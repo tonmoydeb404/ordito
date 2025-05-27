@@ -1,7 +1,13 @@
+import HeaderSection from "./header";
+
 type Props = {};
 
 const App = (props: Props) => {
-  return <div>App</div>;
+  return (
+    <>
+      <HeaderSection />
+    </>
+  );
 };
 
 export default App;
