@@ -1,27 +1,38 @@
+import GroupCard from "@/components/cards/group";
+import CreateCommandModal from "@/components/modals/create-command";
 import useMasonry from "@/hooks/use-masonry";
+import { useModal } from "@/hooks/use-modal";
 import { TCommandGroup } from "@/types/command";
-import GroupItem from "./item";
 
 type Props = {};
 
 const GroupsSection = (props: Props) => {
   const columns = useMasonry({ items: commandGroups });
+  const createCommandModal = useModal<TCommandGroup>();
 
   return (
-    <div
-      className="grid my-16 container mx-auto gap-x-3 gap-y-5"
-      style={{
-        gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
-      }}
-    >
-      {columns.map((col, i) => (
-        <div key={i} className="flex flex-col gap-4 flex-1 shrink-0">
-          {col.map((item) => (
-            <GroupItem data={item} key={item.id} />
-          ))}
-        </div>
-      ))}
-    </div>
+    <>
+      <div
+        className="grid my-16 container mx-auto gap-x-3 gap-y-5"
+        style={{
+          gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
+        }}
+      >
+        {columns.map((col, i) => (
+          <div key={i} className="flex flex-col gap-4 flex-1 shrink-0">
+            {col.map((item) => (
+              <GroupCard
+                data={item}
+                key={item.id}
+                onCreate={() => createCommandModal.open(item)}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <CreateCommandModal {...createCommandModal} />
+    </>
   );
 };
 

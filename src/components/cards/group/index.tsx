@@ -7,15 +7,16 @@ import {
 } from "@/components/ui/card";
 import { TCommandGroup } from "@/types/command";
 import { LucidePlay, LucidePlus } from "lucide-react";
-import CommandActions from "./command-actions";
-import GroupActions from "./group-actions";
+import CommandCard from "../command";
+import GroupActions from "./actions";
 
 type Props = {
   data: TCommandGroup;
+  onCreate: () => void;
 };
 
-const GroupItem = (props: Props) => {
-  const { data } = props;
+const GroupCard = (props: Props) => {
+  const { data, onCreate } = props;
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
@@ -29,21 +30,7 @@ const GroupItem = (props: Props) => {
       </CardHeader>
       <CardContent className="space-y-2">
         {data.commands.map((command) => (
-          <div
-            key={command.id}
-            className="bg-muted/10 dark:bg-accent/40 border py-2 px-2.5 rounded-lg flex items-start"
-          >
-            <div className="flex flex-col grow">
-              <span className="text-[11px] font-light text-muted-foreground mb-1">
-                {command.label}
-              </span>
-              <code className="text-xs">{command.cmd}</code>
-            </div>
-
-            <div className="flex items-center gap-x-1">
-              <CommandActions />
-            </div>
-          </div>
+          <CommandCard data={command} key={command.id} />
         ))}
       </CardContent>
       <CardFooter>
@@ -51,6 +38,7 @@ const GroupItem = (props: Props) => {
           className="w-full shadow-none border border-dashed"
           size={"lg"}
           variant={"ghost"}
+          onClick={onCreate}
         >
           <LucidePlus /> Add Command
         </Button>
@@ -59,4 +47,4 @@ const GroupItem = (props: Props) => {
   );
 };
 
-export default GroupItem;
+export default GroupCard;
