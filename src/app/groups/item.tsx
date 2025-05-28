@@ -6,12 +6,9 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { TCommandGroup } from "@/types/command";
-import {
-  LucideMoreHorizontal,
-  LucideMoreVertical,
-  LucidePlay,
-  LucidePlus,
-} from "lucide-react";
+import { LucidePlay, LucidePlus } from "lucide-react";
+import CommandActions from "./command-actions";
+import GroupActions from "./group-actions";
 
 type Props = {
   data: TCommandGroup;
@@ -27,9 +24,7 @@ const GroupItem = (props: Props) => {
           <Button size={"icon_sm"} variant={"subtle_destructive"}>
             <LucidePlay />
           </Button>
-          <Button size={"icon_sm"} variant={"subtle_dark"}>
-            <LucideMoreVertical />
-          </Button>
+          <GroupActions />
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -46,9 +41,7 @@ const GroupItem = (props: Props) => {
             </div>
 
             <div className="flex items-center gap-x-1">
-              <Button size={"icon_xs"} variant={"ghost"}>
-                <LucideMoreHorizontal />
-              </Button>
+              <CommandActions />
             </div>
           </div>
         ))}
