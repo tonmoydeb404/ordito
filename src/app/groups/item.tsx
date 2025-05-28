@@ -24,10 +24,10 @@ const GroupItem = (props: Props) => {
       <CardHeader className="flex items-center justify-between">
         <h3 className="text-base font-medium">{data.title}</h3>
         <div className="flex items-center gap-2">
-          <Button size={"icon"} variant={"subtle_destructive"}>
+          <Button size={"icon_sm"} variant={"subtle_destructive"}>
             <LucidePlay />
           </Button>
-          <Button size={"icon"} variant={"subtle_dark"}>
+          <Button size={"icon_sm"} variant={"subtle_dark"}>
             <LucideMoreVertical />
           </Button>
         </div>
@@ -36,7 +36,7 @@ const GroupItem = (props: Props) => {
         {data.commands.map((command) => (
           <div
             key={command.id}
-            className="bg-muted/10 dark:bg-accent/40 border p-2.5 rounded-lg flex items-start"
+            className="bg-muted/10 dark:bg-accent/40 border py-2 px-2.5 rounded-lg flex items-start"
           >
             <div className="flex flex-col grow">
               <span className="text-[11px] font-light text-muted-foreground mb-1">
@@ -46,7 +46,7 @@ const GroupItem = (props: Props) => {
             </div>
 
             <div className="flex items-center gap-x-1">
-              <Button size={"icon_sm"} variant={"ghost"}>
+              <Button size={"icon_xs"} variant={"ghost"}>
                 <LucideMoreHorizontal />
               </Button>
             </div>
