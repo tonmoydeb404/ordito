@@ -1,5 +1,7 @@
+import CreateGroupModal from "@/components/modals/create-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useModal } from "@/hooks/use-modal";
 import { LucidePlus, Search, Terminal } from "lucide-react";
 import { useState } from "react";
 
@@ -7,7 +9,7 @@ type Props = {};
 
 const HeaderSection = (props: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [_groupDialogOpen, setGroupDialogOpen] = useState(false);
+  const modal = useModal<void>();
 
   return (
     <>
@@ -38,12 +40,14 @@ const HeaderSection = (props: Props) => {
             />
           </div>
 
-          <Button onClick={() => setGroupDialogOpen(true)} size="lg">
+          <Button onClick={() => modal.open()} size="lg">
             <LucidePlus />
             New Group
           </Button>
         </div>
       </div>
+
+      <CreateGroupModal {...modal} />
     </>
   );
 };

@@ -8,5 +8,5 @@ export type TCommmand = {
   id: string; // uuid
   label: string;
   cmd: string;
-  is_detached: boolean;
+  is_detached?: boolean;
 };
