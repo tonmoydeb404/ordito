@@ -34,16 +34,21 @@ fn main() {
         })
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
-            commands::create_group,
-            commands::get_groups,
-            commands::delete_group,
-            commands::add_command_to_group,
-            commands::delete_command_from_group,
-            commands::execute_command,
-            commands::execute_command_detached,
-            commands::execute_group_commands,
-            commands::export_data,
-            commands::import_data
+            // Group commands
+            commands::group::create_group,
+            commands::group::get_groups,
+            commands::group::delete_group,
+            commands::group::update_group,
+            commands::group::export_data,
+            commands::group::import_data,
+            // Command commands
+            commands::command::add_command_to_group,
+            commands::command::delete_command_from_group,
+            commands::command::update_command,
+            // Execute commands
+            commands::execute::execute_command,
+            commands::execute::execute_command_detached,
+            commands::execute::execute_group_commands
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
