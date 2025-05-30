@@ -22,7 +22,7 @@ const GroupCard = (props: Props) => {
       <CardHeader className="flex items-center justify-between">
         <h3 className="text-base font-medium">{data.title}</h3>
         <div className="flex items-center gap-2">
-          <Button size={"icon_sm"} variant={"subtle_destructive"}>
+          <Button size={"icon_sm"} variant={"destructive"}>
             <LucidePlay />
           </Button>
           <GroupActions />

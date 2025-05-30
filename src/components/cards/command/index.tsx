@@ -10,7 +10,7 @@ const CommandCard = (props: Props) => {
   return (
     <div className="bg-muted/10 dark:bg-accent/40 border py-2 px-2.5 rounded-lg flex items-start">
       <div className="flex flex-col grow">
-        <span className="text-[11px] font-light text-muted-foreground mb-1">
+        <span className="text-xs font-light text-muted-foreground mb-1">
           {data.label}
         </span>
         <code className="text-xs">{data.cmd}</code>

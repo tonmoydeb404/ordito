@@ -18,7 +18,7 @@ const GroupActions = (props: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Button size={"icon_sm"} variant={"subtle_dark"}>
+        <Button size={"icon_sm"} variant={"secondary"}>
           <LucideMoreVertical />
         </Button>
       </DropdownMenuTrigger>
