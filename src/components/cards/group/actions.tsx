@@ -12,9 +12,13 @@ import {
   LucideTrash,
 } from "lucide-react";
 
-type Props = {};
+type Props = {
+  onDelete: () => void;
+  onUpdate: () => void;
+};
 
 const GroupActions = (props: Props) => {
+  const { onDelete, onUpdate } = props;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -26,10 +30,10 @@ const GroupActions = (props: Props) => {
         <DropdownMenuItem>
           <LucidePlay /> Execute Commands
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={onUpdate}>
           <LucideEdit /> Update Title
         </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive">
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
           <LucideTrash /> Remove Group
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -13,10 +13,12 @@ import GroupActions from "./actions";
 type Props = {
   data: TCommandGroup;
   onCreate: () => void;
+  onDelete: () => void;
+  onUpdate: () => void;
 };
 
 const GroupCard = (props: Props) => {
-  const { data, onCreate } = props;
+  const { data, onCreate, onDelete, onUpdate } = props;
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
@@ -25,7 +27,7 @@ const GroupCard = (props: Props) => {
           <Button size={"icon_sm"} variant={"destructive"}>
             <LucidePlay />
           </Button>
-          <GroupActions />
+          <GroupActions onDelete={onDelete} onUpdate={onUpdate} />
         </div>
       </CardHeader>
       <CardContent className="space-y-2">

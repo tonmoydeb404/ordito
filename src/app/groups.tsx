@@ -1,5 +1,7 @@
 import GroupCard from "@/components/cards/group";
 import CreateCommandModal from "@/components/modals/create-command";
+import DeleteGroupModal from "@/components/modals/delete-group";
+import UpdateGroupModal from "@/components/modals/update-group";
 import { useAppContext } from "@/context";
 import useMasonry from "@/hooks/use-masonry";
 import { useModal } from "@/hooks/use-modal";
@@ -11,6 +13,8 @@ const GroupsSection = (props: Props) => {
   const { groups } = useAppContext();
   const columns = useMasonry({ items: groups });
   const createCommandModal = useModal<TCommandGroup>();
+  const updateGroupModal = useModal<TCommandGroup>();
+  const deleteGroupModal = useModal<TCommandGroup>();
 
   return (
     <>
@@ -27,6 +31,8 @@ const GroupsSection = (props: Props) => {
                 data={item}
                 key={item.id}
                 onCreate={() => createCommandModal.open(item)}
+                onDelete={() => deleteGroupModal.open(item)}
+                onUpdate={() => updateGroupModal.open(item)}
               />
             ))}
           </div>
@@ -34,6 +40,9 @@ const GroupsSection = (props: Props) => {
       </div>
 
       <CreateCommandModal {...createCommandModal} />
+
+      <UpdateGroupModal {...updateGroupModal} />
+      <DeleteGroupModal {...deleteGroupModal} />
     </>
   );
 };
