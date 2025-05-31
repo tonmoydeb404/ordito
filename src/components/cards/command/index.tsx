@@ -19,7 +19,9 @@ const CommandCard = (props: Props) => {
         <span className="text-xs font-light text-muted-foreground mb-1">
           {data.label}
         </span>
-        <code className="text-xs">{data.cmd}</code>
+        <code className="text-xs break-all whitespace-pre-wrap">
+          {data.cmd}
+        </code>
       </div>
 
       <div className="flex items-center gap-x-1">

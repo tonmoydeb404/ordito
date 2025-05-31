@@ -73,7 +73,9 @@ function DeleteCommandModal(props: Props) {
 
             <div className="mt-3 p-3 bg-muted rounded-md">
               <div className="text-xs text-muted-foreground mb-1">Command:</div>
-              <code className="text-sm font-mono break-all">{command.cmd}</code>
+              <code className="text-sm font-mono break-all whitespace-pre-wrap">
+                {command.cmd}
+              </code>
               {command.is_detached && (
                 <div className="text-xs text-muted-foreground mt-1">
                   • Runs in background (detached)
