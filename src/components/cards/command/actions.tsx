@@ -24,11 +24,11 @@ const CommandActions = (props: Props) => {
   const { onDelete, onExecute, onUpdate, onCopy } = props;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button size={"icon_xs"} variant={"ghost"}>
+      <Button size={"icon_xs"} variant={"ghost"} asChild>
+        <DropdownMenuTrigger>
           <LucideMoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
+        </DropdownMenuTrigger>
+      </Button>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onExecute}>
           <LucidePlay /> Execute

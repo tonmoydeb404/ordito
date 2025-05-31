@@ -24,11 +24,11 @@ const GroupActions = (props: Props) => {
   const { onDelete, onUpdate, onCopy, onExecute } = props;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button size={"icon_sm"} variant={"secondary"}>
+      <Button size={"icon_sm"} variant={"secondary"} asChild>
+        <DropdownMenuTrigger>
           <LucideMoreVertical />
-        </Button>
-      </DropdownMenuTrigger>
+        </DropdownMenuTrigger>
+      </Button>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onExecute}>
           <LucidePlay /> Execute Commands
