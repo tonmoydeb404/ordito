@@ -109,7 +109,7 @@ fn main() {
             toggle_startup,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while running orbito");
 }
 /// Tauri command to refresh tray menu from frontend
 #[tauri::command]
