@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  LucideClipboard,
   LucideEdit,
   LucideMoreVertical,
   LucidePlay,
@@ -15,10 +16,12 @@ import {
 type Props = {
   onDelete: () => void;
   onUpdate: () => void;
+  onExecute: () => void;
+  onCopy: () => void;
 };
 
 const GroupActions = (props: Props) => {
-  const { onDelete, onUpdate } = props;
+  const { onDelete, onUpdate, onCopy, onExecute } = props;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -27,8 +30,11 @@ const GroupActions = (props: Props) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={onExecute}>
           <LucidePlay /> Execute Commands
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopy}>
+          <LucideClipboard /> Copy
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onUpdate}>
           <LucideEdit /> Update Title

@@ -51,8 +51,6 @@ const GroupsSection = (props: Props) => {
                   <CommandCard
                     data={command}
                     key={command.id}
-                    onCopy={() => {}}
-                    onExecute={() => {}}
                     onDelete={() =>
                       deleteCommandModal.open({ command, group: item })
                     }

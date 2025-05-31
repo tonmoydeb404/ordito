@@ -1,16 +1,18 @@
+import { useCommandExecution } from "@/context/hooks";
 import { TCommmand } from "@/types/command";
+import { copyCommand } from "@/utils/clipboard";
 import CommandActions from "./actions";
 
 type Props = {
   data: TCommmand;
   onUpdate: () => void;
   onDelete: () => void;
-  onExecute: () => void;
-  onCopy: () => void;
 };
 
 const CommandCard = (props: Props) => {
   const { data, ...others } = props;
+  const { executeCommand, executeCommandDetached } = useCommandExecution();
+
   return (
     <div className="bg-muted/10 dark:bg-accent/40 border py-2 px-2.5 rounded-lg flex items-start">
       <div className="flex flex-col grow">
@@ -21,7 +23,19 @@ const CommandCard = (props: Props) => {
       </div>
 
       <div className="flex items-center gap-x-1">
-        <CommandActions {...others} />
+        <CommandActions
+          {...others}
+          onExecute={() => {
+            if (data.is_detached) {
+              executeCommandDetached(data.cmd);
+            } else {
+              executeCommand(data.cmd);
+            }
+          }}
+          onCopy={() => {
+            copyCommand(data);
+          }}
+        />
       </div>
     </div>
   );

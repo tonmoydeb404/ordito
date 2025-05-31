@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  LucideClipboard,
   LucideEdit,
   LucideMoreHorizontal,
   LucidePlay,
@@ -20,7 +21,7 @@ type Props = {
 };
 
 const CommandActions = (props: Props) => {
-  const { onDelete, onExecute, onUpdate } = props;
+  const { onDelete, onExecute, onUpdate, onCopy } = props;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -31,6 +32,9 @@ const CommandActions = (props: Props) => {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onExecute}>
           <LucidePlay /> Execute
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopy}>
+          <LucideClipboard /> Copy
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onUpdate}>
           <LucideEdit /> Update Command
