@@ -1,120 +1,182 @@
-# Ordito
+<div align="center">
+  <img src="public/logo.svg" alt="Ordito Logo" width="120" height="120">
+  
+  # Ordito
 
-A powerful desktop application built with Tauri that allows you to organize, manage, and execute commands from a convenient system tray interface. Perfect for developers, system administrators, and power users who frequently run terminal commands.
+**Organize. Execute. Simplify.**
+
+A powerful desktop application that brings command execution to your system tray. Organize your frequently used commands into groups and execute them with a single click - no more switching between terminal windows or remembering complex command syntax.
+
+[![Release](https://img.shields.io/github/v/release/tonmoydeb404/ordito)](https://github.com/tonmoydeb404/ordito/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)]()
+
+</div>
+
+---
 
 ## ✨ Features
 
-### 🎯 Core Functionality
+### 🎯 **Command Management**
 
-- **Command Groups**: Organize commands into logical groups for better management
-- **Quick Execution**: Execute commands with a single click from the system tray
-- **Detached Mode**: Run commands in the background without blocking the UI
-- **Batch Execution**: Execute all commands in a group with one action
+- **Create Command Groups** - Organize related commands together (Development, Docker, Git, etc.)
+- **Quick Command Execution** - Execute any command with a single click from the tray menu
+- **Detached Mode** - Run background processes without blocking the UI
+- **Batch Execution** - Execute all commands in a group at once
 
-### 🖥️ System Integration
+### 🖥️ **System Tray Integration**
 
-- **System Tray**: Lightweight tray application that runs in the background
-- **Auto-start**: Automatically launch on system startup (hidden in tray)
-- **Cross-platform**: Available for Windows, macOS, and Linux
-- **Notifications**: Real-time feedback for command execution results
+- **Always Available** - Lives quietly in your system tray, ready when you need it
+- **Right-Click Menu** - Access all your commands directly from the tray
+- **Hide to Tray** - Minimize to tray instead of closing completely
+- **Auto-Start Support** - Launch automatically on system startup
 
-### 📊 Data Management
+### 📊 **Data & Settings**
 
-- **Export/Import**: Backup and share your command configurations
-- **Persistent Storage**: All data is automatically saved locally
-- **JSON Format**: Human-readable configuration format
+- **Export/Import** - Backup and share your command configurations
+- **Auto-Save** - All changes are saved automatically
+- **Startup Control** - Toggle auto-start behavior from settings
+- **Persistent Storage** - Your data stays safe between app restarts
 
-### 🎨 User Experience
+### 🎨 **User Experience**
 
-- **Modern UI**: Clean, intuitive interface built with React
-- **Dark/Light Support**: Adapts to your system preferences
-- **Responsive Design**: Works well on different screen sizes
-- **Error Handling**: Comprehensive error reporting and recovery
+- **Modern Interface** - Clean, intuitive design built with React
+- **Real-Time Feedback** - Instant notifications for command results
+- **Error Handling** - Clear error messages and execution status
+- **Cross-Platform** - Works on Windows and Linux
+
+## 💡 Use Cases
+
+### **🧑‍💻 For Developers**
+
+```bash
+# VS Code Projects
+code ~/my-project
+code C:\Projects\MyApp
+
+# Development Servers
+npm run dev
+python manage.py runserver
+cargo run
+
+# Build Commands
+npm run build
+cargo build --release
+docker build -t myapp .
+
+# Quick Browser Access
+chrome https://localhost:3000
+firefox http://127.0.0.1:8000
+
+# Git Workflows
+git status
+git pull origin main
+git push origin feature-branch
+```
+
+### **⚙️ For System Administrators**
+
+```bash
+# System Updates
+sudo apt update && sudo apt upgrade
+sudo yum update
+sudo pacman -Syu
+
+# Service Management
+systemctl restart nginx
+systemctl status postgresql
+docker-compose restart
+
+# Log Monitoring
+tail -f /var/log/syslog
+journalctl -f
+docker logs -f container_name
+
+# Network Diagnostics
+ping google.com
+netstat -tulpn
+ss -tulpn
+```
+
+### **🚀 For Daily Productivity**
+
+```bash
+# Open Websites
+chrome https://github.com
+firefox https://gmail.com
+start https://calendar.google.com
+
+# File Operations
+code ~/Documents/notes.md
+nautilus ~/Downloads
+explorer C:\Users\username\Desktop
+
+# Environment Setup
+docker-compose up -d && npm start
+source ~/.bashrc && conda activate myenv
+cd ~/project && git pull && npm install
+```
+
+### **🔧 For Power Users**
+
+```bash
+# File Management
+find . -name "*.log" -delete
+rsync -av /source/ /backup/
+zip -r backup.zip important_folder/
+
+# Process Management
+ps aux | grep chrome
+kill -9 $(pgrep firefox)
+htop
+
+# Custom Scripts
+./deploy.sh production
+python scripts/cleanup.py
+bash ~/scripts/backup-routine.sh
+```
+
+## 📥 Download
+
+### Windows
+
+**[📦 Download ordito.exe](https://github.com/tonmoydeb404/ordito/releases/latest/download/ordito.exe)**
+
+- Portable executable - no installation required
+- Simply download and run
+
+### Linux
+
+**[📦 Download .deb](https://github.com/tonmoydeb404/ordito/releases/latest)** (Ubuntu/Debian)
+
+```bash
+sudo dpkg -i ordito_1.0.0_amd64.deb
+```
+
+**[📦 Download .AppImage](https://github.com/tonmoydeb404/ordito/releases/latest)** (Universal Linux)
+
+```bash
+chmod +x ordito_1.0.0_amd64.AppImage
+./ordito_1.0.0_amd64.AppImage
+```
+
+**[📦 Download .rpm](https://github.com/tonmoydeb404/ordito/releases/latest)** (Red Hat/Fedora)
+
+```bash
+sudo rpm -i ordito-1.0.0-1.x86_64.rpm
+```
 
 ## 🚀 Quick Start
 
-### Installation
-
-1. **Download** the latest release for your platform:
-
-   - Windows: `.msi` installer
-   - macOS: `.dmg` disk image
-   - Linux: `.deb` or `.rpm` package
-
-2. **Install** the application using your platform's standard installation process
-
-3. **Launch** the application - it will appear in your system tray
-
-### First Steps
-
-1. **Right-click** the tray icon to open the context menu
-2. **Click "Show Window"** to open the main interface
-3. **Create your first group** by clicking the "+" button
-4. **Add commands** to your group with labels and command strings
-5. **Test execution** by clicking the play button next to a command
-
-## 📖 Usage Guide
-
-### Creating Command Groups
-
-Groups help organize related commands together:
-
-```
-Example Groups:
-├── Development
-│   ├── Start Server (npm run dev)
-│   ├── Run Tests (npm test)
-│   └── Build Project (npm run build)
-├── System Maintenance
-│   ├── Update System (sudo apt update && sudo apt upgrade)
-│   ├── Clear Cache (sudo apt autoclean)
-│   └── Check Disk Space (df -h)
-└── Docker
-    ├── List Containers (docker ps)
-    ├── Clean Images (docker system prune)
-    └── Start Services (docker-compose up -d)
-```
-
-### Command Types
-
-- **Regular Commands**: Execute and wait for completion, showing output
-- **Detached Commands**: Run in background, perfect for starting servers or long-running processes
-
-### System Tray Operations
-
-- **Left Click**: Show/hide main window
-- **Right Click**: Access command menu
-- **Command Execution**: Direct execution from tray menu
-- **Group Execution**: Run all commands in a group
-
-### Keyboard Shortcuts
-
-- `Ctrl/Cmd + N`: New group
-- `Ctrl/Cmd + S`: Save (auto-save is enabled)
-- `Escape`: Hide window to tray
-
-## ⚙️ Configuration
-
-### Auto-start Setup
-
-1. Open the main application window
-2. Click the settings gear icon (⚙️) in the top right
-3. Select "Enable Startup"
-4. The app will now start automatically with your system (in tray mode)
-
-### Data Location
-
-Configuration files are stored in:
-
-- **Windows**: `%APPDATA%\Ordito\`
-- **macOS**: `~/Library/Application Support/Ordito/`
-- **Linux**: `~/.local/share/Ordito/`
-
-### Export/Import Data
-
-- **Export**: Save your configuration to a JSON file for backup or sharing
-- **Import**: Load configuration from a JSON file
-- **Format**: Human-readable JSON structure for easy editing
+1. **Launch Ordito** - Look for the icon in your system tray
+2. **Right-click the tray icon** to see the menu
+3. **Click "Show Window"** to open the main interface
+4. **Create a group** - Click the "+" button and name your group (e.g., "Development")
+5. **Add commands** - Click "Add Command" and enter:
+   - **Label**: `Start Dev Server`
+   - **Command**: `npm run dev`
+   - **Detached**: ✅ (for long-running processes)
+6. **Execute from tray** - Right-click tray → Development → Start Dev Server
 
 ## 🔧 Development
 
@@ -135,17 +197,17 @@ git clone https://github.com/tonmoydeb404/ordito.git
 cd ordito
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run tauri dev
+pnpm tauri dev
 ```
 
 ### Build
 
 ```bash
 # Build for production
-npm run tauri build
+pnpm tauri build
 ```
 
 ### Tech Stack
