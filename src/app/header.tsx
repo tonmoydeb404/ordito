@@ -1,15 +1,13 @@
 import CreateGroupModal from "@/components/modals/create-group";
+import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useModal } from "@/hooks/use-modal";
-import { LucidePlus, Search, Terminal } from "lucide-react";
-import { useState } from "react";
+import { LucidePlus, Terminal } from "lucide-react";
 
 type Props = {};
 
 const HeaderSection = (props: Props) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const modal = useModal<void>();
+  const createModal = useModal<void>();
 
   return (
     <>
@@ -30,24 +28,21 @@ const HeaderSection = (props: Props) => {
       <div className="sticky top-0 z-10 bg-card border-b">
         <div className="container mx-auto px-6 py-6 flex items-center justify-between">
           {/* Search */}
-          <div className="relative max-w-md w-full">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 size-5 text-muted-foreground" />
-            <Input
-              placeholder="Search groups..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12"
+          <div className="max-w-md w-full">
+            <SearchInput
+              placeholder="Search by group & command..."
+              className="h-12"
             />
           </div>
 
-          <Button onClick={() => modal.open()} size="lg">
+          <Button onClick={() => createModal.open()} size="lg">
             <LucidePlus />
             New Group
           </Button>
         </div>
       </div>
 
-      <CreateGroupModal {...modal} />
+      <CreateGroupModal {...createModal} />
     </>
   );
 };
