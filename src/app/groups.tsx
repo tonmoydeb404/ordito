@@ -5,7 +5,7 @@ import DeleteCommandModal from "@/components/modals/delete-command";
 import DeleteGroupModal from "@/components/modals/delete-group";
 import UpdateCommandModal from "@/components/modals/update-command";
 import UpdateGroupModal from "@/components/modals/update-group";
-import { useAppContext } from "@/context";
+import { useAppContext } from "@/context/app";
 import useMasonry from "@/hooks/use-masonry";
 import { useModal } from "@/hooks/use-modal";
 import { TCommandGroup, TCommmand } from "@/types/command";

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AppContextType } from "@/context/type";
+import { ExecutionContextType } from "@/context/execution/type";
 import { Terminal } from "lucide-react";
 import { useEffect, useRef } from "react";
 import Empty from "./empty";
@@ -32,23 +32,20 @@ interface GroupExecution {
 interface ExecutionResultsModalProps {
   isOpen: boolean;
   close: () => void;
-  groupId?: string | null;
-  results: AppContextType["results"];
-  onClearResults: (groupId: string) => void;
-  onClearAllResults: () => void;
+  selectedResponse?: string | null;
+  responses: ExecutionContextType["responses"];
+  onRemove: (groupId: string) => void;
+  onClear: () => void;
 }
 
-export default function ExecutionResultsModal({
-  isOpen,
-  close,
-  groupId,
-  results,
-  onClearResults,
-  onClearAllResults,
-}: ExecutionResultsModalProps) {
+export default function ExecutionResultsModal(
+  props: ExecutionResultsModalProps
+) {
+  const { isOpen, close, selectedResponse, responses, onRemove, onClear } =
+    props;
   const highlightRef = useRef<HTMLDivElement>(null);
 
-  const groupExecutions: GroupExecution[] = Object.entries(results).map(
+  const groupExecutions: GroupExecution[] = Object.entries(responses).map(
     ([timestamp, executionResult]) => {
       return {
         label: executionResult.label,
@@ -80,7 +77,7 @@ export default function ExecutionResultsModal({
 
   // Scroll to highlighted group when modal opens
   useEffect(() => {
-    if (isOpen && groupId && highlightRef.current) {
+    if (isOpen && selectedResponse && highlightRef.current) {
       setTimeout(() => {
         highlightRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -88,7 +85,7 @@ export default function ExecutionResultsModal({
         });
       }, 100);
     }
-  }, [isOpen, groupId]);
+  }, [isOpen, selectedResponse]);
 
   if (groupExecutions.length === 0) {
     return (
@@ -121,7 +118,7 @@ export default function ExecutionResultsModal({
             totalErrors={totalErrors}
             totalGroups={groupExecutions.length}
             totalResults={totalResults}
-            groupId={groupId}
+            groupId={selectedResponse}
           />
         </DialogHeader>
 
@@ -131,16 +128,18 @@ export default function ExecutionResultsModal({
               <Item
                 key={execution.timestamp}
                 execution={execution}
-                isHighlighted={groupId === execution.timestamp}
-                onClear={() => onClearResults(execution.timestamp)}
-                ref={groupId === execution.timestamp ? highlightRef : null}
+                isHighlighted={selectedResponse === execution.timestamp}
+                onClear={() => onRemove(execution.timestamp)}
+                ref={
+                  selectedResponse === execution.timestamp ? highlightRef : null
+                }
               />
             ))}
           </div>
         </div>
 
         <DialogFooter className="flex justify-between border-t pt-4">
-          <Footer onClearAll={onClearAllResults} onClose={close} />
+          <Footer onClearAll={onClear} onClose={close} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

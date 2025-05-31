@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
-import { AppProvider } from "@/context";
+import AppProvider from "@/context/app/provider";
+import ExecutionProvider from "@/context/execution/provider";
 import GroupsSection from "./groups";
 import HeaderSection from "./header";
 
@@ -8,9 +9,11 @@ type Props = {};
 const App = (props: Props) => {
   return (
     <AppProvider>
-      <HeaderSection />
-      <GroupsSection />
-      <Toaster />
+      <ExecutionProvider>
+        <HeaderSection />
+        <GroupsSection />
+        <Toaster />
+      </ExecutionProvider>
     </AppProvider>
   );
 };
