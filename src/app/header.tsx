@@ -12,7 +12,7 @@ const HeaderSection = (props: Props) => {
 
   return (
     <>
-      <div className="bg-card">
+      <div className="bg-card hidden lg:block">
         <div className="container mx-auto px-6 pt-6 pb-2 flex items-center gap-4">
           <img src="/logo.svg" alt="Logo" width={50} />
           <div>
@@ -31,7 +31,7 @@ const HeaderSection = (props: Props) => {
           <div className="max-w-md w-full">
             <SearchInput
               placeholder="Search by group & command..."
-              className="h-12"
+              className="h-10"
             />
           </div>
 
