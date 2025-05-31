@@ -16,7 +16,7 @@ jobs:
           - platform: "ubuntu-22.04"
             args: ""
           - platform: "windows-latest"
-            args: "--no-bundle"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -28,6 +28,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install WiX (Windows only)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip" -OutFile "wix314-binaries.zip"
+          Expand-Archive -Path "wix314-binaries.zip" -DestinationPath "wix314"
+          echo "$env:GITHUB_WORKSPACE\wix314" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
@@ -49,19 +56,31 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Build frontend
-        run: pnpm build
-
-      - name: Build Tauri app
-        run: pnpm tauri build ${{ matrix.args }}
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Build the app (with debug info)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUST_BACKTRACE: 1
         with:
-          draft: true
-          generate_release_notes: true
-          files: |
-            src-tauri/target/release/ordito*
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
+          tagName: ${{ github.ref_name }}
+          releaseName: "Ordito v__VERSION__"
+          releaseBody: "See the assets to download and install this version."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Debug - List build artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Listing target directory:"
+          Get-ChildItem -Recurse src-tauri/target/release/ -ErrorAction SilentlyContinue
+          echo "Looking for bundle directory:"
+          Get-ChildItem -Recurse src-tauri/target/release/bundle/ -ErrorAction SilentlyContinue
+
+      - name: Debug - List build artifacts (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          echo "Listing target directory:"
+          find src-tauri/target/release/ -type f -name "*.deb" -o -name "*.AppImage" -o -name "ordito" 2>/dev/null || true
+          echo "Bundle directory contents:"
+          ls -la src-tauri/target/release/bundle/ 2>/dev/null || true
