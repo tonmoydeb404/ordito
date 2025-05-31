@@ -1,4 +1,3 @@
-// src/startup.rs - Startup management using Tauri autostart plugin
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -12,7 +11,7 @@ impl StartupManager {
             .map_err(|e| format!("Failed to check startup status: {}", e))
     }
 
-    /// Enable startup
+    /// Enable startup (will automatically start in tray)
     pub fn enable_startup(app: &AppHandle) -> Result<(), String> {
         app.autolaunch()
             .enable()
@@ -36,7 +35,7 @@ impl StartupManager {
             Ok(false)
         } else {
             Self::enable_startup(app)?;
-            log::info!("✅ Startup enabled");
+            log::info!("✅ Startup enabled (will start in tray)");
             Ok(true)
         }
     }

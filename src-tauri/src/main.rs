@@ -9,6 +9,7 @@ mod storage;
 mod tray;
 mod window;
 
+use notification::NotificationManager;
 use startup::StartupManager;
 use state::AppState;
 use storage::load_data;
@@ -25,14 +26,18 @@ fn main() {
 
     log::info!("🚀 Setting up application...");
 
+    // Check if app was started via autostart (check for the flag we set)
+    let args: Vec<String> = std::env::args().collect();
+    let started_from_autostart = args.contains(&"--autostart".to_string());
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
-            Some(vec!["--flag1", "--flag2"]),
+            Some(vec!["--autostart"]), // Pass autostart flag
         ))
-        .setup(|app| {
+        .setup(move |app| {
             // Load data on startup
             let app_handle = app.handle();
             let state: State<AppState> = app.state();
@@ -60,6 +65,21 @@ fn main() {
             log::info!("🔧 Setting up window background behavior...");
             if let Err(e) = WindowManager::setup_background_behavior(app) {
                 log::error!("❌ Failed to setup window behavior: {}", e);
+            }
+
+            // If started from autostart, hide window and show notification
+            if started_from_autostart {
+                log::info!("🫥 Started from autostart - hiding to tray");
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+
+                // Show brief startup notification
+                NotificationManager::show_success(
+                    &app_handle,
+                    "Ordito",
+                    "Running in background. Right-click tray icon to access commands.",
+                );
             }
 
             log::info!("✅ Application setup complete");
@@ -91,7 +111,6 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
 /// Tauri command to refresh tray menu from frontend
 #[tauri::command]
 async fn refresh_tray_menu(app_handle: tauri::AppHandle) -> Result<(), String> {
