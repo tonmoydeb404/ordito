@@ -2,13 +2,15 @@ import SettingsDropdown from "@/components/dropdowns/settings";
 import CreateGroupModal from "@/components/modals/create-group";
 import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
+import { useExecutionContext } from "@/contexts/execution";
 import { useModal } from "@/hooks/use-modal";
-import { LucidePlus } from "lucide-react";
+import { LucidePlus, LucideTerminal } from "lucide-react";
 
 type Props = {};
 
 const HeaderSection = (props: Props) => {
   const createModal = useModal<void>();
+  const { showModal } = useExecutionContext();
 
   return (
     <>
@@ -39,6 +41,14 @@ const HeaderSection = (props: Props) => {
             <Button onClick={() => createModal.open()}>
               <LucidePlus />
               New Group
+            </Button>
+
+            <Button
+              variant={"secondary"}
+              size={"icon"}
+              onClick={() => showModal(null)}
+            >
+              <LucideTerminal />
             </Button>
 
             <SettingsDropdown />
