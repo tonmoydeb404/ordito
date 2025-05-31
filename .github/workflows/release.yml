@@ -56,10 +56,11 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Build the app
+      - name: Build the app (with debug info)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUST_BACKTRACE: 1
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Ordito v__VERSION__"
@@ -67,3 +68,19 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Debug - List build artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Listing target directory:"
+          Get-ChildItem -Recurse src-tauri/target/release/ -ErrorAction SilentlyContinue
+          echo "Looking for bundle directory:"
+          Get-ChildItem -Recurse src-tauri/target/release/bundle/ -ErrorAction SilentlyContinue
+
+      - name: Debug - List build artifacts (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          echo "Listing target directory:"
+          find src-tauri/target/release/ -type f -name "*.deb" -o -name "*.AppImage" -o -name "ordito" 2>/dev/null || true
+          echo "Bundle directory contents:"
+          ls -la src-tauri/target/release/bundle/ 2>/dev/null || true
