@@ -7,18 +7,19 @@ import {
 } from "@/components/ui/card";
 import { TCommandGroup } from "@/types/command";
 import { LucidePlay, LucidePlus } from "lucide-react";
-import CommandCard from "../command";
+import { ReactNode } from "react";
 import GroupActions from "./actions";
 
 type Props = {
   data: TCommandGroup;
-  onCreate: () => void;
+  onCommandCreate: () => void;
   onDelete: () => void;
   onUpdate: () => void;
+  children: ReactNode;
 };
 
 const GroupCard = (props: Props) => {
-  const { data, onCreate, onDelete, onUpdate } = props;
+  const { data, onCommandCreate, onDelete, onUpdate, children } = props;
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
@@ -30,17 +31,13 @@ const GroupCard = (props: Props) => {
           <GroupActions onDelete={onDelete} onUpdate={onUpdate} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {data.commands.map((command) => (
-          <CommandCard data={command} key={command.id} />
-        ))}
-      </CardContent>
+      <CardContent className="space-y-2">{children}</CardContent>
       <CardFooter>
         <Button
           className="w-full shadow-none border border-dashed"
           size={"lg"}
           variant={"ghost"}
-          onClick={onCreate}
+          onClick={onCommandCreate}
         >
           <LucidePlus /> Add Command
         </Button>

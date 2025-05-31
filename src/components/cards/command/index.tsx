@@ -3,10 +3,14 @@ import CommandActions from "./actions";
 
 type Props = {
   data: TCommmand;
+  onUpdate: () => void;
+  onDelete: () => void;
+  onExecute: () => void;
+  onCopy: () => void;
 };
 
 const CommandCard = (props: Props) => {
-  const { data } = props;
+  const { data, ...others } = props;
   return (
     <div className="bg-muted/10 dark:bg-accent/40 border py-2 px-2.5 rounded-lg flex items-start">
       <div className="flex flex-col grow">
@@ -17,7 +21,7 @@ const CommandCard = (props: Props) => {
       </div>
 
       <div className="flex items-center gap-x-1">
-        <CommandActions />
+        <CommandActions {...others} />
       </div>
     </div>
   );

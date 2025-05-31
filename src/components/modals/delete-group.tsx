@@ -60,18 +60,18 @@ function DeleteGroupModal(props: Props) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Group</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
+          <AlertDialogDescription className="">
             <span>
               Are you sure you want to delete the group{" "}
               <span className="font-semibold">"{group.title}"</span>?
             </span>
             {group.commands.length > 0 && (
-              <span className="block text-destructive">
+              <span className="text-destructive ml-1">
                 This will also delete {group.commands.length} command
                 {group.commands.length !== 1 ? "s" : ""} in this group.
               </span>
             )}
-            <span className="block">This action cannot be undone.</span>
+            <span className="ml-1">This action cannot be undone.</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
 
