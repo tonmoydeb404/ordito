@@ -27,7 +27,7 @@ const HeaderSection = (props: Props) => {
       </div>
 
       <div className="sticky top-0 z-10 bg-card border-b">
-        <div className="container mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="max-w-md w-full">
             <SearchInput
               placeholder="Search by group & command..."
