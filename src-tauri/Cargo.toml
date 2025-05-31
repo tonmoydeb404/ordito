@@ -1,6 +1,6 @@
 [package]
 name = "ordito"
-version = "0.1.0"
+version = "1.0.0"
 description = "A powerful desktop application for organizing and executing commands from a convenient system tray interface"
 authors = ["tonmoydeb404 <tonmoydeb404@gmail.com>"]
 edition = "2021"
