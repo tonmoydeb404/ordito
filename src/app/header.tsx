@@ -3,7 +3,7 @@ import CreateGroupModal from "@/components/modals/create-group";
 import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal";
-import { LucidePlus, Terminal } from "lucide-react";
+import { LucidePlus } from "lucide-react";
 
 type Props = {};
 
@@ -14,12 +14,12 @@ const HeaderSection = (props: Props) => {
     <>
       <div className="bg-card">
         <div className="container mx-auto px-6 pt-6 pb-2 flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-black text-primary">
-            <Terminal className="h-8 w-8" />
-          </div>
+          <img src="/logo.svg" alt="Logo" width={50} />
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Ordito</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Ordito
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Organize and execute your commands efficiently
             </p>
           </div>

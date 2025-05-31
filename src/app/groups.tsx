@@ -32,7 +32,7 @@ const GroupsSection = (props: Props) => {
   return (
     <>
       <div
-        className="grid my-16 container mx-auto gap-x-3 gap-y-5"
+        className="grid my-16 container mx-auto gap-x-3 gap-y-5 px-5 md:px-0"
         style={{
           gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
         }}
