@@ -1,3 +1,4 @@
+import ExecutionResultsModal from "@/components/modals/execution-results";
 import { TauriAPI } from "@/lib/tauri";
 import { TCommandGroup, TCommmand } from "@/types/command";
 import {
@@ -8,28 +9,7 @@ import {
   useEffect,
   useState,
 } from "react";
-
-// Context type
-interface AppContextType {
-  groups: TCommandGroup[];
-  loading: boolean;
-  error: string | null;
-  refreshGroups: () => Promise<void>;
-  getGroupById: (groupId: string) => TCommandGroup | undefined;
-  getCommandById: (groupId: string, commandId: string) => TCommmand | undefined;
-  // Internal methods for mutation hooks
-  _setGroups: (groups: TCommandGroup[]) => void;
-  _addGroup: (group: TCommandGroup) => void;
-  _updateGroup: (groupId: string, title: string) => void;
-  _deleteGroup: (groupId: string) => void;
-  _addCommand: (groupId: string, command: TCommmand) => void;
-  _updateCommand: (
-    groupId: string,
-    commandId: string,
-    commandData: Omit<TCommmand, "id">
-  ) => void;
-  _deleteCommand: (groupId: string, commandId: string) => void;
-}
+import { AppContextType } from "./type";
 
 // Create context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -54,6 +34,12 @@ export function AppProvider({ children }: AppProviderProps) {
   const [groups, setGroups] = useState<TCommandGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Simplified execution state
+  const [results, setResults] = useState<Record<string, [string, string][]>>(
+    {}
+  );
+  const [showResultsModal, setShowResultsModal] = useState<string | null>(null);
 
   const refreshGroups = useCallback(async () => {
     try {
@@ -96,6 +82,11 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const _deleteGroup = useCallback((groupId: string) => {
     setGroups((prev) => prev.filter((group) => group.id !== groupId));
+    // Also clear execution results for deleted group
+    setResults((prev) => {
+      const { [groupId]: deleted, ...rest } = prev;
+      return rest;
+    });
   }, []);
 
   const _addCommand = useCallback((groupId: string, command: TCommmand) => {
@@ -143,6 +134,29 @@ export function AppProvider({ children }: AppProviderProps) {
     );
   }, []);
 
+  // Results management functions
+
+  const addResult = useCallback(
+    (groupId: string, results: [string, string][]) => {
+      setResults((prev) => ({
+        ...prev,
+        [groupId]: [...(prev[groupId] || []), ...results],
+      }));
+    },
+    []
+  );
+
+  const clearResults = useCallback((groupId: string) => {
+    setResults((prev) => ({
+      ...prev,
+      [groupId]: [],
+    }));
+  }, []);
+
+  const clearAllResults = useCallback(() => {
+    setResults({});
+  }, []);
+
   // Load groups on mount
   useEffect(() => {
     refreshGroups();
@@ -155,6 +169,11 @@ export function AppProvider({ children }: AppProviderProps) {
     refreshGroups,
     getGroupById,
     getCommandById,
+
+    // Simplified execution state
+    results,
+    showResultsModal,
+
     _setGroups: setGroups,
     _addGroup,
     _updateGroup,
@@ -162,9 +181,23 @@ export function AppProvider({ children }: AppProviderProps) {
     _addCommand,
     _updateCommand,
     _deleteCommand,
+
+    // Simplified execution methods
+    setResults: addResult,
+    setShowResultsModal,
   };
 
   return (
-    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
+    <AppContext.Provider value={contextValue}>
+      {children}
+      <ExecutionResultsModal
+        isOpen={!!showResultsModal}
+        close={() => setShowResultsModal(null)}
+        groupId={showResultsModal}
+        results={results}
+        onClearResults={clearResults}
+        onClearAllResults={clearAllResults}
+      />
+    </AppContext.Provider>
   );
 }

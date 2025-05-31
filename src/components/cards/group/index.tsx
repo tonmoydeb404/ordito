@@ -22,7 +22,12 @@ type Props = {
 
 const GroupCard = (props: Props) => {
   const { data, onCommandCreate, onDelete, onUpdate, children } = props;
-  const { executeGroupCommands } = useCommandExecution();
+  const { executeGroupCommands, loading } = useCommandExecution();
+
+  const onExecute = () => {
+    executeGroupCommands(data.id);
+  };
+
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
@@ -31,7 +36,8 @@ const GroupCard = (props: Props) => {
           <Button
             size={"icon_sm"}
             variant={"destructive"}
-            disabled={!data.commands.length}
+            disabled={!data.commands.length || loading}
+            onClick={onExecute}
           >
             <LucidePlay />
           </Button>
@@ -39,9 +45,7 @@ const GroupCard = (props: Props) => {
           <GroupActions
             onDelete={onDelete}
             onUpdate={onUpdate}
-            onExecute={() => {
-              executeGroupCommands(data.id);
-            }}
+            onExecute={onExecute}
             onCopy={() => {
               copyAsShellScript(data.commands, data.title);
             }}
