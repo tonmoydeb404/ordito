@@ -1,393 +1,328 @@
+// src/tray.rs - Optimized and compact version
 use crate::commands;
 use crate::models::CommandGroup;
+use crate::notification::NotificationManager;
 use crate::state::AppState;
 use std::collections::HashMap;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, State,
+    AppHandle, Manager, Runtime, State,
 };
 
 pub struct TrayManager;
 
 impl TrayManager {
-    /// Setup system tray with menu based on current groups
+    /// Setup system tray with menu
     pub fn setup_system_tray(
         app: &tauri::App,
         groups: &HashMap<String, CommandGroup>,
     ) -> tauri::Result<()> {
-        // Create tray menu
-        let menu = Self::create_tray_menu(app, groups)?;
+        let menu = Self::build_menu(app, groups)?;
 
         let _tray = TrayIconBuilder::with_id("main-tray")
             .icon(app.default_window_icon().unwrap().clone())
             .menu(&menu)
             .show_menu_on_left_click(false)
             .tooltip("Command Runner - Right click for menu, left click to show window")
-            .on_menu_event(|app, event| {
-                Self::handle_tray_menu_event(app, event);
-            })
-            .on_tray_icon_event(|tray, event| match event {
-                TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    button_state: MouseButtonState::Up,
-                    ..
-                } => {
-                    log::debug!("Tray icon left-clicked - showing window");
-                    let app = tray.app_handle();
-                    Self::show_main_window(&app);
-                }
-                TrayIconEvent::DoubleClick {
-                    button: MouseButton::Left,
-                    ..
-                } => {
-                    log::debug!("Tray icon double-clicked - showing window");
-                    let app = tray.app_handle();
-                    Self::show_main_window(&app);
-                }
-                _ => {}
-            })
+            .on_menu_event(Self::handle_menu_event)
+            .on_tray_icon_event(Self::handle_icon_event)
             .build(app)?;
 
-        log::info!("Tray icon created and should be visible in system tray");
+        log::info!("Tray icon created");
         Ok(())
     }
 
-    /// Create tray menu based on current groups
-    fn create_tray_menu(
-        app: &tauri::App,
-        groups: &HashMap<String, CommandGroup>,
-    ) -> tauri::Result<Menu<tauri::Wry>> {
-        let menu = Menu::new(app)?;
-
-        // Add groups as submenus
-        if !groups.is_empty() {
-            log::debug!("Adding {} groups to tray menu", groups.len());
-
-            for group in groups.values() {
-                let group_submenu = Self::create_group_submenu(app, group)?;
-                menu.append(&group_submenu)?;
+    /// Handle tray icon click events
+    fn handle_icon_event(tray: &tauri::tray::TrayIcon<tauri::Wry>, event: TrayIconEvent) {
+        if matches!(
+            event,
+            TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } | TrayIconEvent::DoubleClick {
+                button: MouseButton::Left,
+                ..
             }
-            menu.append(&PredefinedMenuItem::separator(app)?)?;
-        } else {
-            let no_groups_item = MenuItem::with_id(
-                app,
-                "no_groups",
-                "No command groups available",
-                false,
-                None::<&str>,
-            )?;
-            menu.append(&no_groups_item)?;
-            menu.append(&PredefinedMenuItem::separator(app)?)?;
+        ) {
+            Self::show_window(tray.app_handle());
         }
-
-        // Add application controls
-        let show_item = MenuItem::with_id(app, "show_window", "Show Window", true, None::<&str>)?;
-        menu.append(&show_item)?;
-
-        let refresh_item =
-            MenuItem::with_id(app, "refresh_menu", "Refresh Menu", true, None::<&str>)?;
-        menu.append(&refresh_item)?;
-
-        menu.append(&PredefinedMenuItem::separator(app)?)?;
-
-        let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-        menu.append(&quit_item)?;
-
-        Ok(menu)
     }
 
-    /// Create submenu for a command group
-    fn create_group_submenu(
-        app: &tauri::App,
-        group: &CommandGroup,
-    ) -> tauri::Result<Submenu<tauri::Wry>> {
-        let submenu = Submenu::with_id(app, &format!("group_{}", group.id), &group.title, true)?;
-
-        if !group.commands.is_empty() {
-            let execute_all_id = format!("execute_group_{}", group.id);
-            let execute_all_item = MenuItem::with_id(
-                app,
-                &execute_all_id,
-                &format!("Execute All ({})", group.commands.len()),
-                true,
-                None::<&str>,
-            )?;
-            submenu.append(&execute_all_item)?;
-
-            submenu.append(&PredefinedMenuItem::separator(app)?)?;
-
-            for command in &group.commands {
-                let command_id = format!("execute_command_{}_{}", group.id, command.id);
-                let icon = if command.is_detached.unwrap_or(false) {
-                    "🚀"
-                } else {
-                    "⚡"
-                };
-                let label = format!("{} {}", icon, command.label);
-
-                let command_item = MenuItem::with_id(app, &command_id, &label, true, None::<&str>)?;
-                submenu.append(&command_item)?;
-            }
-        } else {
-            let no_commands_item = MenuItem::with_id(
-                app,
-                &format!("no_commands_{}", group.id),
-                "No commands in this group",
-                false,
-                None::<&str>,
-            )?;
-            submenu.append(&no_commands_item)?;
-        }
-
-        Ok(submenu)
-    }
-
-    /// Handle tray menu click events
-    fn handle_tray_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
-        let event_id = event.id().as_ref();
-        log::debug!("Tray menu event: {}", event_id);
-
-        match event_id {
-            "show_window" => {
-                log::debug!("Showing main window from tray menu");
-                Self::show_main_window(app);
-            }
-            "refresh_menu" => {
-                log::debug!("Refreshing tray menu");
-                if let Err(e) = Self::refresh_tray_menu_internal(app.clone()) {
-                    log::error!("Failed to refresh tray menu: {}", e);
-                }
-            }
-            "quit" => {
-                log::info!("Application quit requested from tray");
-                app.exit(0);
-            }
+    /// Handle menu click events
+    fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
+        match event.id().as_ref() {
+            "show_window" => Self::show_window(app),
+            "refresh_menu" => Self::refresh_menu(app),
+            "quit" => app.exit(0),
             id if id.starts_with("execute_group_") => {
                 if let Some(group_id) = id.strip_prefix("execute_group_") {
-                    log::info!("Executing group from tray: {}", group_id);
-                    Self::execute_group_from_tray(app, group_id.to_string());
+                    Self::execute_group(app, group_id);
                 }
             }
             id if id.starts_with("execute_command_") => {
-                if let Some(command_part) = id.strip_prefix("execute_command_") {
-                    let parts: Vec<&str> = command_part.split('_').collect();
-                    if parts.len() >= 2 {
-                        let group_id = parts[0].to_string();
-                        let command_id = parts[1].to_string();
-                        log::info!(
-                            "Executing command from tray: {} in group: {}",
-                            command_id,
-                            group_id
-                        );
-                        Self::execute_command_from_tray(app, group_id, command_id);
-                    }
+                if let Some(parts) = Self::parse_command_id(id) {
+                    Self::execute_command(app, parts.0, parts.1);
                 }
             }
-            _ => {
-                log::debug!("Unhandled tray menu event: {}", event_id);
-            }
+            _ => {}
         }
     }
 
-    /// Show the main application window
-    fn show_main_window(app: &tauri::AppHandle) {
+    /// Parse command ID format: "execute_command_{group_id}_{command_id}"
+    fn parse_command_id(id: &str) -> Option<(String, String)> {
+        let parts: Vec<&str> = id.strip_prefix("execute_command_")?.split('_').collect();
+        if parts.len() >= 2 {
+            Some((parts[0].to_string(), parts[1].to_string()))
+        } else {
+            None
+        }
+    }
+
+    /// Show main window
+    fn show_window(app: &AppHandle) {
         if let Some(window) = app.get_webview_window("main") {
             let _ = window.show();
             let _ = window.set_focus();
             let _ = window.unminimize();
-            log::debug!("Main window shown and focused");
         } else {
-            log::error!("Main window not found");
+            NotificationManager::show_error(app, "Error", "Main window not found");
         }
     }
 
-    /// Execute all commands in a group from tray
-    fn execute_group_from_tray(app: &tauri::AppHandle, group_id: String) {
+    /// Refresh tray menu
+    fn refresh_menu(app: &AppHandle) {
+        if let Err(e) = Self::refresh_tray_menu(app.clone()) {
+            NotificationManager::show_error(app, "Menu Refresh Failed", &e);
+        }
+    }
+
+    /// Execute group from tray
+    fn execute_group(app: &AppHandle, group_id: &str) {
         let app_handle = app.clone();
+        let group_id = group_id.to_string();
+
         tauri::async_runtime::spawn(async move {
             let state: State<AppState> = app_handle.state();
+            let group_name = Self::get_group_name(&state, &group_id);
 
-            match commands::execute::execute_group_commands(state, group_id.clone()).await {
-                Ok(results) => {
-                    log::info!("Group '{}' executed successfully", group_id);
-                    for (label, output) in &results {
-                        if output.starts_with("Error:") {
-                            log::error!("Command '{}' failed: {}", label, output);
-                        } else {
-                            log::info!("Command '{}' completed: {}", label, output);
-                        }
-                    }
-                }
-                Err(e) => {
-                    log::error!("Failed to execute group '{}': {}", group_id, e);
-                }
+            match commands::execute::execute_group_commands(state, group_id).await {
+                Ok(results) => Self::handle_group_results(&app_handle, &group_name, results),
+                Err(e) => NotificationManager::show_error(
+                    &app_handle,
+                    "Group Execution Failed",
+                    &format!("Failed to execute group: {}", e),
+                ),
             }
         });
     }
 
-    /// Execute a single command from tray
-    fn execute_command_from_tray(app: &tauri::AppHandle, group_id: String, command_id: String) {
+    /// Execute single command from tray
+    fn execute_command(app: &AppHandle, group_id: String, command_id: String) {
         let app_handle = app.clone();
+
         tauri::async_runtime::spawn(async move {
             let state: State<AppState> = app_handle.state();
+            let command = Self::find_command(&state, &group_id, &command_id);
 
-            let command = {
-                let groups = state.lock().unwrap();
-                if let Some(group) = groups.get(&group_id) {
-                    group
-                        .commands
-                        .iter()
-                        .find(|cmd| cmd.id == command_id)
-                        .cloned()
-                } else {
-                    None
-                }
-            };
+            match command {
+                Some(cmd) => Self::run_command(&app_handle, cmd).await,
+                None => NotificationManager::show_error(&app_handle, "Error", "Command not found"),
+            }
+        });
+    }
 
-            if let Some(cmd_item) = command {
-                let result = if cmd_item.is_detached.unwrap_or(false) {
-                    commands::execute::execute_command_detached(cmd_item.cmd.clone()).await
-                } else {
-                    commands::execute::execute_command(cmd_item.cmd.clone()).await
-                };
+    /// Get group name by ID
+    fn get_group_name(state: &State<AppState>, group_id: &str) -> String {
+        state
+            .lock()
+            .unwrap()
+            .get(group_id)
+            .map(|g| g.title.clone())
+            .unwrap_or_else(|| group_id.to_string())
+    }
 
-                match result {
-                    Ok(output) => {
-                        log::info!(
-                            "Command '{}' executed successfully: {}",
-                            cmd_item.label,
-                            output
-                        );
-                    }
-                    Err(e) => {
-                        log::error!("Failed to execute command '{}': {}", cmd_item.label, e);
-                    }
-                }
+    /// Find command in group
+    fn find_command(
+        state: &State<AppState>,
+        group_id: &str,
+        command_id: &str,
+    ) -> Option<crate::models::CommandItem> {
+        state
+            .lock()
+            .unwrap()
+            .get(group_id)?
+            .commands
+            .iter()
+            .find(|cmd| cmd.id == command_id)
+            .cloned()
+    }
+
+    /// Run a single command
+    async fn run_command(app: &AppHandle, cmd: crate::models::CommandItem) {
+        let result = if cmd.is_detached.unwrap_or(false) {
+            commands::execute::execute_command_detached(cmd.cmd.clone()).await
+        } else {
+            commands::execute::execute_command(cmd.cmd.clone()).await
+        };
+
+        match result {
+            Ok(_) => NotificationManager::show_success(
+                app,
+                "Command Completed",
+                &format!("'{}' completed", cmd.label),
+            ),
+            Err(e) => NotificationManager::show_error(
+                app,
+                "Command Failed",
+                &format!("'{}' failed: {}", cmd.label, e),
+            ),
+        }
+    }
+
+    /// Handle group execution results
+    fn handle_group_results(app: &AppHandle, _group_name: &str, results: Vec<(String, String)>) {
+        let (success_count, error_count) = results.iter().fold((0, 0), |(s, e), (_, output)| {
+            if output.starts_with("Error:") {
+                (s, e + 1)
             } else {
-                log::error!("Command {} not found in group {}", command_id, group_id);
+                (s + 1, e)
             }
         });
-    }
 
-    /// Refresh tray menu with current groups (internal)
-    fn refresh_tray_menu_internal(app_handle: tauri::AppHandle) -> Result<(), String> {
-        let state: State<AppState> = app_handle.state();
-        let groups = state.lock().unwrap().clone();
-
-        let new_menu = Self::create_tray_menu_for_handle(&app_handle, &groups)
-            .map_err(|e| format!("Failed to create menu: {}", e))?;
-
-        if let Some(tray) = app_handle.tray_by_id("main-tray") {
-            tray.set_menu(Some(new_menu))
-                .map_err(|e| format!("Failed to set menu: {}", e))?;
-            log::info!("Tray menu refreshed with {} groups", groups.len());
-        } else {
-            return Err("Tray icon not found".to_string());
+        match (success_count, error_count) {
+            (s, 0) => NotificationManager::show_success(
+                app,
+                "Group Completed",
+                &format!("All {} commands succeeded", s),
+            ),
+            (0, e) => NotificationManager::show_error(
+                app,
+                "Group Failed",
+                &format!("All {} commands failed", e),
+            ),
+            (s, e) => NotificationManager::show_warning(
+                app,
+                "Group Partially Completed",
+                &format!("{} succeeded, {} failed", s, e),
+            ),
         }
-
-        Ok(())
     }
 
-    /// Public method to refresh tray menu
-    pub fn refresh_tray_menu(app_handle: tauri::AppHandle) -> Result<(), String> {
-        Self::refresh_tray_menu_internal(app_handle)
-    }
-
-    /// Helper functions for AppHandle (same logic, different type)
-    fn create_tray_menu_for_handle(
-        app_handle: &tauri::AppHandle,
+    /// Build tray menu (unified for both App and AppHandle)
+    fn build_menu<R: Runtime>(
+        manager: &impl Manager<R>,
         groups: &HashMap<String, CommandGroup>,
-    ) -> tauri::Result<Menu<tauri::Wry>> {
-        let menu = Menu::new(app_handle)?;
+    ) -> tauri::Result<Menu<R>> {
+        let menu = Menu::new(manager)?;
+
+        // Add groups
+        for group in groups.values() {
+            menu.append(&Self::create_group_submenu(manager, group)?)?;
+        }
 
         if !groups.is_empty() {
-            for group in groups.values() {
-                let group_submenu = Self::create_group_submenu_for_handle(app_handle, group)?;
-                menu.append(&group_submenu)?;
-            }
-            menu.append(&PredefinedMenuItem::separator(app_handle)?)?;
+            menu.append(&PredefinedMenuItem::separator(manager)?)?;
         } else {
-            let no_groups_item = MenuItem::with_id(
-                app_handle,
+            menu.append(&MenuItem::with_id(
+                manager,
                 "no_groups",
                 "No command groups available",
                 false,
                 None::<&str>,
-            )?;
-            menu.append(&no_groups_item)?;
-            menu.append(&PredefinedMenuItem::separator(app_handle)?)?;
+            )?)?;
+            menu.append(&PredefinedMenuItem::separator(manager)?)?;
         }
 
-        let show_item =
-            MenuItem::with_id(app_handle, "show_window", "Show Window", true, None::<&str>)?;
-        menu.append(&show_item)?;
-
-        let refresh_item = MenuItem::with_id(
-            app_handle,
+        // Add controls
+        menu.append(&MenuItem::with_id(
+            manager,
+            "show_window",
+            "Show Window",
+            true,
+            None::<&str>,
+        )?)?;
+        menu.append(&MenuItem::with_id(
+            manager,
             "refresh_menu",
             "Refresh Menu",
             true,
             None::<&str>,
-        )?;
-        menu.append(&refresh_item)?;
-
-        menu.append(&PredefinedMenuItem::separator(app_handle)?)?;
-
-        let quit_item = MenuItem::with_id(app_handle, "quit", "Quit", true, None::<&str>)?;
-        menu.append(&quit_item)?;
+        )?)?;
+        menu.append(&PredefinedMenuItem::separator(manager)?)?;
+        menu.append(&MenuItem::with_id(
+            manager,
+            "quit",
+            "Quit",
+            true,
+            None::<&str>,
+        )?)?;
 
         Ok(menu)
     }
 
-    fn create_group_submenu_for_handle(
-        app_handle: &tauri::AppHandle,
+    /// Create submenu for a group
+    fn create_group_submenu<R: Runtime>(
+        manager: &impl Manager<R>,
         group: &CommandGroup,
-    ) -> tauri::Result<Submenu<tauri::Wry>> {
-        let submenu = Submenu::with_id(
-            app_handle,
-            &format!("group_{}", group.id),
-            &group.title,
-            true,
-        )?;
+    ) -> tauri::Result<Submenu<R>> {
+        let submenu =
+            Submenu::with_id(manager, &format!("group_{}", group.id), &group.title, true)?;
 
-        if !group.commands.is_empty() {
-            let execute_all_id = format!("execute_group_{}", group.id);
-            let execute_all_item = MenuItem::with_id(
-                app_handle,
-                &execute_all_id,
-                &format!("Execute All ({})", group.commands.len()),
-                true,
-                None::<&str>,
-            )?;
-            submenu.append(&execute_all_item)?;
-
-            submenu.append(&PredefinedMenuItem::separator(app_handle)?)?;
-
-            for command in &group.commands {
-                let command_id = format!("execute_command_{}_{}", group.id, command.id);
-                let icon = if command.is_detached.unwrap_or(false) {
-                    "🚀"
-                } else {
-                    "⚡"
-                };
-                let label = format!("{} {}", icon, command.label);
-
-                let command_item =
-                    MenuItem::with_id(app_handle, &command_id, &label, true, None::<&str>)?;
-                submenu.append(&command_item)?;
-            }
-        } else {
-            let no_commands_item = MenuItem::with_id(
-                app_handle,
+        if group.commands.is_empty() {
+            submenu.append(&MenuItem::with_id(
+                manager,
                 &format!("no_commands_{}", group.id),
-                "No commands in this group",
+                "No commands",
                 false,
                 None::<&str>,
-            )?;
-            submenu.append(&no_commands_item)?;
+            )?)?;
+            return Ok(submenu);
+        }
+
+        // Execute all option
+        submenu.append(&MenuItem::with_id(
+            manager,
+            &format!("execute_group_{}", group.id),
+            &format!("Execute All ({})", group.commands.len()),
+            true,
+            None::<&str>,
+        )?)?;
+        submenu.append(&PredefinedMenuItem::separator(manager)?)?;
+
+        // Individual commands
+        for cmd in &group.commands {
+            let icon = if cmd.is_detached.unwrap_or(false) {
+                "🚀"
+            } else {
+                "⚡"
+            };
+            submenu.append(&MenuItem::with_id(
+                manager,
+                &format!("execute_command_{}_{}", group.id, cmd.id),
+                &format!("{} {}", icon, cmd.label),
+                true,
+                None::<&str>,
+            )?)?;
         }
 
         Ok(submenu)
+    }
+
+    /// Public method to refresh tray menu
+    pub fn refresh_tray_menu(app_handle: AppHandle) -> Result<(), String> {
+        let state: State<AppState> = app_handle.state();
+        let groups = state.lock().unwrap().clone();
+        let new_menu = Self::build_menu(&app_handle, &groups).map_err(|e| e.to_string())?;
+
+        app_handle
+            .tray_by_id("main-tray")
+            .ok_or("Tray not found")?
+            .set_menu(Some(new_menu))
+            .map_err(|e| e.to_string())?;
+
+        log::info!("Tray menu refreshed with {} groups", groups.len());
+        Ok(())
     }
 }
