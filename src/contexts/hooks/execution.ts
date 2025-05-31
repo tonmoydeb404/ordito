@@ -126,8 +126,6 @@ export function useCommandExecution() {
           result: response,
         });
 
-        console.log(response);
-
         setLoading(false);
 
         // Smart toast based on results
