@@ -1,17 +1,19 @@
-// src/main.rs - Updated with notification module
+// src/main.rs - Simplified without frontend window commands
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
 mod models;
-mod notification; // Add notification module
+mod notification;
 mod state;
 mod storage;
 mod tray;
+mod window; // Add window module
 
 use state::AppState;
 use storage::load_data;
 use tauri::{Manager, State};
 use tray::TrayManager;
+use window::WindowManager;
 
 fn main() {
     // Initialize logging (only in debug builds)
@@ -43,13 +45,17 @@ fn main() {
 
             // Setup system tray
             log::info!("🎯 Creating system tray...");
-            match TrayManager::setup_system_tray(app, &groups) {
-                Ok(_) => log::info!("✅ System tray created successfully"),
-                Err(e) => {
-                    log::error!("❌ Failed to create system tray: {}", e);
-                }
+            if let Err(e) = TrayManager::setup_system_tray(app, &groups) {
+                log::error!("❌ Failed to create system tray: {}", e);
             }
 
+            // Setup window background behavior
+            log::info!("🔧 Setting up window background behavior...");
+            if let Err(e) = WindowManager::setup_background_behavior(app) {
+                log::error!("❌ Failed to setup window behavior: {}", e);
+            }
+
+            log::info!("✅ Application setup complete");
             Ok(())
         })
         .manage(AppState::default())
