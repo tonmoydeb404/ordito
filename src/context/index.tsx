@@ -185,8 +185,6 @@ export function AppProvider({ children }: AppProviderProps) {
     setShowResultsModal,
   };
 
-  console.log(results);
-
   return (
     <AppContext.Provider value={contextValue}>
       {children}
