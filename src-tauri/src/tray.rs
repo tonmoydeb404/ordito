@@ -24,7 +24,7 @@ impl TrayManager {
             .icon(app.default_window_icon().unwrap().clone())
             .menu(&menu)
             .show_menu_on_left_click(false)
-            .tooltip("Command Runner - Right click for menu, left click to show window")
+            .tooltip("Ordito - Right click for menu, left click to show window")
             .on_menu_event(Self::handle_menu_event)
             .on_tray_icon_event(|tray, event| {
                 if matches!(

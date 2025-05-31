@@ -64,7 +64,7 @@ impl WindowManager {
 
         NotificationManager::show_success(
             app_handle,
-            "Command Runner",
+            "Ordito",
             "Running in background. Right-click tray icon to access commands.",
         );
 
