@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGroupMutations } from "@/context/hooks";
+import { useGroupMutations } from "@/contexts/hooks";
 import { TModalProps } from "@/hooks/use-modal";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";

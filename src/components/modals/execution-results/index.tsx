@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ExecutionContextType } from "@/context/execution/type";
+import { ExecutionContextType } from "@/contexts/execution/type";
 import { Terminal } from "lucide-react";
 import { useEffect, useRef } from "react";
 import Empty from "./empty";

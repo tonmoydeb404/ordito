@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCommandMutations } from "@/context/hooks";
+import { useCommandMutations } from "@/contexts/hooks";
 import { TModalProps } from "@/hooks/use-modal";
 import { TCommandGroup, TCommmand } from "@/types/command";
 import { Loader2 } from "lucide-react";

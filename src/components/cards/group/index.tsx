@@ -5,7 +5,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { useCommandExecution } from "@/context/hooks";
+import { useCommandExecution } from "@/contexts/hooks";
 import { TCommandGroup } from "@/types/command";
 import { copyAsShellScript } from "@/utils/clipboard";
 import { LucidePlay, LucidePlus } from "lucide-react";

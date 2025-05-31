@@ -1,4 +1,4 @@
-import { useAppContext } from "@/context/app";
+import { useAppContext } from "@/contexts/app";
 import { TauriAPI } from "@/lib/tauri";
 import { useCallback, useState } from "react";
 

@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
-import AppProvider from "@/context/app/provider";
-import ExecutionProvider from "@/context/execution/provider";
+import AppProvider from "@/contexts/app/provider";
+import ExecutionProvider from "@/contexts/execution/provider";
 import GroupsSection from "./groups";
 import HeaderSection from "./header";
 

@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCommandMutations } from "@/context/hooks";
+import { useCommandMutations } from "@/contexts/hooks";
 import { TModalProps } from "@/hooks/use-modal";
 import { TCommandGroup, TCommmand } from "@/types/command";
 import { Loader2 } from "lucide-react";

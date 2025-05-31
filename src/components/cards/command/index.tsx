@@ -1,4 +1,4 @@
-import { useCommandExecution } from "@/context/hooks";
+import { useCommandExecution } from "@/contexts/hooks";
 import { TCommmand } from "@/types/command";
 import { copyCommand } from "@/utils/clipboard";
 import CommandActions from "./actions";
