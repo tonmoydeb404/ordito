@@ -9,7 +9,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { AppContextType } from "./type";
+import { AppContextType, AppExecution } from "./type";
 
 // Create context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -36,9 +36,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Simplified execution state
-  const [results, setResults] = useState<Record<string, [string, string][]>>(
-    {}
-  );
+  const [results, setResults] = useState<AppContextType["results"]>({});
   const [showResultsModal, setShowResultsModal] = useState<string | null>(null);
 
   const refreshGroups = useCallback(async () => {
@@ -136,21 +134,21 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // Results management functions
 
-  const addResult = useCallback(
-    (groupId: string, results: [string, string][]) => {
-      setResults((prev) => ({
-        ...prev,
-        [groupId]: [...(prev[groupId] || []), ...results],
-      }));
-    },
-    []
-  );
-
-  const clearResults = useCallback((groupId: string) => {
+  const addResult = useCallback((id: string, results: AppExecution) => {
     setResults((prev) => ({
       ...prev,
-      [groupId]: [],
+      [id]: results,
     }));
+  }, []);
+
+  const clearResults = useCallback((id: string) => {
+    setResults((prev) => {
+      if (id in prev) {
+        delete prev[id];
+      }
+
+      return prev;
+    });
   }, []);
 
   const clearAllResults = useCallback(() => {
@@ -183,9 +181,11 @@ export function AppProvider({ children }: AppProviderProps) {
     _deleteCommand,
 
     // Simplified execution methods
-    setResults: addResult,
+    addResult,
     setShowResultsModal,
   };
+
+  console.log(results);
 
   return (
     <AppContext.Provider value={contextValue}>

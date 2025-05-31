@@ -7,44 +7,49 @@ export function useCommandExecution() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { results, showResultsModal, setResults, setShowResultsModal } =
-    useAppContext();
+  const { addResult, setShowResultsModal } = useAppContext();
 
   const executeCommand = useCallback(
-    async (cmd: string) => {
+    async (cmd: string, label: string) => {
       try {
         setLoading(true);
         setError(null);
-        const result = await TauriAPI.executeCommand(cmd);
+        const response = await TauriAPI.executeCommand(cmd);
         setLoading(false);
+
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: [[label, response]],
+        });
 
         toast.success("Command executed successfully!", {
           action: {
             label: "Details",
             onClick: () => {
-              // For single commands, create a temporary result entry
-              const tempGroupId = `single-cmd-${Date.now()}`;
-              setResults(tempGroupId, [["Command", result]]);
-              setShowResultsModal(tempGroupId);
+              setShowResultsModal(id);
             },
           },
         });
 
-        return result;
+        return response;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to execute command";
         setError(errorMessage);
         setLoading(false);
 
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: [[label, `Error: ${errorMessage}`]],
+        });
+
         toast.error(errorMessage, {
           action: {
             label: "Details",
             onClick: () => {
-              // For single command errors, create a temporary result entry
-              const tempGroupId = `single-cmd-error-${Date.now()}`;
-              setResults(tempGroupId, [["Command", `Error: ${errorMessage}`]]);
-              setShowResultsModal(tempGroupId);
+              setShowResultsModal(id);
             },
           },
         });
@@ -52,30 +57,33 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [setResults, setShowResultsModal]
+    [addResult, setShowResultsModal]
   );
 
   const executeCommandDetached = useCallback(
-    async (cmd: string) => {
+    async (cmd: string, label: string) => {
       try {
         setLoading(true);
         setError(null);
-        const result = await TauriAPI.executeCommandDetached(cmd);
+        const response = await TauriAPI.executeCommandDetached(cmd);
         setLoading(false);
+
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: [[label, response]],
+        });
 
         toast.success("Command started in background!", {
           action: {
             label: "Details",
             onClick: () => {
-              // For detached commands, create a temporary result entry
-              const tempGroupId = `detached-cmd-${Date.now()}`;
-              setResults(tempGroupId, [["Detached Command", result]]);
-              setShowResultsModal(tempGroupId);
+              setShowResultsModal(id);
             },
           },
         });
 
-        return result;
+        return response;
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -84,16 +92,17 @@ export function useCommandExecution() {
         setError(errorMessage);
         setLoading(false);
 
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: [[label, `Error: ${errorMessage}`]],
+        });
+
         toast.error(errorMessage, {
           action: {
             label: "Details",
             onClick: () => {
-              // For detached command errors, create a temporary result entry
-              const tempGroupId = `detached-cmd-error-${Date.now()}`;
-              setResults(tempGroupId, [
-                ["Detached Command", `Error: ${errorMessage}`],
-              ]);
-              setShowResultsModal(tempGroupId);
+              setShowResultsModal(id);
             },
           },
         });
@@ -101,38 +110,46 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [setResults, setShowResultsModal]
+    [addResult, setShowResultsModal]
   );
 
   const executeGroupCommands = useCallback(
-    async (groupId: string) => {
+    async (groupId: string, label: string) => {
       try {
         setLoading(true);
         setError(null);
-        const groupResults = await TauriAPI.executeGroupCommands(groupId);
-        setResults(groupId, groupResults);
+        const response = await TauriAPI.executeGroupCommands(groupId);
+
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: response,
+        });
+
+        console.log(response);
+
         setLoading(false);
 
         // Smart toast based on results
-        const successCount = groupResults.filter(
+        const successCount = response.filter(
           ([, output]) => !output.startsWith("Error:")
         ).length;
-        const errorCount = groupResults.length - successCount;
+        const errorCount = response.length - successCount;
 
         const detailsAction = {
           label: "Details",
-          onClick: () => setShowResultsModal(groupId),
+          onClick: () => setShowResultsModal(id),
         };
 
         if (errorCount === 0) {
           toast.success(
-            `All ${groupResults.length} commands executed successfully!`,
+            `All ${response.length} commands executed successfully!`,
             {
               action: detailsAction,
             }
           );
         } else if (successCount === 0) {
-          toast.error(`All ${groupResults.length} commands failed!`, {
+          toast.error(`All ${response.length} commands failed!`, {
             action: detailsAction,
           });
         } else {
@@ -141,7 +158,7 @@ export function useCommandExecution() {
           });
         }
 
-        return groupResults;
+        return response;
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -150,16 +167,17 @@ export function useCommandExecution() {
         setError(errorMessage);
         setLoading(false);
 
+        const id = new Date().toISOString();
+        addResult(id, {
+          label: label,
+          result: [[label, `Error: ${errorMessage}`]],
+        });
+
         toast.error(errorMessage, {
           action: {
             label: "Details",
             onClick: () => {
-              // For group execution errors, show the error
-              const tempGroupId = `group-error-${Date.now()}`;
-              setResults(tempGroupId, [
-                ["Group Execution", `Error: ${errorMessage}`],
-              ]);
-              setShowResultsModal(tempGroupId);
+              setShowResultsModal(id);
             },
           },
         });
@@ -167,60 +185,8 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [setResults, setShowResultsModal]
+    [addResult, setShowResultsModal]
   );
-
-  // Helper functions
-  const getExecutionResults = useCallback(
-    (groupId: string) => {
-      return results[groupId] || [];
-    },
-    [results]
-  );
-
-  const hasResults = useCallback(
-    (groupId: string) => {
-      return (results[groupId] || []).length > 0;
-    },
-    [results]
-  );
-
-  const getResultsSummary = useCallback(
-    (groupId: string) => {
-      const groupResults = results[groupId] || [];
-      const successCount = groupResults.filter(
-        ([, output]) => !output.startsWith("Error:")
-      ).length;
-      const errorCount = groupResults.length - successCount;
-
-      return {
-        total: groupResults.length,
-        success: successCount,
-        error: errorCount,
-      };
-    },
-    [results]
-  );
-
-  const clearResults = useCallback(
-    (groupId?: string) => {
-      if (groupId) {
-        setResults(groupId, []);
-      } else {
-        // Clear all results - need to update context to support this
-        Object.keys(results).forEach((id) => setResults(id, []));
-      }
-    },
-    [results, setResults]
-  );
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  const closeResultsModal = useCallback(() => {
-    setShowResultsModal(null);
-  }, [setShowResultsModal]);
 
   return {
     loading,
@@ -228,13 +194,5 @@ export function useCommandExecution() {
     executeCommand,
     executeCommandDetached,
     executeGroupCommands,
-    getExecutionResults,
-    hasResults,
-    getResultsSummary,
-    clearResults,
-    clearError,
-    // Modal state for results
-    showResultsModal,
-    closeResultsModal,
   };
 }

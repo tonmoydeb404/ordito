@@ -27,9 +27,9 @@ const CommandCard = (props: Props) => {
           {...others}
           onExecute={() => {
             if (data.is_detached) {
-              executeCommandDetached(data.cmd);
+              executeCommandDetached(data.cmd, data.label);
             } else {
-              executeCommand(data.cmd);
+              executeCommand(data.cmd, data.label);
             }
           }}
           onCopy={() => {

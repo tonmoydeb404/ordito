@@ -9,7 +9,7 @@ export type AppContextType = {
   getCommandById: (groupId: string, commandId: string) => TCommmand | undefined;
 
   // Simplified execution state
-  results: Record<string, [string, string][]>;
+  results: Record<string, AppExecution>;
   showResultsModal: string | null;
 
   // Internal methods for mutation hooks
@@ -26,6 +26,11 @@ export type AppContextType = {
   _deleteCommand: (groupId: string, commandId: string) => void;
 
   // Simplified execution methods
-  setResults: (groupId: string, results: [string, string][]) => void;
+  addResult: (timestamp: string, result: AppExecution) => void;
   setShowResultsModal: (groupId: string | null) => void;
+};
+
+export type AppExecution = {
+  label: string;
+  result: [label: string, response: string][];
 };

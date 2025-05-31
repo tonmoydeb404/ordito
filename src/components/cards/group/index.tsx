@@ -25,7 +25,7 @@ const GroupCard = (props: Props) => {
   const { executeGroupCommands, loading } = useCommandExecution();
 
   const onExecute = () => {
-    executeGroupCommands(data.id);
+    executeGroupCommands(data.id, data.title);
   };
 
   return (
