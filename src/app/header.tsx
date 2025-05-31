@@ -1,3 +1,4 @@
+import ExportImport from "@/components/export-import";
 import CreateGroupModal from "@/components/modals/create-group";
 import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,6 @@ const HeaderSection = (props: Props) => {
 
       <div className="sticky top-0 z-10 bg-card border-b">
         <div className="container mx-auto px-6 py-6 flex items-center justify-between">
-          {/* Search */}
           <div className="max-w-md w-full">
             <SearchInput
               placeholder="Search by group & command..."
@@ -35,10 +35,14 @@ const HeaderSection = (props: Props) => {
             />
           </div>
 
-          <Button onClick={() => createModal.open()} size="lg">
-            <LucidePlus />
-            New Group
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => createModal.open()}>
+              <LucidePlus />
+              New Group
+            </Button>
+
+            <ExportImport />
+          </div>
         </div>
       </div>
 

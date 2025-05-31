@@ -1,7 +1,8 @@
 use crate::models::{AppData, CommandGroup};
 use crate::state::AppState;
-use crate::storage::{get_data_file_path, save_data};
+use crate::storage::save_data;
 use tauri::State;
+use tauri_plugin_dialog::{DialogExt, FilePath};
 use uuid::Uuid;
 
 #[tauri::command]
@@ -75,11 +76,30 @@ pub async fn export_data(
         groups: groups.clone(),
     };
 
-    let _content = serde_json::to_string_pretty(&app_data)
+    let content = serde_json::to_string_pretty(&app_data)
         .map_err(|e| format!("Failed to serialize data: {}", e))?;
 
-    let file_path = get_data_file_path(&app_handle)?;
-    Ok(format!("Data saved to: {}", file_path.display()))
+    // Use the dialog plugin
+    let file_path = app_handle
+        .dialog()
+        .file()
+        .add_filter("JSON Files", &["json"])
+        .set_file_name(&format!(
+            "ordito-commands-{}.json",
+            chrono::Utc::now().format("%Y-%m-%d")
+        ))
+        .blocking_save_file();
+
+    match file_path {
+        Some(FilePath::Path(path)) => {
+            // Write to selected path
+            std::fs::write(&path, content).map_err(|e| format!("Failed to write file: {}", e))?;
+
+            Ok(format!("Data exported to: {}", path.display()))
+        }
+        Some(FilePath::Url(_)) => Err("URL paths not supported for file export".to_string()),
+        None => Err("User cancelled save dialog".to_string()),
+    }
 }
 
 #[tauri::command]

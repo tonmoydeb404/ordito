@@ -1,0 +1,34 @@
+{
+  "groups": {
+    "9f28481e-348a-4dae-a666-16a63d75c61a": {
+      "id": "9f28481e-348a-4dae-a666-16a63d75c61a",
+      "title": "Test",
+      "commands": [
+        {
+          "id": "33db461a-fe0f-44a0-8229-bbdcee7cf07b",
+          "label": "Thank You",
+          "cmd": "npm run dev",
+          "is_detached": false
+        }
+      ]
+    },
+    "a7bd3907-f251-4a58-b159-1310577dcd4f": {
+      "id": "a7bd3907-f251-4a58-b159-1310577dcd4f",
+      "title": "Test 2",
+      "commands": [
+        {
+          "id": "5b23a66b-bce6-4482-b40e-6158c6da0938",
+          "label": "Okay",
+          "cmd": "Accha",
+          "is_detached": false
+        },
+        {
+          "id": "4d1e171d-2d94-43cf-af14-0529778598b4",
+          "label": "Tik Ase",
+          "cmd": "Okay",
+          "is_detached": false
+        }
+      ]
+    }
+  }
+}
