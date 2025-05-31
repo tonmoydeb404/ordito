@@ -78,4 +78,18 @@ export class TauriAPI {
   static async importData(data: string): Promise<string> {
     return await invoke("import_data", { data });
   }
+
+  // Tray operations
+  static async refreshTrayMenu(): Promise<void> {
+    return await invoke("refresh_tray_menu");
+  }
+
+  // Startup operations
+  static async isStartupEnabled(): Promise<boolean> {
+    return await invoke("is_startup_enabled");
+  }
+
+  static async toggleStartup(): Promise<boolean> {
+    return await invoke("toggle_startup");
+  }
 }

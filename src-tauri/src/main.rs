@@ -1,19 +1,22 @@
-// src/main.rs - Simplified without frontend window commands
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
 mod models;
 mod notification;
+mod startup;
 mod state;
 mod storage;
 mod tray;
-mod window; // Add window module
+mod window;
 
+use startup::StartupManager;
 use state::AppState;
 use storage::load_data;
 use tauri::{Manager, State};
 use tray::TrayManager;
 use window::WindowManager;
+
+use tauri_plugin_autostart::MacosLauncher;
 
 fn main() {
     // Initialize logging (only in debug builds)
@@ -25,6 +28,10 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--flag1", "--flag2"]),
+        ))
         .setup(|app| {
             // Load data on startup
             let app_handle = app.handle();
@@ -77,6 +84,9 @@ fn main() {
             commands::execute::execute_group_commands,
             // Tray commands
             refresh_tray_menu,
+            // Startup commands
+            is_startup_enabled,
+            toggle_startup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -86,4 +96,16 @@ fn main() {
 #[tauri::command]
 async fn refresh_tray_menu(app_handle: tauri::AppHandle) -> Result<(), String> {
     TrayManager::refresh_tray_menu(app_handle)
+}
+
+/// Tauri command to check if startup is enabled
+#[tauri::command]
+async fn is_startup_enabled(app_handle: tauri::AppHandle) -> Result<bool, String> {
+    StartupManager::is_startup_enabled(&app_handle)
+}
+
+/// Tauri command to toggle startup setting
+#[tauri::command]
+async fn toggle_startup(app_handle: tauri::AppHandle) -> Result<bool, String> {
+    StartupManager::toggle_startup(&app_handle)
 }

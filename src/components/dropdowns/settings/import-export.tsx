@@ -1,17 +1,13 @@
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useDataOperations } from "@/contexts/hooks";
-import { LucideCog, LucideFolderUp, LucideImport } from "lucide-react";
+import { LucideFolderUp, LucideImport } from "lucide-react";
 import { useRef } from "react";
 
-type Props = {};
+interface Props {
+  disabled?: boolean;
+}
 
-const ExportImport = (props: Props) => {
+export const ImportExport = ({ disabled }: Props) => {
   const { exportData, importData, loading } = useDataOperations();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,25 +47,18 @@ const ExportImport = (props: Props) => {
     }
   };
 
+  const isDisabled = disabled || loading;
+
   return (
     <>
-      <DropdownMenu>
-        <Button size="icon" variant="secondary" asChild disabled={loading}>
-          <DropdownMenuTrigger>
-            <LucideCog className={loading ? "animate-spin" : ""} />
-          </DropdownMenuTrigger>
-        </Button>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleExport} disabled={loading}>
-            <LucideFolderUp className="mr-2 h-4 w-4" />
-            Export Commands
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleImportClick} disabled={loading}>
-            <LucideImport className="mr-2 h-4 w-4" />
-            Import Commands
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <DropdownMenuItem onClick={handleExport} disabled={isDisabled}>
+        <LucideFolderUp className="mr-2 h-4 w-4" />
+        Export Commands
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={handleImportClick} disabled={isDisabled}>
+        <LucideImport className="mr-2 h-4 w-4" />
+        Import Commands
+      </DropdownMenuItem>
 
       {/* Hidden file input */}
       <input
@@ -82,5 +71,3 @@ const ExportImport = (props: Props) => {
     </>
   );
 };
-
-export default ExportImport;

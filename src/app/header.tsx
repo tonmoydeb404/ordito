@@ -1,4 +1,4 @@
-import ExportImport from "@/components/export-import";
+import SettingsDropdown from "@/components/dropdowns/settings";
 import CreateGroupModal from "@/components/modals/create-group";
 import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ const HeaderSection = (props: Props) => {
               New Group
             </Button>
 
-            <ExportImport />
+            <SettingsDropdown />
           </div>
         </div>
       </div>
