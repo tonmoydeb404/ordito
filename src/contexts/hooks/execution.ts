@@ -1,13 +1,13 @@
-import { useAppContext } from "@/contexts/app";
 import { TauriAPI } from "@/lib/tauri";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { useExecutionContext } from "../execution";
 
 export function useCommandExecution() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { addResult, setShowResultsModal } = useAppContext();
+  const { addResponse, showModal } = useExecutionContext();
 
   const executeCommand = useCallback(
     async (cmd: string, label: string) => {
@@ -18,7 +18,7 @@ export function useCommandExecution() {
         setLoading(false);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: [[label, response]],
         });
@@ -27,7 +27,7 @@ export function useCommandExecution() {
           action: {
             label: "Details",
             onClick: () => {
-              setShowResultsModal(id);
+              showModal(id);
             },
           },
         });
@@ -40,7 +40,7 @@ export function useCommandExecution() {
         setLoading(false);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: [[label, `Error: ${errorMessage}`]],
         });
@@ -49,7 +49,7 @@ export function useCommandExecution() {
           action: {
             label: "Details",
             onClick: () => {
-              setShowResultsModal(id);
+              showModal(id);
             },
           },
         });
@@ -57,7 +57,7 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [addResult, setShowResultsModal]
+    [addResponse, showModal]
   );
 
   const executeCommandDetached = useCallback(
@@ -69,7 +69,7 @@ export function useCommandExecution() {
         setLoading(false);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: [[label, response]],
         });
@@ -78,7 +78,7 @@ export function useCommandExecution() {
           action: {
             label: "Details",
             onClick: () => {
-              setShowResultsModal(id);
+              showModal(id);
             },
           },
         });
@@ -93,7 +93,7 @@ export function useCommandExecution() {
         setLoading(false);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: [[label, `Error: ${errorMessage}`]],
         });
@@ -102,7 +102,7 @@ export function useCommandExecution() {
           action: {
             label: "Details",
             onClick: () => {
-              setShowResultsModal(id);
+              showModal(id);
             },
           },
         });
@@ -110,7 +110,7 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [addResult, setShowResultsModal]
+    [addResponse, showModal]
   );
 
   const executeGroupCommands = useCallback(
@@ -121,7 +121,7 @@ export function useCommandExecution() {
         const response = await TauriAPI.executeGroupCommands(groupId);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: response,
         });
@@ -138,7 +138,7 @@ export function useCommandExecution() {
 
         const detailsAction = {
           label: "Details",
-          onClick: () => setShowResultsModal(id),
+          onClick: () => showModal(id),
         };
 
         if (errorCount === 0) {
@@ -168,7 +168,7 @@ export function useCommandExecution() {
         setLoading(false);
 
         const id = new Date().toISOString();
-        addResult(id, {
+        addResponse(id, {
           label: label,
           result: [[label, `Error: ${errorMessage}`]],
         });
@@ -177,7 +177,7 @@ export function useCommandExecution() {
           action: {
             label: "Details",
             onClick: () => {
-              setShowResultsModal(id);
+              showModal(id);
             },
           },
         });
@@ -185,7 +185,7 @@ export function useCommandExecution() {
         throw err;
       }
     },
-    [addResult, setShowResultsModal]
+    [addResponse, showModal]
   );
 
   return {
