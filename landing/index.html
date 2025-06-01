@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary SEO Meta Tags -->
+  <title>Ordito – Organize. Execute. Simplify.</title>
+  <meta name="description"
+    content="Ordito is a powerful open‐source desktop GUI application for developers and power users. Organize, manage, and execute commands from an intuitive interface with system‐tray integration. Available under the MIT license." />
+  <meta name="keywords"
+    content="Ordito, command manager, open source, desktop application, GUI, developer tool, system tray, MIT license" />
+  <meta name="author" content="Tonmoy Deb" />
+  <link rel="canonical" href="https://ordito.tonmoydeb.com/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:title" content="Ordito – Organize. Execute. Simplify." />
+  <meta property="og:description"
+    content="Ordito is a powerful open‐source desktop GUI application for developers and power users. Organize, manage, and execute commands from an intuitive interface with system‐tray integration. Available under the MIT license." />
+  <meta property="og:url" content="https://ordito.tonmoydeb.com/" />
+  <meta property="og:image" content="https://ordito.tonmoydeb.com/app.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Ordito" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Ordito – Organize. Execute. Simplify." />
+  <meta name="twitter:description"
+    content="Ordito is a powerful open‐source desktop GUI application for developers and power users. Organize, manage, and execute commands from an intuitive interface with system‐tray integration. Available under the MIT license." />
+  <meta name="twitter:image" content="https://ordito.tonmoydeb.com/app.png" />
+  <meta name="twitter:site" content="@tonmoydeb404" />
+
+  <!-- Structured Data: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ordito",
+    "url": "https://ordito.tonmoydeb.com/",
+    "description": "Ordito is a powerful open‐source desktop GUI application for developers and power users. Organize, manage, and execute commands from an intuitive interface with system‐tray integration.",
+    "applicationCategory": "DeveloperTool",
+    "operatingSystem": "Windows, macOS, Linux",
+    "license": "https://opensource.org/licenses/MIT",
+    "author": {
+      "@type": "Person",
+      "name": "Tonmoy Deb",
+      "url": "https://tonmoydeb.com"
+    },
+    "image": "https://ordito.tonmoydeb.com/app.png"
+  }
+  </script>
+
+  <!-- Stylesheet & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #000;
+      color: #fff;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Hero section */
+    .hero {
+      position: relative;
+      padding: 8rem 0;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    /* Background blobs */
+    .bg-blobs {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      mix-blend-mode: multiply;
+      filter: blur(3rem);
+      opacity: 0.2;
+    }
+
+    .blob-1 {
+      top: 5rem;
+      left: 25%;
+      width: 24rem;
+      height: 24rem;
+      background-color: #6E56CF;
+      animation: blob 7s infinite;
+    }
+
+    .blob-2 {
+      top: 10rem;
+      right: 25%;
+      width: 24rem;
+      height: 24rem;
+      background-color: #a78bfa;
+      animation: blob 7s infinite 2s;
+    }
+
+    .blob-3 {
+      bottom: -2rem;
+      left: 33%;
+      width: 24rem;
+      height: 24rem;
+      background-color: #6366f1;
+      animation: blob 7s infinite 4s;
+    }
+
+    .blob-4 {
+      top: -5rem;
+      right: -5rem;
+      width: 18rem;
+      height: 18rem;
+      background: linear-gradient(to bottom right, #6E56CF, #9333ea);
+      opacity: 0.3;
+      filter: blur(2rem);
+    }
+
+    @keyframes blob {
+      0% {
+        transform: translate(0px, 0px) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -50px) scale(1.1);
+      }
+
+      66% {
+        transform: translate(-20px, 20px) scale(0.9);
+      }
+
+      100% {
+        transform: translate(0px, 0px) scale(1);
+      }
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 9999px;
+      backdrop-filter: blur(8px);
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .badge i {
+      color: #fbbf24;
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    /* Heading */
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .gradient-text-white {
+      background: linear-gradient(to right, #fff, #fff, #d1d5db);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .gradient-text-purple {
+      background: linear-gradient(to right, #6E56CF, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* Description */
+    .description {
+      font-size: 1.25rem;
+      color: #d1d5db;
+      max-width: 48rem;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* Buttons */
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 4rem;
+    }
+
+    @media (min-width: 640px) {
+      .buttons {
+        flex-direction: row;
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .btn i {
+      margin-right: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, #6E56CF, #9F7AEA);
+      color: white;
+      border: none;
+      box-shadow: 0 10px 15px -3px rgba(110, 86, 207, 0.2);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 15px 20px -3px rgba(110, 86, 207, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(4px);
+    }
+
+    .btn-outline:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Screenshot */
+    .screenshot-container {
+      max-width: 70rem;
+      margin: 4rem auto 0;
+      position: relative;
+    }
+
+    .screenshot-glow {
+      position: absolute;
+      inset: -0.25rem;
+      background: linear-gradient(to right, #6E56CF, #9F7AEA);
+      border-radius: 1rem;
+      filter: blur(0.5rem);
+      opacity: 0.5;
+      transition: opacity 1s;
+    }
+
+    .screenshot-container:hover .screenshot-glow {
+      opacity: 0.75;
+    }
+
+    .screenshot {
+      position: relative;
+      background-color: black;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .screenshot img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 3rem;
+      font-size: 0.875rem;
+      color: #9ca3af;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+    }
+
+    a.stat {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a.stat:hover {
+      color: #6366f1;
+    }
+
+    .stat i {
+      margin-right: 0.25rem;
+    }
+
+    .star {
+      color: #fbbf24;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 6rem 0;
+      }
+
+      .stats {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <!-- Background Elements -->
+      <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+      </div>
+
+      <div class="container">
+        <!-- Badge -->
+        <div class="badge">
+          <i class="fas fa-star"></i>
+          Open Source Command Manager
+        </div>
+
+        <!-- Heading -->
+        <h1>
+          <span class="gradient-text-white">Ordito – Organize. Execute.</span>
+          <span class="gradient-text-purple"> Simplify.</span>
+        </h1>
+
+        <!-- Description -->
+        <p class="description">
+          Ordito is a powerful desktop GUI application that lets you organize, manage, and execute commands from an
+          intuitive
+          interface and convenient system tray. Perfect for developers, system administrators, and power users.
+        </p>
+
+        <!-- Buttons -->
+        <div class="buttons">
+          <a href="https://github.com/tonmoydeb404/ordito/releases/latest" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i>
+            Download Now
+          </a>
+          <a href="https://github.com/tonmoydeb404/ordito" class="btn btn-outline" target="_blank">
+            <i class="fab fa-github"></i>
+            View on GitHub
+          </a>
+        </div>
+
+        <!-- App Screenshot -->
+        <div class="screenshot-container">
+          <!-- <div class="screenshot-glow"></div> -->
+          <div class="screenshot">
+            <img src="./app.png" alt="Screenshot of Ordito application interface" />
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat">
+            <i class="fas fa-shield-alt"></i>
+            MIT License
+          </div>
+          <a href="https://tonmoydeb.com" class="stat" title="Tonmoy Deb" target="_blank">
+            <i class="fas fa-code"></i>
+            tonmoydeb404
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>
