@@ -150,20 +150,20 @@ bash ~/scripts/backup-routine.sh
 **[📦 Download .deb](https://github.com/tonmoydeb404/ordito/releases/latest)** (Ubuntu/Debian)
 
 ```bash
-sudo dpkg -i ordito_1.0.0_amd64.deb
+sudo dpkg -i ordito_1.1.0_amd64.deb
 ```
 
 **[📦 Download .AppImage](https://github.com/tonmoydeb404/ordito/releases/latest)** (Universal Linux)
 
 ```bash
-chmod +x ordito_1.0.0_amd64.AppImage
-./ordito_1.0.0_amd64.AppImage
+chmod +x ordito_1.1.0_amd64.AppImage
+./ordito_1.1.0_amd64.AppImage
 ```
 
 **[📦 Download .rpm](https://github.com/tonmoydeb404/ordito/releases/latest)** (Red Hat/Fedora)
 
 ```bash
-sudo rpm -i ordito-1.0.0-1.x86_64.rpm
+sudo rpm -i ordito-1.1.0-1.x86_64.rpm
 ```
 
 ## 🚀 Quick Start
