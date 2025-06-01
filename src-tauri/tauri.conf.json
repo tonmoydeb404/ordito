@@ -32,6 +32,14 @@
       "icons/icon.ico"
     ],
     "license": "LICENSE",
-    "licenseFile": "LICENSE"
+    "licenseFile": "LICENSE",
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/README.md": "../README.md",
+          "/usr/share/assets": "./icons"
+        }
+      }
+    }
   }
 }

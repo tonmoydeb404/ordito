@@ -1,0 +1,105 @@
+name: ordito
+version: "1.0.0"
+summary: A powerful command runner and organizer for developers
+description: |
+  Ordito is a cross-platform application that helps developers organize and execute commands efficiently. 
+  Features include:
+  - Group commands by project or context
+  - Execute commands individually or in batches
+  - System tray integration for quick access
+  - Import/export command configurations
+  - Detached command execution
+  - Autostart functionality
+
+grade: stable
+confinement: strict
+base: core22
+
+architectures:
+  - build-on: amd64
+
+apps:
+  ordito:
+    command: bin/ordito
+    extensions: [gnome]
+    plugs:
+      - home
+      - network
+      - network-bind
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+      - browser-support
+      - gsettings
+      - opengl
+      - audio-playback
+      - process-control
+      - system-observe
+    environment:
+      DISABLE_WAYLAND: 1
+
+parts:
+  ordito:
+    plugin: dump
+    source: .
+    build-packages:
+      - curl
+      - wget
+      - file
+      - build-essential
+      - pkg-config
+      - libssl-dev
+      - libgtk-3-dev
+      - libwebkit2gtk-4.0-dev
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+    stage-packages:
+      - libwebkit2gtk-4.0-37
+      - libgtk-3-0
+      - libayatana-appindicator3-1
+      - librsvg2-2
+    override-build: |
+      # Install Node.js and npm
+      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get install -y nodejs
+
+      # Install Rust
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      source ~/.cargo/env
+
+      # Install Tauri CLI
+      cargo install tauri-cli
+
+      # Install npm dependencies
+      npm install
+
+      # Build the application
+      npm run tauri build
+
+      # Copy the built binary
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp src-tauri/target/release/ordito $SNAPCRAFT_PART_INSTALL/bin/
+
+      # Copy desktop file and icon
+      mkdir -p $SNAPCRAFT_PART_INSTALL/share/applications
+      mkdir -p $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps
+
+      # Create desktop file
+      cat > $SNAPCRAFT_PART_INSTALL/share/applications/ordito.desktop << EOF
+      [Desktop Entry]
+      Name=Ordito
+      Comment=Command runner and organizer
+      Exec=ordito
+      Icon=ordito
+      Type=Application
+      Categories=Development;Utility;
+      Keywords=command;terminal;developer;productivity;
+      StartupNotify=true
+      EOF
+
+      # Copy icon (adjust path as needed)
+      if [ -f "src-tauri/icons/128x128.png" ]; then
+        cp src-tauri/icons/128x128.png $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps/ordito.png
+      fi
