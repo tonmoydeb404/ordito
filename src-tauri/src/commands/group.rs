@@ -1,6 +1,6 @@
 use crate::models::{AppData, CommandGroup};
 use crate::state::AppState;
-use crate::storage::save_data;
+use crate::storage::{merge_data, save_data};
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use uuid::Uuid;
@@ -124,14 +124,28 @@ pub async fn import_data(
             let app_data: AppData = serde_json::from_str(&content)
                 .map_err(|e| format!("Failed to parse import data: {}", e))?;
 
-            // Replace existing state
+            // Merge with existing state instead of replacing
             {
                 let mut groups = state.lock().unwrap();
-                *groups = app_data.groups;
-                save_data(&app_handle, &groups)?;
-            }
+                let (merged_groups, added_count, skipped_count) =
+                    merge_data(&groups, app_data.groups);
 
-            Ok("Data imported successfully".to_string())
+                *groups = merged_groups;
+                save_data(&app_handle, &groups)?;
+
+                // Return detailed success message
+                if skipped_count > 0 {
+                    Ok(format!(
+                        "Import completed: {} new groups added, {} existing groups skipped (duplicate IDs)",
+                        added_count, skipped_count
+                    ))
+                } else {
+                    Ok(format!(
+                        "Import completed: {} new groups added successfully",
+                        added_count
+                    ))
+                }
+            }
         }
         Some(FilePath::Url(_)) => Err("URL paths not supported for import".to_string()),
         None => Err("User cancelled open dialog".to_string()),

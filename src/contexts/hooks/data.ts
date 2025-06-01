@@ -69,9 +69,7 @@ export function useDataOperations() {
 
       toast.success("Import completed!", {
         id,
-        description: `Successfully imported ${updatedGroups.length} group${
-          updatedGroups.length !== 1 ? "s" : ""
-        }. ${result}`,
+        description: result,
       });
 
       return result;

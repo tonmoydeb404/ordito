@@ -55,3 +55,36 @@ pub fn save_data(
 
     Ok(())
 }
+
+// Merge imported data with current data, avoiding duplicates by group ID
+pub fn merge_data(
+    current_groups: &HashMap<String, CommandGroup>,
+    imported_groups: HashMap<String, CommandGroup>,
+) -> (HashMap<String, CommandGroup>, usize, usize) {
+    let mut merged_groups = current_groups.clone();
+    let mut added_count = 0;
+    let mut skipped_count = 0;
+
+    for (group_id, imported_group) in imported_groups {
+        if merged_groups.contains_key(&group_id) {
+            // Group ID already exists, skip it
+            skipped_count += 1;
+            log::info!(
+                "Skipping duplicate group: {} (ID: {})",
+                imported_group.title,
+                group_id
+            );
+        } else {
+            // New group, add it to merged data
+            merged_groups.insert(group_id.clone(), imported_group.clone());
+            added_count += 1;
+            log::info!(
+                "Added new group: {} (ID: {})",
+                imported_group.title,
+                group_id
+            );
+        }
+    }
+
+    (merged_groups, added_count, skipped_count)
+}
