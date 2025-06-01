@@ -106,16 +106,34 @@ pub async fn export_data(
 pub async fn import_data(
     state: State<'_, AppState>,
     app_handle: tauri::AppHandle,
-    data: String,
 ) -> Result<String, String> {
-    let app_data: AppData =
-        serde_json::from_str(&data).map_err(|e| format!("Failed to parse import data: {}", e))?;
+    // Open dialog for selecting .json file
+    let file_path = app_handle
+        .dialog()
+        .file()
+        .add_filter("JSON Files", &["json"])
+        .blocking_pick_file();
 
-    {
-        let mut groups = state.lock().unwrap();
-        *groups = app_data.groups;
-        save_data(&app_handle, &groups)?;
+    match file_path {
+        Some(FilePath::Path(path)) => {
+            // Read file content
+            let content = std::fs::read_to_string(&path)
+                .map_err(|e| format!("Failed to read file: {}", e))?;
+
+            // Deserialize
+            let app_data: AppData = serde_json::from_str(&content)
+                .map_err(|e| format!("Failed to parse import data: {}", e))?;
+
+            // Replace existing state
+            {
+                let mut groups = state.lock().unwrap();
+                *groups = app_data.groups;
+                save_data(&app_handle, &groups)?;
+            }
+
+            Ok("Data imported successfully".to_string())
+        }
+        Some(FilePath::Url(_)) => Err("URL paths not supported for import".to_string()),
+        None => Err("User cancelled open dialog".to_string()),
     }
-
-    Ok("Data imported successfully".to_string())
 }
