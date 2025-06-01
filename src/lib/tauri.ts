@@ -75,8 +75,8 @@ export class TauriAPI {
     return await invoke("export_data");
   }
 
-  static async importData(data: string): Promise<string> {
-    return await invoke("import_data", { data });
+  static async importData(): Promise<string> {
+    return await invoke("import_data");
   }
 
   // Tray operations

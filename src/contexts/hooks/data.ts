@@ -51,46 +51,42 @@ export function useDataOperations() {
     }
   }, []);
 
-  const importData = useCallback(
-    async (data: string) => {
-      try {
-        setLoading(true);
-        setError(null);
+  const importData = useCallback(async () => {
+    const id = "import-data" + Date.now();
+    try {
+      setLoading(true);
+      setError(null);
 
-        toast.loading("Importing data...", { id: "import-data" });
+      toast.loading("Importing data...", { id });
 
-        const result = await TauriAPI.importData(data);
+      const result = await TauriAPI.importData();
 
-        // Refresh groups data after successful import
-        const updatedGroups = await TauriAPI.getGroups();
-        _setGroups(updatedGroups);
+      // Refresh groups data after successful import
+      const updatedGroups = await TauriAPI.getGroups();
+      _setGroups(updatedGroups);
 
-        setLoading(false);
+      setLoading(false);
 
-        toast.success("Import completed!", {
-          id: "import-data",
-          description: `Successfully imported ${updatedGroups.length} group${
-            updatedGroups.length !== 1 ? "s" : ""
-          }. ${result}`,
-        });
+      toast.success("Import completed!", {
+        id,
+        description: result,
+      });
 
-        return result;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to import data";
-        setError(errorMessage);
-        setLoading(false);
+      return result;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to import data";
+      setError(errorMessage);
+      setLoading(false);
 
-        toast.error("Import failed", {
-          id: "import-data",
-          description: errorMessage,
-        });
+      toast.error("Import failed", {
+        id,
+        description: errorMessage,
+      });
 
-        throw err;
-      }
-    },
-    [_setGroups]
-  );
+      throw err;
+    }
+  }, [_setGroups]);
 
   const clearError = useCallback(() => {
     setError(null);
