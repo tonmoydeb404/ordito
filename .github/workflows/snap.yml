@@ -40,12 +40,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --prod --frozen-lockfile
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli
-
       - name: Install system dependencies
         run: |
           sudo apt update
@@ -61,7 +55,16 @@ jobs:
             libssl-dev
 
       - name: Build Tauri app
-        run: npm run tauri build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Don't upload to GitHub releases, we just want to build
+          tagName: ""
+          releaseName: ""
+          releaseBody: ""
+          releaseDraft: false
+          prerelease: false
 
       - name: Build snap
         uses: snapcore/action-build@v1

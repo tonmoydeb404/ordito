@@ -54,7 +54,7 @@ parts:
       - libayatana-appindicator3-1
       - librsvg2-2
     override-build: |
-      # The binary is already built by GitHub Actions
+      # The binary is already built by GitHub Actions via Tauri action
       # Just copy it to the right location
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
       cp src-tauri/target/release/ordito $SNAPCRAFT_PART_INSTALL/bin/
