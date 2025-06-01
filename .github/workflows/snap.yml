@@ -54,17 +54,22 @@ jobs:
             file \
             libssl-dev
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
         with:
-          # Don't upload to GitHub releases, we just want to build
-          tagName: ""
-          releaseName: ""
-          releaseBody: ""
-          releaseDraft: false
-          prerelease: false
+          workspaces: "./src-tauri -> target"
+
+      - name: Install Tauri CLI
+        run: |
+          cargo install tauri-cli --version "^2.0" --locked
+
+      - name: Build Tauri app
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo tauri build
 
       - name: Build snap
         uses: snapcore/action-build@v1
