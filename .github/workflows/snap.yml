@@ -53,7 +53,7 @@ jobs:
 
       - name: Build Snap (no LXD)
         run: |
-          sudo snapcraft
+          snapcraft
 
       # Upload the Snap
       - name: Upload Snap artifact
