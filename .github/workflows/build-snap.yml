@@ -1,4 +1,4 @@
-name: Build Tauri App and Publish as Snap
+name: Build Tauri App and Publish to Snap Store
 
 on:
   push:
@@ -9,19 +9,30 @@ on:
 jobs:
   build-snap:
     runs-on: ubuntu-latest
-
     env:
       CARGO_TERM_COLOR: always
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
 
     steps:
-      - name: Setup LXD
+      - name: Install snapd
         run: |
           sudo apt update
-          sudo apt install -y lxd-installer
-          sudo /snap/bin/lxd waitready || true
-          echo y | sudo /snap/bin/lxd init --auto
-          sudo /snap/bin/lxc network set lxdbr0 ipv6=false
+          sudo apt install -y snapd
+
+      - name: Start snapd service
+        run: |
+          sudo systemctl start snapd
+          sudo systemctl enable snapd
+
+      - name: Install LXD via Snap
+        run: |
+          sudo snap install lxd
+
+      - name: Initialize LXD
+        run: |
+          sudo lxd waitready || true
+          echo y | sudo lxd init --auto
+          sudo lxc network set lxdbr0 ipv6=false
 
       - name: Install Snapcraft
         run: |
@@ -42,7 +53,7 @@ jobs:
       - name: Configure npm registry
         run: echo "registry=https://registry.npmjs.org/"  > .npmrc
 
-      - name: Install pnpm
+      - name: Install pnpm globally
         run: npm install -g pnpm
 
       - name: Install dependencies
@@ -54,7 +65,7 @@ jobs:
       - name: Install Tauri CLI
         run: pnpm add -g @tauri-apps/cli
 
-      - name: Write snapcraft.yaml
+      - name: Write snap/snapcraft.yaml
         run: |
           cat <<EOF > snap/snapcraft.yaml
           name: ordito
