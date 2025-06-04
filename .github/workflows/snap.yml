@@ -50,7 +50,7 @@ jobs:
       # Install Snapcraft without LXD
       - name: Install Snapcraft (Classic)
         run: |
-          sudo snap install snapcraft --classic
+          samuelmeuli/action-snapcraft@v3
 
       - name: Build Snap (no LXD)
         run: |
