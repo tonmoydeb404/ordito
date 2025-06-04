@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Snap (no LXD)
         run: |
-          snapcraft --use-lxd=false --destructive-mode
+          snapcraft
 
       # Upload the Snap
       - name: Upload Snap artifact
