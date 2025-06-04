@@ -1,4 +1,5 @@
-name: Build Snap
+# File: .github/workflows/build-snap.yml
+name: Build Snap Package
 
 on:
   push:
@@ -6,27 +7,57 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-snap:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ──── Node.js + pnpm Setup ────
+      - name: Set up Node.js 20 & cache pnpm
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
+          # cache: "pnpm"
 
-      - name: Install pnpm
+      - name: Install pnpm globally
         run: npm install -g pnpm
 
-      - name: Install Rust
+      # ──── Rust Toolchain ────
+      - name: Set up Rust (stable)
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
-      - name: Install Tauri CLI
-        run: pnpm dlx @tauri-apps/cli install
+      # ──── System Dependencies ────
+      - name: Install system libraries
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            curl \
+            wget \
+            file \
+            dpkg
 
-      - name: Build Snap
+      # ──── Snapcraft Itself ────
+      - name: Install Snapcraft
         uses: snapcore/action-build@v1
         with:
           snapcraft-args: "--destructive-mode"
+
+      # ──── Upload the .snap ────
+      - name: Upload Snap Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordito-snap
+          path: ./*.snap
