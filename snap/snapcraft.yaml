@@ -1,0 +1,27 @@
+name: ordito
+version: "1.1.0"
+summary: A powerful desktop application for organizing and executing commands from a convenient system tray interface
+description: |
+  Ordito is a desktop application that allows users to organize and execute commands
+  from a convenient system tray interface.
+
+grade: stable
+confinement: strict
+
+parts:
+  ordito:
+    plugin: dump
+    source: target/release/bundle/deb
+    source-type: dir
+
+apps:
+  ordito:
+    command: bin/ordito
+    extensions: [gnome]
+    plugs:
+      - home
+      - network
+      - notifications
+      - removable-media
+      - x11
+      - wayland

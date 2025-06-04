@@ -1,0 +1,104 @@
+name: Build Tauri App and Publish to Snap Store
+
+on:
+  push:
+    tags:
+      - "v*" # Trigger on tag pushes like v1.1.0
+  workflow_dispatch:
+
+jobs:
+  build-snap:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure npm registry
+        run: echo "registry=https://registry.npmjs.org/"  > .npmrc
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Install Tauri CLI
+        run: pnpm add -g @tauri-apps/cli
+
+      - name: Build Tauri App (Linux)
+        run: pnpm tauri build --target x86_64-unknown-linux-gnu
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+
+      - name: Initialize LXD
+        run: |
+          sudo lxd init --auto
+          sudo lxc network set lxdbr0 ipv6=false
+
+      - name: Create Snap Directory
+        run: mkdir -p snap
+
+      - name: Write snapcraft.yaml
+        run: |
+          cat <<EOF > snap/snapcraft.yaml
+          name: ordito
+          version: '1.1.0'
+          summary: A powerful desktop application for organizing and executing commands
+          description: |
+            Ordito is a desktop application that allows users to organize and execute commands
+            from a convenient system tray interface.
+
+          grade: stable
+          confinement: strict
+
+          parts:
+            ordito:
+              plugin: dump
+              source: target/release/bundle/deb
+              source-type: dir
+
+          apps:
+            ordito:
+              command: bin/ordito
+              extensions: [gnome]
+              plugs:
+                - home
+                - network
+                - notifications
+                - removable-media
+                - x11
+                - wayland
+          EOF
+
+      - name: Build Snap Package
+        run: |
+          cd snap
+          sg lxd -c 'snapcraft --use-lxd'
+
+      - name: Export Snap File
+        run: |
+          cp ordito_*.snap ../
+        shell: bash
+
+      - name: Upload Snap Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordito-snap
+          path: ordito_*.snap
+
+      - name: Push to Snap Store
+        run: |
+          snapcraft push ordito_*.snap --release=stable
