@@ -1,4 +1,5 @@
 name: ordito
+base: core22
 version: "1.1.0"
 summary: A powerful desktop application for organizing and executing commands
 description: |
@@ -8,15 +9,14 @@ description: |
 grade: stable
 confinement: strict
 
-parts:
-  ordito:
-    plugin: dump
-    source: target/release/bundle/deb
-    source-type: dir
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
 
 apps:
   ordito:
-    command: bin/ordito
+    command: usr/bin/ordito
+    desktop: usr/share/applications/ordito.desktop
     extensions: [gnome]
     plugs:
       - home
@@ -25,3 +25,59 @@ apps:
       - removable-media
       - x11
       - wayland
+
+package-repositories:
+  - type: apt
+    components: [main]
+    suites: [jammy]
+    key-id: 78E1918602959B9C59103100F1831DDAFC42E99D
+    url: http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu
+
+parts:
+  ordito:
+    plugin: dump
+    source: .
+    build-snaps:
+      - node/20/stable
+      - rustup/latest/stable
+    build-packages:
+      - pnpm
+      - libwebkit2gtk-4.1-dev
+      - build-essential
+      - curl
+      - wget
+      - file
+      - libxdo-dev
+      - libssl-dev
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - dpkg
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libayatana-appindicator3-1
+    override-pull: |
+      set -eu
+      # Install pnpm globally if not already available
+      npm install -g pnpm
+      # Run pull step normally
+      snapcraftctl pull
+    override-build: |
+      set -eu
+      # Install dependencies
+      pnpm install
+
+      # Build frontend
+      pnpm build
+
+      # Install Tauri CLI
+      pnpm add -g @tauri-apps/cli
+
+      # Build Tauri app
+      pnpm tauri build --bundle deb
+
+      # Extract deb bundle into the final snap directory
+      dpkg -x src-tauri/target/release/bundle/deb/*.deb "$SNAPCRAFT_PART_INSTALL/"
+
+      # Fix icon path in desktop file
+      sed -i -e "s|Icon=ordito|Icon=/usr/share/icons/hicolor/32x32/apps/ordito.png|g" \
+        "$SNAPCRAFT_PART_INSTALL/usr/share/applications/ordito.desktop"
