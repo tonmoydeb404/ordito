@@ -1,80 +1,55 @@
 name: ordito
-version: "1.0.0"
-summary: Command runner and organizer for developers
+base: core22
+version: "1.1.0"
+summary: A powerful desktop app for organizing and executing commands from the tray.
 description: |
-  Ordito helps developers organize and execute commands efficiently. 
-  Features include command grouping, system tray integration, 
-  import/export configurations, and autostart functionality.
+  Ordito helps you organize command groups and execute them from the system tray. Ideal for developers, sysadmins, and power users.
 
 grade: stable
 confinement: strict
-base: core22
-
-architectures:
-  - build-on: amd64
-
-apps:
-  ordito:
-    command: bin/ordito
-    extensions: [gnome]
-    plugs:
-      - home
-      - network
-      - network-bind
-      - desktop
-      - desktop-legacy
-      - wayland
-      - x11
-      - unity7
-      - browser-support
-      - gsettings
-      - opengl
-      - audio-playback
-      - process-control
-      - system-observe
-    environment:
-      DISABLE_WAYLAND: 1
 
 parts:
   ordito:
-    plugin: dump
+    plugin: rust
     source: .
-    organize:
-      "src-tauri/target/release/ordito": bin/ordito
-    stage:
-      - bin/ordito
-    build-packages:
-      - libgtk-3-dev
-      - libwebkit2gtk-4.1-dev
-      - libayatana-appindicator3-dev
-      - librsvg2-dev
-    stage-packages:
-      - libwebkit2gtk-4.1-37
-      - libgtk-3-0
-      - libayatana-appindicator3-1
-      - librsvg2-2
     override-build: |
-      # The binary is already built by GitHub Actions via Tauri action
-      # Just copy it to the right location
-      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      cp src-tauri/target/release/ordito $SNAPCRAFT_PART_INSTALL/bin/
+      # Install frontend deps and build
+      npm install -g pnpm
+      pnpm install
+      pnpm build
 
-      # Create desktop file
-      mkdir -p $SNAPCRAFT_PART_INSTALL/share/applications
-      cat > $SNAPCRAFT_PART_INSTALL/share/applications/ordito.desktop << EOF
-      [Desktop Entry]
-      Name=Ordito
-      Comment=Command runner and organizer
-      Exec=ordito
-      Icon=ordito
-      Type=Application
-      Categories=Development;Utility;
-      Keywords=command;developer;productivity;
-      StartupNotify=true
-      EOF
+      # Build the tauri app
+      cargo build --release
 
-      # Copy icon if exists
-      mkdir -p $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps
-      if [ -f "src-tauri/icons/128x128.png" ]; then
-        cp src-tauri/icons/128x128.png $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps/ordito.png
-      fi
+      # Move binary to expected location
+      install -Dm755 target/release/ordito $SNAPCRAFT_PART_INSTALL/usr/bin/ordito
+
+      # Copy frontend assets if needed
+    build-packages:
+      - curl
+      - libgtk-3-dev
+      - libayatana-appindicator3-dev
+      - libsoup2.4-dev
+      - libwebkit2gtk-4.0-dev
+      - build-essential
+      - pkg-config
+      - libssl-dev
+      - nodejs
+      - npm
+      - libglib2.0-dev
+      - ca-certificates
+
+apps:
+  ordito:
+    command: usr/bin/ordito
+    extensions: [gnome]
+    plugs:
+      - network
+      - home
+      - desktop
+      - desktop-legacy
+      - x11
+      - wayland
+      - unity7
+      - pulseaudio
+      - browser-support

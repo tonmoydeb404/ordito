@@ -1,91 +1,79 @@
-# .github/workflows/snap.yml
-name: Build and Publish Snap
+name: Build Ordito Snap
 
+# Trigger on pushes to main (or adjust to your default branch), and on pull requests.
 on:
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build-snap:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10.11.0
-    
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-    
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y \
-          libgtk-3-dev \
-          libwebkit2gtk-4.1-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev \
-          build-essential \
-          curl \
-          wget \
-          file \
-          libssl-dev
-    
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: "./src-tauri -> target"
-    
-    - name: Install Tauri CLI
-      run: |
-        cargo install tauri-cli --version "^2.0" --locked
-    
-    - name: Build Tauri app
-      run: |
-        export PATH="$HOME/.cargo/bin:$PATH"
-        cargo tauri build
-    
-    - name: Build snap
-      uses: snapcore/action-build@v1
-      id: snapcraft
-    
-    - name: Upload snap artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ordito-snap
-        path: ${{ steps.snapcraft.outputs.snap }}
-    
-    - name: Publish to Snap Store
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: snapcore/action-publish@v1
-      env:
-        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
-      with:
-        snap: ${{ steps.snapcraft.outputs.snap }}
-        release: edge
+      # 1. Check out your repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Set up Node.js 18.x (your package.json expects Node v18+)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: "pnpm"
+
+      # 3. Install pnpm (since your project uses pnpm@10.11.0)
+      - name: Install pnpm
+        run: npm install -g pnpm@10.11.0
+
+      # 4. Install Rust (Tauri backend requires Rust stable)
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+
+      # 5. Install frontend dependencies via pnpm
+      - name: Install dependencies
+        run: pnpm install
+
+      # 6. Build the frontend and Tauri app
+      #
+      #    - `pnpm build` will run "tsc && vite build" (producing /dist)
+      #    - `pnpm tauri build` will compile your Rust code and bundle the Tauri binary.
+      #
+      - name: Build frontend (Vite) and Tauri binary
+        run: |
+          pnpm build
+          pnpm tauri build
+
+      # 7. Install Snapcraft (to package your Tauri build as a .snap)
+      #
+      #    - We install via snapd (–classic) to get the latest Snapcraft.
+      #
+      - name: Install Snapcraft
+        run: |
+          sudo snap install snapcraft --classic
+          snapcraft --version
+
+      # 8. Run snapcraft to produce a .snap package
+      #
+      #    - Assumes you have a snapcraft.yaml at the repo root (or in snap/).
+      #    - Uses --use-lxd for a clean container build, and --destructive-mode
+      #      so Snapcraft can overwrite files without read-only checks.
+      #
+      - name: Build Snap package
+        run: |
+          snapcraft --use-lxd --destructive-mode
+
+      # 9. Upload the resulting .snap file(s) as a workflow artifact
+      #
+      #    - Adjust the path/glob if your .snap ends up in a nested folder.
+      #
+      - name: Upload .snap artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ordito-snap
+          path: "*.snap"
