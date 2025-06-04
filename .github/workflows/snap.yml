@@ -1,3 +1,4 @@
+# File: .github/workflows/build-snap.yml
 name: Build Snap Package
 
 on:
@@ -13,20 +14,27 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      # ──── Node.js + pnpm Setup ────
+      - name: Set up Node.js 20 & cache pnpm
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "pnpm"
 
-      - name: Set up Rust
+      - name: Install pnpm globally
+        run: npm install -g pnpm
+
+      # ──── Rust Toolchain ────
+      - name: Set up Rust (stable)
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
-      - name: Install dependencies
+      # ──── System Dependencies ────
+      - name: Install system libraries
         run: |
           sudo apt update
           sudo apt install -y \
@@ -41,11 +49,13 @@ jobs:
             file \
             dpkg
 
+      # ──── Snapcraft Itself ────
       - name: Install Snapcraft
         uses: snapcore/action-build@v1
         with:
           snapcraft-args: "--destructive-mode"
 
+      # ──── Upload the .snap ────
       - name: Upload Snap Artifact
         uses: actions/upload-artifact@v4
         with:
