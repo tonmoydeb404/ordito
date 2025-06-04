@@ -1,0 +1,19 @@
+name: My workflow
+
+on: push
+
+jobs:
+  my-job:
+    runs-on: ubuntu-latest
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+
+      # You can now run Snapcraft shell commands
+      - name: Use Snapcraft
+        run: snapcraft --help
