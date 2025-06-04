@@ -1,55 +1,61 @@
 name: ordito
 base: core22
 version: "1.1.0"
-summary: A powerful desktop app for organizing and executing commands from the tray.
+summary: Dummy
 description: |
-  Ordito helps you organize command groups and execute them from the system tray. Ideal for developers, sysadmins, and power users.
+  A powerful desktop application for organizing and executing commands from a convenient system tray interface.
+  Ordito lets you create, manage, and run groups of shell commands directly from your system tray, streamlining your workflow
+  and automating repetitive tasks.
 
 grade: stable
 confinement: strict
 
-parts:
-  ordito:
-    plugin: rust
-    source: .
-    override-build: |
-      # Install frontend deps and build
-      npm install -g pnpm
-      pnpm install
-      pnpm build
-
-      # Build the tauri app
-      cargo build --release
-
-      # Move binary to expected location
-      install -Dm755 target/release/ordito $SNAPCRAFT_PART_INSTALL/usr/bin/ordito
-
-      # Copy frontend assets if needed
-    build-packages:
-      - curl
-      - libgtk-3-dev
-      - libayatana-appindicator3-dev
-      - libsoup2.4-dev
-      - libwebkit2gtk-4.0-dev
-      - build-essential
-      - pkg-config
-      - libssl-dev
-      - nodejs
-      - npm
-      - libglib2.0-dev
-      - ca-certificates
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
 
 apps:
   ordito:
     command: usr/bin/ordito
+    desktop: usr/share/applications/ordito.desktop
     extensions: [gnome]
-    plugs:
-      - network
-      - home
-      - desktop
-      - desktop-legacy
-      - x11
-      - wayland
-      - unity7
-      - pulseaudio
-      - browser-support
+    # Uncomment and add any plugs you need:
+    # plugs:
+    #   - network
+    #   - home
+    #   - desktop
+    #   - x11
+    #   - wayland
+    # The gnome extension already includes [desktop, desktop-legacy, gsettings, opengl, wayland, x11, mount-observe, calendar-service]
+
+parts:
+  build-app:
+    plugin: dump
+    build-snaps:
+      - node/20/stable
+      - rustup/latest/stable
+    build-packages:
+      - libwebkit2gtk-4.1-dev
+      - build-essential
+      - curl
+      - wget
+      - file
+      - libxdo-dev
+      - libssl-dev
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - dpkg
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libayatana-appindicator3-1
+    source: .
+    override-build: |
+      set -eux
+      # Install Node.js dependencies
+      npm install
+      # Build the Tauri app and package as a .deb bundle
+      npm run tauri build -- --bundles deb
+      # Extract the .deb into the snap filesystem
+      dpkg -x src-tauri/target/release/bundle/deb/*.deb $SNAPCRAFT_PART_INSTALL/
+      # Fix the desktop file's Icon entry to point inside the snap
+      sed -i -e "s|Icon=ordito|Icon=/usr/share/icons/hicolor/32x32/apps/ordito.png|g" $SNAPCRAFT_PART_INSTALL/usr/share/applications/ordito.desktop
