@@ -1,4 +1,4 @@
-name: Build Tauri App and Publish to Snap Store
+name: Build Tauri App and Publish as Snap
 
 on:
   push:
@@ -9,11 +9,25 @@ on:
 jobs:
   build-snap:
     runs-on: ubuntu-latest
+
     env:
       CARGO_TERM_COLOR: always
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
 
     steps:
+      - name: Setup LXD
+        run: |
+          sudo apt update
+          sudo apt install -y lxd-installer
+          sudo /snap/bin/lxd waitready || true
+          echo y | sudo /snap/bin/lxd init --auto
+          sudo /snap/bin/lxc network set lxdbr0 ipv6=false
+
+      - name: Install Snapcraft
+        run: |
+          sudo snap install core
+          sudo snap install snapcraft --classic
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -28,6 +42,9 @@ jobs:
       - name: Configure npm registry
         run: echo "registry=https://registry.npmjs.org/"  > .npmrc
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
         run: pnpm install
 
@@ -37,24 +54,11 @@ jobs:
       - name: Install Tauri CLI
         run: pnpm add -g @tauri-apps/cli
 
-      - name: Build Tauri App (Linux)
-        run: pnpm tauri build --target x86_64-unknown-linux-gnu
-
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
-
-      - name: Initialize LXD
-        run: |
-          sudo lxd init --auto
-          sudo lxc network set lxdbr0 ipv6=false
-
-      - name: Create Snap Directory
-        run: mkdir -p snap
-
       - name: Write snapcraft.yaml
         run: |
           cat <<EOF > snap/snapcraft.yaml
           name: ordito
+          base: core22
           version: '1.1.0'
           summary: A powerful desktop application for organizing and executing commands
           description: |
@@ -64,15 +68,14 @@ jobs:
           grade: stable
           confinement: strict
 
-          parts:
-            ordito:
-              plugin: dump
-              source: target/release/bundle/deb
-              source-type: dir
+          layout:
+            /usr/lib/\$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+              bind: \$SNAP/usr/lib/\$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
 
           apps:
             ordito:
-              command: bin/ordito
+              command: usr/bin/ordito
+              desktop: usr/share/applications/ordito.desktop
               extensions: [gnome]
               plugs:
                 - home
@@ -81,24 +84,61 @@ jobs:
                 - removable-media
                 - x11
                 - wayland
+
+          package-repositories:
+            - type: apt
+              components: [main]
+              suites: [jammy]
+              key-id: 78E1918602959B9C59103100F1831DDAFC42E99D
+              url: http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu
+
+          parts:
+            ordito:
+              plugin: dump
+              source: .
+              build-snaps:
+                - node/20/stable
+                - rustup/latest/stable
+              build-packages:
+                - pnpm
+                - libwebkit2gtk-4.1-dev
+                - build-essential
+                - curl
+                - wget
+                - file
+                - libxdo-dev
+                - libssl-dev
+                - libayatana-appindicator3-dev
+                - librsvg2-dev
+                - dpkg
+              stage-packages:
+                - libwebkit2gtk-4.1-0
+                - libayatana-appindicator3-1
+              override-pull: |
+                set -eu
+                npm install -g pnpm
+                snapcraftctl pull
+              override-build: |
+                set -eu
+                pnpm install
+                pnpm build
+                pnpm add -g @tauri-apps/cli
+                pnpm tauri build --bundle deb
+                dpkg -x src-tauri/target/release/bundle/deb/*.deb "\$SNAPCRAFT_PART_INSTALL/"
+                sed -i -e "s|Icon=ordito|Icon=/usr/share/icons/hicolor/32x32/apps/ordito.png|g" "\$SNAPCRAFT_PART_INSTALL/usr/share/applications/ordito.desktop"
           EOF
 
       - name: Build Snap Package
         run: |
           cd snap
-          sg lxd -c 'snapcraft --use-lxd'
-
-      - name: Export Snap File
-        run: |
-          cp ordito_*.snap ../
-        shell: bash
+          snapcraft --use-lxd
 
       - name: Upload Snap Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ordito-snap
-          path: ordito_*.snap
+          path: snap/*.snap
 
       - name: Push to Snap Store
         run: |
-          snapcraft push ordito_*.snap --release=stable
+          snapcraft push snap/*.snap --release=stable
