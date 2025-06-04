@@ -10,6 +10,9 @@ jobs:
   build-snap:
     runs-on: ubuntu-latest
 
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+
     permissions:
       contents: write
 
@@ -17,8 +20,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Node + pnpm setup
-      - name: Setup Node.js
+      # Node.js + pnpm
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -26,11 +29,11 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      # Rust
+      # Rust toolchain
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
-      # Install system libraries
+      # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt update
@@ -44,18 +47,16 @@ jobs:
             curl \
             wget \
             file \
-            dpkg \
-            snapd
+            dpkg
 
-      # Install Snapcraft without LXD
-      - name: Install Snapcraft (Classic)
+      # Snapcraft (no LXD, no destructive mode)
+      - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
 
-      - name: Build Snap (no LXD)
-        run: |
-          sudo snapcraft
+      - name: Build Snap Package
+        run: snapcraft
 
-      # Upload the Snap
+      # Upload Snap artifact
       - name: Upload Snap artifact
         uses: actions/upload-artifact@v4
         with:
