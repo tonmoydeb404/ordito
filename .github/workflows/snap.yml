@@ -1,4 +1,4 @@
-name: Build Ordito Snap
+name: Build and Publish Snap
 
 # Trigger on pushes to main (or adjust to your default branch), and on pull requests.
 on:
