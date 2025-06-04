@@ -1,7 +1,7 @@
-name: Build and Publish Snap
+name: Build Ordito Snap
 
-# Trigger on pushes to main (or adjust to your default branch), and on pull requests.
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,22 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check out your repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js 18.x (your package.json expects Node v18+)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
           cache: "pnpm"
 
-      # 3. Install pnpm (since your project uses pnpm@10.11.0)
       - name: Install pnpm
         run: npm install -g pnpm@10.11.0
 
-      # 4. Install Rust (Tauri backend requires Rust stable)
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -35,43 +31,23 @@ jobs:
           override: true
           profile: minimal
 
-      # 5. Install frontend dependencies via pnpm
       - name: Install dependencies
         run: pnpm install
 
-      # 6. Build the frontend and Tauri app
-      #
-      #    - `pnpm build` will run "tsc && vite build" (producing /dist)
-      #    - `pnpm tauri build` will compile your Rust code and bundle the Tauri binary.
-      #
       - name: Build frontend (Vite) and Tauri binary
         run: |
           pnpm build
           pnpm tauri build
 
-      # 7. Install Snapcraft (to package your Tauri build as a .snap)
-      #
-      #    - We install via snapd (–classic) to get the latest Snapcraft.
-      #
       - name: Install Snapcraft
         run: |
           sudo snap install snapcraft --classic
           snapcraft --version
 
-      # 8. Run snapcraft to produce a .snap package
-      #
-      #    - Assumes you have a snapcraft.yaml at the repo root (or in snap/).
-      #    - Uses --use-lxd for a clean container build, and --destructive-mode
-      #      so Snapcraft can overwrite files without read-only checks.
-      #
       - name: Build Snap package
         run: |
           snapcraft --use-lxd --destructive-mode
 
-      # 9. Upload the resulting .snap file(s) as a workflow artifact
-      #
-      #    - Adjust the path/glob if your .snap ends up in a nested folder.
-      #
       - name: Upload .snap artifact
         uses: actions/upload-artifact@v3
         with:
