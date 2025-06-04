@@ -1,6 +1,6 @@
 name: ordito
 version: "1.1.0"
-summary: A powerful desktop application for organizing and executing commands from a convenient system tray interface
+summary: A powerful desktop application for organizing and executing commands
 description: |
   Ordito is a desktop application that allows users to organize and execute commands
   from a convenient system tray interface.
