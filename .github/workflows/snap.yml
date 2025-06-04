@@ -54,7 +54,7 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v3
 
       - name: Build Snap Package
-        run: snapcraft
+        run: snapcraft --use-lxd=false
 
       # Upload Snap artifact
       - name: Upload Snap artifact
