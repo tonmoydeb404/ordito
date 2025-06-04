@@ -16,4 +16,4 @@ jobs:
 
       # You can now run Snapcraft shell commands
       - name: Use Snapcraft
-        run: snapcraft --help
+        run: sudo snapcraft
