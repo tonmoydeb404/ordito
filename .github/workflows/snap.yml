@@ -1,4 +1,4 @@
-# File: .github/workflows/build-snap.yml
+# .github/workflows/build-snap.yml
 name: Build Snap Package
 
 on:
@@ -17,24 +17,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ──── Node.js + pnpm Setup ────
-      - name: Set up Node.js 20 & cache pnpm
+      # Node + pnpm setup
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # cache: "pnpm"
 
-      - name: Install pnpm globally
+      - name: Install pnpm
         run: npm install -g pnpm
 
-      # ──── Rust Toolchain ────
-      - name: Set up Rust (stable)
+      # Rust
+      - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
 
-      # ──── System Dependencies ────
-      - name: Install system libraries
+      # Install system libraries
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
@@ -47,16 +44,20 @@ jobs:
             curl \
             wget \
             file \
-            dpkg
+            dpkg \
+            snapd
 
-      # ──── Snapcraft Itself ────
-      - name: Install Snapcraft
-        uses: snapcore/action-build@v1
-        with:
-          snapcraft-args: "--destructive-mode"
+      # Install Snapcraft without LXD
+      - name: Install Snapcraft (Classic)
+        run: |
+          sudo snap install snapcraft --classic
 
-      # ──── Upload the .snap ────
-      - name: Upload Snap Artifact
+      - name: Build Snap (no LXD)
+        run: |
+          snapcraft --use-lxd=false --destructive-mode
+
+      # Upload the Snap
+      - name: Upload Snap artifact
         uses: actions/upload-artifact@v4
         with:
           name: ordito-snap
