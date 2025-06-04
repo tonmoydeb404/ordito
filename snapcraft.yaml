@@ -1,5 +1,5 @@
 name: ordito
-base: core24
+base: core22
 version: "1.1.0"
 summary: A powerful desktop application for organizing and executing commands
 description: |
