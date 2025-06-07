@@ -1,80 +1,58 @@
 name: ordito
-version: "1.1.0"
-summary: Command runner and organizer for developers
+base: core22
+version: '0.1.0'
+summary: Your summary # 79 char long summary
 description: |
-  Ordito helps developers organize and execute commands efficiently. 
-  Features include command grouping, system tray integration, 
-  import/export configurations, and autostart functionality.
+  Your description
 
 grade: stable
 confinement: strict
-base: core22
 
-architectures:
-  - build-on: amd64
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
 
 apps:
   ordito:
-    command: bin/ordito
+    command: usr/bin/ordito
+    desktop: usr/share/applications/ordito.desktop
     extensions: [gnome]
-    plugs:
-      - home
-      - network
-      - network-bind
-      - desktop
-      - desktop-legacy
-      - wayland
-      - x11
-      - unity7
-      - browser-support
-      - gsettings
-      - opengl
-      - audio-playback
-      - process-control
-      - system-observe
-    environment:
-      DISABLE_WAYLAND: 1
+    #plugs:
+    #  - network
+    # Add whatever plugs you need here, see https://snapcraft.io/docs/snapcraft-interfaces for more info.
+    # The gnome extension already includes [ desktop, desktop-legacy, gsettings, opengl, wayland, x11, mount-observe, calendar-service ]
+
+package-repositories:
+  - type: apt
+    components: [main]
+    suites: [noble]
+    key-id: 78E1918602959B9C59103100F1831DDAFC42E99D
+    url: http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu
 
 parts:
-  ordito:
+  build-app:
     plugin: dump
-    source: .
-    organize:
-      "src-tauri/target/release/ordito": bin/ordito
-    stage:
-      - bin/ordito
+    build-snaps:
+      - node/20/stable
+      - rustup/latest/stable
     build-packages:
-      - libgtk-3-dev
-      - libwebkit2gtk-4.0-dev
+      - libwebkit2gtk-4.1-dev
+      - build-essential
+      - curl
+      - wget
+      - file
+      - libxdo-dev
+      - libssl-dev
       - libayatana-appindicator3-dev
       - librsvg2-dev
+      - dpkg
     stage-packages:
-      - libwebkit2gtk-4.0-37
-      - libgtk-3-0
+      - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
-      - librsvg2-2
+    source: .
     override-build: |
-      # The binary is already built by GitHub Actions
-      # Just copy it to the right location
-      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      cp src-tauri/target/release/ordito $SNAPCRAFT_PART_INSTALL/bin/
-
-      # Create desktop file
-      mkdir -p $SNAPCRAFT_PART_INSTALL/share/applications
-      cat > $SNAPCRAFT_PART_INSTALL/share/applications/ordito.desktop << EOF
-      [Desktop Entry]
-      Name=Ordito
-      Comment=Command runner and organizer
-      Exec=ordito
-      Icon=ordito
-      Type=Application
-      Categories=Development;Utility;
-      Keywords=command;developer;productivity;
-      StartupNotify=true
-      EOF
-
-      # Copy icon if exists
-      mkdir -p $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps
-      if [ -f "src-tauri/icons/128x128.png" ]; then
-        cp src-tauri/icons/128x128.png $SNAPCRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps/ordito.png
-      fi
+      set -eu
+      npm install
+      npm run tauri build -- --bundles deb
+      dpkg -x src-tauri/target/release/bundle/deb/*.deb $SNAPCRAFT_PART_INSTALL/
+      sed -i -e "s|Icon=appname|Icon=/usr/share/icons/hicolor/32x32/apps/appname.png|g" $SNAPCRAFT_PART_INSTALL/usr/share/applications/appname.desktop
