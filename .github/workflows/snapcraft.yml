@@ -1,0 +1,39 @@
+name: Snapcraft Builds
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+
+jobs:
+  build-snapcraft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          #cache: 'npm'
+
+      - name: Prepare environment variables
+        run: |
+          echo "export TAURI_SIGNING_PRIVATE_KEY=\"${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}\"" >> .env
+          echo "export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=\"${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}\"" >> .env
+
+      - name: Build Snap package
+        uses: snapcore/action-build@v1
+        id: build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Publish to snap store
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: edge
