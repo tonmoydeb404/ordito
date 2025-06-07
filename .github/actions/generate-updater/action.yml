@@ -59,20 +59,25 @@ runs:
         echo "Repository: ${{ inputs.repository }}"
         echo "Looking for release at: https://github.com/${{ inputs.repository }}/releases/tag/${{ steps.release_info.outputs.release_tag }}"
 
-        echo "🔍 Checking if release exists (including drafts)..."
+        echo "🔍 Getting all releases and finding target..."
 
-        # Get release data (works for both draft and published releases)
-        if ! RELEASE_DATA=$(gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }} 2>/dev/null); then
+        # Get all releases and find our target release
+        ALL_RELEASES=$(gh api repos/${{ inputs.repository }}/releases)
+
+        # Find the specific release by tag
+        RELEASE_DATA=$(echo "$ALL_RELEASES" | jq -r ".[] | select(.tag_name == \"${{ steps.release_info.outputs.release_tag }}\")")
+
+        if [ -z "$RELEASE_DATA" ] || [ "$RELEASE_DATA" = "null" ]; then
           echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
           echo ""
           echo "🔍 Available releases:"
-          gh api repos/${{ inputs.repository }}/releases --jq '.[] | "- \(.tag_name) (\(.name)) [draft: \(.draft)]"' | head -10
+          echo "$ALL_RELEASES" | jq -r '.[] | "- \(.tag_name) (\(.name)) [draft: \(.draft)]"' | head -10
           exit 1
         fi
 
-        # Check release status
-        IS_DRAFT=$(echo "$RELEASE_DATA" | jq -r '.draft')
+        # Extract release info
         RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
+        IS_DRAFT=$(echo "$RELEASE_DATA" | jq -r '.draft')
         RELEASE_NAME=$(echo "$RELEASE_DATA" | jq -r '.name')
 
         echo "✅ Release found!"
