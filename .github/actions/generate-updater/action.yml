@@ -35,7 +35,7 @@ runs:
       shell: bash
       run: |
         TAG="${{ inputs.tag }}"
-        RELEASE_TAG="app-${TAG}"
+        RELEASE_TAG="$TAG"
         VERSION=${TAG#v}
         PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -56,6 +56,23 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         echo "📥 Downloading assets for release: ${{ steps.release_info.outputs.release_tag }}"
+        echo "Repository: ${{ inputs.repository }}"
+        echo "Looking for release at: https://github.com/${{ inputs.repository }}/releases/tag/${{ steps.release_info.outputs.release_tag }}"
+
+        # Check if release exists first
+        echo "🔍 Checking if release exists..."
+        if ! gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }} >/dev/null 2>&1; then
+          echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
+          echo ""
+          echo "🔍 Available releases:"
+          gh api repos/${{ inputs.repository }}/releases --jq '.[] | "- \(.tag_name) (\(.name))"' | head -10
+          echo ""
+          echo "💡 Possible reasons:"
+          echo "   1. Build job failed and didn't create the release"
+          echo "   2. Release tag format mismatch (expected: app-v1.1.1)"
+          echo "   3. Timing issue - build still in progress"
+          exit 1
+        fi
 
         # Get release data
         RELEASE_DATA=$(gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }})

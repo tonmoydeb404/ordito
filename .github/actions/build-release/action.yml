@@ -67,8 +67,8 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.signing_private_key }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.signing_private_key_password }}
       with:
-        tagName: app-${{ inputs.tag }}
-        releaseName: "App ${{ inputs.tag }}"
+        tagName: ${{ inputs.tag }}
+        releaseName: "Oridito ${{ inputs.tag }}"
         releaseBody: "See the assets to download this version and install."
         releaseDraft: true
         prerelease: false

@@ -58,7 +58,7 @@ jobs:
 
   generate-updater:
     needs: [get-tag, build]
-    if: always() && (needs.build.result == 'success' || inputs.skip_build)
+    if: always() && (needs.build.result == 'success' || (inputs.skip_build == true))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -92,7 +92,7 @@ jobs:
           echo ""
           if [ "${{ needs.generate-updater.result }}" = "success" ]; then
             echo "✅ Release completed successfully!"
-            echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/app-${{ needs.get-tag.outputs.tag }}"
+            echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.get-tag.outputs.tag }}"
             echo "🔗 Updater: ${{ needs.generate-updater.outputs.updater_url }}"
             echo ""
             echo "📋 Next steps:"
