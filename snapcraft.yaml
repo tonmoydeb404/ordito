@@ -73,14 +73,25 @@ parts:
       # Load environment variables from .env file if it exists
       if [ -f ".env" ]; then
         echo "🔑 Loading environment variables from .env file..."
-        export $(grep -v '^#' .env | xargs)
+        
+        # Source the .env file properly
+        set -a  # automatically export all variables
+        source .env
+        set +a  # stop auto-exporting
+        
         echo "✅ Environment variables loaded"
         
-        # Verify signing keys are available
+        # Verify signing keys are available (without showing values)
         if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
-          echo "✅ TAURI_SIGNING_PRIVATE_KEY is available"
+          echo "✅ TAURI_SIGNING_PRIVATE_KEY is available (length: ${#TAURI_SIGNING_PRIVATE_KEY})"
         else
-          echo "⚠️  TAURI_SIGNING_PRIVATE_KEY not found"
+          echo "❌ TAURI_SIGNING_PRIVATE_KEY not found"
+        fi
+        
+        if [ -n "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]; then
+          echo "✅ TAURI_SIGNING_PRIVATE_KEY_PASSWORD is available (length: ${#TAURI_SIGNING_PRIVATE_KEY_PASSWORD})"
+        else
+          echo "❌ TAURI_SIGNING_PRIVATE_KEY_PASSWORD not found"
         fi
       else
         echo "⚠️  .env file not found, building without signing"

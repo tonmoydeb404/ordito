@@ -19,8 +19,14 @@ jobs:
 
       - name: Create .env file with signing keys
         run: |
-          echo "TAURI_SIGNING_PRIVATE_KEY=${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > .env
+          # Create .env file with proper escaping
+          cat > .env << 'EOF'
+          TAURI_SIGNING_PRIVATE_KEY=${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          EOF
+
           echo "✅ Created .env file with signing keys"
+          echo "📋 Environment file created (content hidden for security)"
 
       - name: Build Snap package
         uses: snapcore/action-build@v1
