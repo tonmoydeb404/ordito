@@ -1,4 +1,4 @@
-# .github/actions/generate-updater.yml
+# .github/actions/generate-updater/action.yml
 name: "Generate Updater JSON"
 description: "Generate updater JSON file and publish release"
 

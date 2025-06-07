@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Tauri release
-        uses: ./.github/actions/build-release.yml
+        uses: ./.github/actions/build-release
         with:
           tag: ${{ needs.get-tag.outputs.tag }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Generate updater JSON
         id: updater
-        uses: ./.github/actions/generate-updater.yml
+        uses: ./.github/actions/generate-updater
         with:
           tag: ${{ needs.get-tag.outputs.tag }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

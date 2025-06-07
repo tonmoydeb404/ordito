@@ -1,4 +1,4 @@
-# .github/actions/build-release.yml
+# .github/actions/build-release/action.yml
 name: "Build Tauri Release"
 description: "Build and create a draft release for Tauri application"
 
