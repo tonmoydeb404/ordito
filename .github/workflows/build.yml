@@ -112,7 +112,7 @@ jobs:
         # if u get Error: Resource not accessible by integration
         # go to repository Settings => Action => General => Workflow permissions => Switch to Read and Write permisions
         env:
-          CI: true
+          CI: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
