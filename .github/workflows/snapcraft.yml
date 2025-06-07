@@ -16,12 +16,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          #cache: 'npm'
 
-      - name: Prepare environment variables
+      - name: Create signing key files
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          echo "export TAURI_SIGNING_PRIVATE_KEY=\"${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}\"" >> .env
-          echo "export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=\"${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}\"" >> .env
+          # Create individual files to avoid shell parsing issues
+          echo "$TAURI_SIGNING_PRIVATE_KEY" > tauri_private_key.txt
+          echo "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" > tauri_password.txt
+
+          echo "✅ Created signing key files"
+          echo "📋 Key length: $(wc -c < tauri_private_key.txt)"
+          echo "📋 Password length: $(wc -c < tauri_password.txt)"
 
       - name: Build Snap package
         uses: snapcore/action-build@v1

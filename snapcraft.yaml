@@ -1,9 +1,10 @@
 name: ordito
 base: core22
-version: '0.1.0'
-summary: Your summary # 79 char long summary
+version: '1.1.0'
+summary: A modern desktop application built with Tauri
 description: |
-  Your description
+  Ordito is a modern desktop application built with Tauri, providing
+  a native experience with web technologies.
 
 grade: stable
 confinement: strict
@@ -17,10 +18,10 @@ apps:
     command: usr/bin/ordito
     desktop: usr/share/applications/ordito.desktop
     extensions: [gnome]
-    #plugs:
-    #  - network
-    # Add whatever plugs you need here, see https://snapcraft.io/docs/snapcraft-interfaces for more info.
-    # The gnome extension already includes [ desktop, desktop-legacy, gsettings, opengl, wayland, x11, mount-observe, calendar-service ]
+    plugs:
+      - network
+      - home
+      - removable-media
 
 package-repositories:
   - type: apt
@@ -46,13 +47,92 @@ parts:
       - libayatana-appindicator3-dev
       - librsvg2-dev
       - dpkg
+      - pkg-config
     stage-packages:
       - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
     source: .
     override-build: |
       set -eu
-      npm install
-      npm run tauri build -- --bundles deb
-      dpkg -x src-tauri/target/release/bundle/deb/*.deb $SNAPCRAFT_PART_INSTALL/
-      sed -i -e "s|Icon=appname|Icon=/usr/share/icons/hicolor/32x32/apps/appname.png|g" $SNAPCRAFT_PART_INSTALL/usr/share/applications/appname.desktop
+      
+      # Setup Rust environment
+      echo "🔧 Setting up Rust environment..."
+      export PATH="/snap/bin:$PATH"
+      rustup default stable
+      rustup update
+      
+      # Verify Rust installation
+      rustc --version
+      cargo --version
+      
+      # Setup Node and PNPM
+      echo "📦 Setting up Node and PNPM..."
+      npm install -g pnpm
+      pnpm --version
+      
+      # Load environment variables from files to avoid shell parsing issues
+      if [ -f "tauri_private_key.txt" ] && [ -f "tauri_password.txt" ]; then
+        echo "🔑 Loading signing keys from files..."
+        
+        # Read directly from files to avoid any shell parsing
+        export TAURI_SIGNING_PRIVATE_KEY=$(cat tauri_private_key.txt)
+        export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$(cat tauri_password.txt)
+        
+        echo "✅ Environment variables loaded from files"
+        
+        # Verify signing keys are available (without showing values)
+        if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+          echo "✅ TAURI_SIGNING_PRIVATE_KEY is available (length: ${#TAURI_SIGNING_PRIVATE_KEY})"
+        else
+          echo "❌ TAURI_SIGNING_PRIVATE_KEY not found"
+        fi
+        
+        if [ -n "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]; then
+          echo "✅ TAURI_SIGNING_PRIVATE_KEY_PASSWORD is available (length: ${#TAURI_SIGNING_PRIVATE_KEY_PASSWORD})"
+        else
+          echo "❌ TAURI_SIGNING_PRIVATE_KEY_PASSWORD not found"
+        fi
+        
+        # Clean up files for security
+        rm -f tauri_private_key.txt tauri_password.txt
+        echo "🧹 Cleaned up temporary key files"
+      else
+        echo "⚠️  Signing key files not found, building without signing"
+      fi
+      
+      # Install dependencies
+      echo "📦 Installing dependencies..."
+      pnpm install
+      
+      # Build the application
+      echo "🚀 Building Tauri application..."
+      pnpm tauri build --bundles deb
+      
+      # Extract the DEB package
+      echo "📋 Extracting DEB package..."
+      DEB_FILE=$(find src-tauri/target/release/bundle/deb -name "*.deb" | head -1)
+      if [ -z "$DEB_FILE" ]; then
+        echo "❌ No DEB file found!"
+        ls -la src-tauri/target/release/bundle/deb/
+        exit 1
+      fi
+      
+      echo "Found DEB file: $DEB_FILE"
+      dpkg -x "$DEB_FILE" $SNAPCRAFT_PART_INSTALL/
+      
+      # Fix desktop file icon path
+      echo "🖼️  Fixing desktop file..."
+      DESKTOP_FILE="$SNAPCRAFT_PART_INSTALL/usr/share/applications/ordito.desktop"
+      if [ -f "$DESKTOP_FILE" ]; then
+        # Update icon path to absolute path
+        sed -i -e "s|Icon=ordito|Icon=/usr/share/icons/hicolor/32x32/apps/ordito.png|g" "$DESKTOP_FILE"
+        echo "Desktop file updated"
+      else
+        echo "⚠️  Desktop file not found at expected location"
+        find $SNAPCRAFT_PART_INSTALL -name "*.desktop" -type f
+      fi
+      
+      # Verify installation
+      echo "✅ Build completed successfully!"
+      echo "Installed files:"
+      ls -la $SNAPCRAFT_PART_INSTALL/usr/bin/ || true
