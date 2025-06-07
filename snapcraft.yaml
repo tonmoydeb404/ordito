@@ -48,6 +48,7 @@ parts:
       - librsvg2-dev
       - dpkg
       - pkg-config
+      - jq
     stage-packages:
       - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
@@ -74,9 +75,25 @@ parts:
       echo "📦 Installing dependencies..."
       pnpm install
       
+      # Temporarily remove public key from tauri.conf.json for Snap build
+      echo "🔧 Modifying tauri.conf.json for Snap build (removing updater config)..."
+      
+      # Create a backup
+      cp src-tauri/tauri.conf.json src-tauri/tauri.conf.json.backup
+      
+      # Remove the updater section using jq
+      jq 'del(.plugins.updater)' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp
+      mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+      
+      echo "Modified tauri.conf.json:"
+      cat src-tauri/tauri.conf.json
+      
       # Build the application
       echo "🚀 Building Tauri application..."
       pnpm tauri build --bundles deb
+      
+      # Restore the original config
+      mv src-tauri/tauri.conf.json.backup src-tauri/tauri.conf.json
       
       # Extract the DEB package
       echo "📋 Extracting DEB package..."
