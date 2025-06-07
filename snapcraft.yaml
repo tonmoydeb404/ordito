@@ -65,13 +65,18 @@ parts:
       rustc --version
       cargo --version
       
-      # Setup Node environment
-      echo "📦 Installing Node dependencies..."
-      npm install
+      # Setup Node and PNPM
+      echo "📦 Setting up Node and PNPM..."
+      npm install -g pnpm
+      pnpm --version
+      
+      # Install dependencies
+      echo "📦 Installing dependencies..."
+      pnpm install
       
       # Build the application
       echo "🚀 Building Tauri application..."
-      npm run tauri build -- --bundles deb
+      pnpm tauri build -- --bundles deb
       
       # Extract the DEB package
       echo "📋 Extracting DEB package..."
