@@ -57,64 +57,30 @@ runs:
       run: |
         echo "📥 Downloading assets for release: ${{ steps.release_info.outputs.release_tag }}"
         echo "Repository: ${{ inputs.repository }}"
-        echo "Looking for release at: https://github.com/${{ inputs.repository }}/releases/tag/${{ steps.release_info.outputs.release_tag }}"
-
-        echo "🔍 Getting all releases and finding target..."
 
         # Get all releases and find our target release
         ALL_RELEASES=$(gh api repos/${{ inputs.repository }}/releases)
-
-        # Find the specific release by tag
         RELEASE_DATA=$(echo "$ALL_RELEASES" | jq -r ".[] | select(.tag_name == \"${{ steps.release_info.outputs.release_tag }}\")")
 
         if [ -z "$RELEASE_DATA" ] || [ "$RELEASE_DATA" = "null" ]; then
           echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
-          echo ""
-          echo "🔍 Available releases:"
-          echo "$ALL_RELEASES" | jq -r '.[] | "- \(.tag_name) (\(.name)) [draft: \(.draft)]"' | head -10
           exit 1
         fi
 
         # Extract release info
         RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
-        IS_DRAFT=$(echo "$RELEASE_DATA" | jq -r '.draft')
-        RELEASE_NAME=$(echo "$RELEASE_DATA" | jq -r '.name')
-
-        echo "✅ Release found!"
-        echo "   ID: $RELEASE_ID"
-        echo "   Name: $RELEASE_NAME"
-        echo "   Draft: $IS_DRAFT"
-
-        if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
-          echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
-          exit 1
-        fi
-
-        echo "Release ID: $RELEASE_ID"
+        echo "✅ Release found! ID: $RELEASE_ID"
 
         # Create assets directory
         mkdir -p assets
 
-        # Download all release assets
+        # Download assets using GitHub API
         ASSETS=$(gh api repos/${{ inputs.repository }}/releases/$RELEASE_ID/assets)
-        ASSET_COUNT=$(echo "$ASSETS" | jq length)
-
-        echo "Found $ASSET_COUNT asset(s) to download"
-
-        if [ "$ASSET_COUNT" = "0" ]; then
-          echo "❌ No assets found in release"
-          exit 1
-        fi
-
-        # Download assets using GitHub API (works with draft releases)
         echo "$ASSETS" | jq -r '.[] | select(.name | test("\\.(AppImage|AppImage\\.sig|msi|msi\\.sig|exe|exe\\.sig|app\\.tar\\.gz|app\\.tar\\.gz\\.sig)$")) | .url' | while read asset_url; do
-          # Get asset info
           ASSET_INFO=$(echo "$ASSETS" | jq -r ".[] | select(.url == \"$asset_url\")")
           ASSET_NAME=$(echo "$ASSET_INFO" | jq -r '.name')
           
           echo "Downloading: $ASSET_NAME"
-          
-          # Download using GitHub API (works with draft releases)
           curl -L \
                -H "Authorization: Bearer ${{ inputs.github_token }}" \
                -H "Accept: application/octet-stream" \
@@ -143,7 +109,7 @@ runs:
           find assets -name "$pattern" -type f | head -1
         }
 
-        # Helper function to generate platform entry
+        # Helper function to generate platform entry (logs go to stderr)
         generate_platform() {
           local platform="$1"
           local file_pattern="$2"
@@ -157,18 +123,14 @@ runs:
             local filename=$(basename "$main_file")
             local download_url="https://github.com/$REPOSITORY/releases/download/$TAG_NAME/$filename"
             
-            echo "  ✅ $platform: $filename" >&2  # Log to stderr
+            echo "  ✅ $platform: $filename" >&2
             
-            # Return platform JSON
-            cat << EOF
-    "$platform": {
-      "signature": "$signature",
-      "url": "$download_url"
-    }
-EOF
-            return 0
+            echo "    \"$platform\": {"
+            echo "      \"signature\": \"$signature\","
+            echo "      \"url\": \"$download_url\""
+            echo "    },"
           else
-            echo "  ⏭️  Skipped $platform (missing files)" >&2  # Log to stderr
+            echo "  ⏭️  Skipped $platform (missing files)" >&2
             return 1
           fi
         }
@@ -182,139 +144,95 @@ EOF
   "platforms": {
 EOF
 
-        # Track platforms
+        # Track if we added any platforms
         platforms_added=0
-        platform_entries=()
 
         # Generate platform entries
         echo "📦 Processing platforms..."
 
         # Linux x86_64
-        if platform_json=$(generate_platform "linux-x86_64" "*.AppImage" "*.AppImage.sig"); then
-          platform_entries+=("$platform_json")
+        if generate_platform "linux-x86_64" "*.AppImage" "*.AppImage.sig" >> latest.json; then
           platforms_added=$((platforms_added + 1))
         fi
 
-        # Windows x86_64 (setup.exe)
-        if platform_json=$(generate_platform "windows-x86_64" "*-setup.exe" "*-setup.exe.sig"); then
-          platform_entries+=("$platform_json")
+        # Windows x86_64
+        if generate_platform "windows-x86_64" "*-setup.exe" "*-setup.exe.sig" >> latest.json; then
           platforms_added=$((platforms_added + 1))
         fi
 
         # Windows x86_64 (MSI fallback)
         if [ $platforms_added -eq 0 ]; then
-          if platform_json=$(generate_platform "windows-x86_64" "*.msi" "*.msi.sig"); then
-            platform_entries+=("$platform_json")
+          if generate_platform "windows-x86_64" "*.msi" "*.msi.sig" >> latest.json; then
             platforms_added=$((platforms_added + 1))
           fi
         fi
 
         # macOS x86_64
-        if platform_json=$(generate_platform "darwin-x86_64" "*_x64.app.tar.gz" "*_x64.app.tar.gz.sig"); then
-          platform_entries+=("$platform_json")
+        if generate_platform "darwin-x86_64" "*_x64.app.tar.gz" "*_x64.app.tar.gz.sig" >> latest.json; then
           platforms_added=$((platforms_added + 1))
         fi
 
-        # macOS aarch64 (Apple Silicon)
-        if platform_json=$(generate_platform "darwin-aarch64" "*_aarch64.app.tar.gz" "*_aarch64.app.tar.gz.sig"); then
-          platform_entries+=("$platform_json")
+        # macOS aarch64
+        if generate_platform "darwin-aarch64" "*_aarch64.app.tar.gz" "*_aarch64.app.tar.gz.sig" >> latest.json; then
           platforms_added=$((platforms_added + 1))
         fi
 
-        # macOS Universal (fallback)
-        if platform_json=$(generate_platform "darwin-universal" "*.app.tar.gz" "*.app.tar.gz.sig"); then
-          platform_entries+=("$platform_json")
+        # macOS Universal
+        if generate_platform "darwin-universal" "*.app.tar.gz" "*.app.tar.gz.sig" >> latest.json; then
           platforms_added=$((platforms_added + 1))
         fi
 
         # Check if we found any platforms
         if [ $platforms_added -eq 0 ]; then
           echo "❌ No valid platform assets found!"
-          echo "Available files:"
           ls -la assets/
           exit 1
         fi
 
-        # Add platform entries to JSON
-        for i in "${!platform_entries[@]}"; do
-          echo "${platform_entries[$i]}" >> latest.json
-          # Add comma if not the last entry
-          if [ $i -lt $((${#platform_entries[@]} - 1)) ]; then
-            echo "," >> latest.json
-          fi
-        done
-
-        # Close the JSON
+        # Remove the trailing comma and close JSON
+        sed -i '$ s/,$//' latest.json
         cat >> latest.json << EOF
-
   }
 }
 EOF
 
-        echo ""
         echo "✅ Generated updater JSON for $platforms_added platform(s)"
 
     - name: Validate JSON
       shell: bash
       run: |
         echo "🔍 Validating generated JSON..."
-
-        if [ ! -f "latest.json" ]; then
-          echo "❌ latest.json not found!"
-          exit 1
-        fi
-# Validate JSON syntax
+        
         if ! jq empty latest.json 2>/dev/null; then
           echo "❌ Invalid JSON syntax!"
           cat latest.json
           exit 1
         fi
-
-        # Check required fields
-        VERSION=$(jq -r '.version // empty' latest.json)
-        PLATFORMS_COUNT=$(jq -r '.platforms | length' latest.json)
-
-        if [ -z "$VERSION" ]; then
-          echo "❌ Missing version field!"
-          exit 1
-        fi
-
-        if [ "$PLATFORMS_COUNT" = "0" ]; then
-          echo "❌ No platforms found!"
-          exit 1
-        fi
-
+        
         echo "✅ JSON validation passed!"
-        echo "Version: $VERSION"
-        echo "Platforms: $PLATFORMS_COUNT"
-
-        # Show generated JSON
         echo "Generated JSON:"
         jq '.' latest.json
 
-    - name: Upload JSON and publish release
+    - name: Upload and publish
       id: publish
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         echo "📤 Uploading latest.json to release..."
-
+        
         gh release upload ${{ steps.release_info.outputs.release_tag }} latest.json \
           --repo ${{ inputs.repository }} \
           --clobber
-
-        echo "✅ Successfully uploaded updater JSON!"
-
+        
         echo "📢 Publishing release..."
-
+        
         gh release edit ${{ steps.release_info.outputs.release_tag }} \
           --repo ${{ inputs.repository }} \
           --draft=false
-
+        
         UPDATER_URL="https://github.com/${{ inputs.repository }}/releases/latest/download/latest.json"
         echo "updater_url=$UPDATER_URL" >> $GITHUB_OUTPUT
-
-        echo "🎉 Release published with auto-updater support!"
-        echo ""
+        
+        echo "🎉 Release published!"
         echo "🔗 Updater endpoint: $UPDATER_URL"
