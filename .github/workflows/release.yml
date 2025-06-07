@@ -1,0 +1,105 @@
+# .github/workflows/release.yml
+name: "Complete Release Pipeline"
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and release"
+        required: true
+        default: "v1.0.0"
+      skip_build:
+        description: "Skip build and only generate updater JSON"
+        type: boolean
+        default: false
+      release_notes:
+        description: "Custom release notes"
+        required: false
+        default: ""
+
+jobs:
+  get-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Get tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using tag: $TAG"
+
+  build:
+    if: ${{ !inputs.skip_build }}
+    needs: get-tag
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Tauri release
+        uses: ./.github/actions/build-release.yml
+        with:
+          tag: ${{ needs.get-tag.outputs.tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          signing_private_key: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          signing_private_key_password: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          platform: ubuntu-22.04
+
+  generate-updater:
+    needs: [get-tag, build]
+    if: always() && (needs.build.result == 'success' || inputs.skip_build)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      updater_url: ${{ steps.updater.outputs.updater_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate updater JSON
+        id: updater
+        uses: ./.github/actions/generate-updater.yml
+        with:
+          tag: ${{ needs.get-tag.outputs.tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_notes: ${{ inputs.release_notes }}
+          repository: ${{ github.repository }}
+
+  summary:
+    needs: [get-tag, build, generate-updater]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pipeline Summary
+        run: |
+          echo "🎉 Release Pipeline Summary"
+          echo "=========================="
+          echo "Tag: ${{ needs.get-tag.outputs.tag }}"
+          echo "Build: ${{ inputs.skip_build && 'Skipped' || needs.build.result }}"
+          echo "Updater: ${{ needs.generate-updater.result }}"
+          echo ""
+          if [ "${{ needs.generate-updater.result }}" = "success" ]; then
+            echo "✅ Release completed successfully!"
+            echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/app-${{ needs.get-tag.outputs.tag }}"
+            echo "🔗 Updater: ${{ needs.generate-updater.outputs.updater_url }}"
+            echo ""
+            echo "📋 Next steps:"
+            echo "1. Update your tauri.conf.json with the updater endpoint"
+            echo "2. Test the auto-updater in your application"
+            echo "3. Monitor download metrics in GitHub releases"
+          else
+            echo "❌ Pipeline failed. Check the logs above."
+            exit 1
+          fi
