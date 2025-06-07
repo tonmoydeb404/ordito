@@ -58,7 +58,7 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         #run: npm install --save-dev @tauri-apps/cli # change this to npm or pnpm depending on which one you use.
         run: |
-          pnpm clean-install --include prod --include dev --include peer --verbose
+          pnpm install --frozen-lockfile
           pnpm install --save-dev @tauri-apps/cli @tauri-apps/api rollup
 
       - name: Build the app bundles and signatures, when available
@@ -66,7 +66,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          #TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "App v__VERSION__"
