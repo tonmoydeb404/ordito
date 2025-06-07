@@ -20,7 +20,6 @@ jobs:
       - name: Create .env file with signing keys
         run: |
           echo "TAURI_SIGNING_PRIVATE_KEY=${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > .env
-          echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}" >> .env
           echo "✅ Created .env file with signing keys"
 
       - name: Build Snap package
