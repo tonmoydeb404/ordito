@@ -76,7 +76,7 @@ parts:
       
       # Build the application
       echo "🚀 Building Tauri application..."
-      pnpm tauri build -- --bundles deb
+      pnpm tauri build --bundles deb
       
       # Extract the DEB package
       echo "📋 Extracting DEB package..."
