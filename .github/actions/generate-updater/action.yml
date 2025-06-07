@@ -59,24 +59,26 @@ runs:
         echo "Repository: ${{ inputs.repository }}"
         echo "Looking for release at: https://github.com/${{ inputs.repository }}/releases/tag/${{ steps.release_info.outputs.release_tag }}"
 
-        # Check if release exists first
-        echo "🔍 Checking if release exists..."
-        if ! gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }} >/dev/null 2>&1; then
+        echo "🔍 Checking if release exists (including drafts)..."
+
+        # Get release data (works for both draft and published releases)
+        if ! RELEASE_DATA=$(gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }} 2>/dev/null); then
           echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
           echo ""
           echo "🔍 Available releases:"
-          gh api repos/${{ inputs.repository }}/releases --jq '.[] | "- \(.tag_name) (\(.name))"' | head -10
-          echo ""
-          echo "💡 Possible reasons:"
-          echo "   1. Build job failed and didn't create the release"
-          echo "   2. Release tag format mismatch (expected: app-v1.1.1)"
-          echo "   3. Timing issue - build still in progress"
+          gh api repos/${{ inputs.repository }}/releases --jq '.[] | "- \(.tag_name) (\(.name)) [draft: \(.draft)]"' | head -10
           exit 1
         fi
 
-        # Get release data
-        RELEASE_DATA=$(gh api repos/${{ inputs.repository }}/releases/tags/${{ steps.release_info.outputs.release_tag }})
+        # Check release status
+        IS_DRAFT=$(echo "$RELEASE_DATA" | jq -r '.draft')
         RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
+        RELEASE_NAME=$(echo "$RELEASE_DATA" | jq -r '.name')
+
+        echo "✅ Release found!"
+        echo "   ID: $RELEASE_ID"
+        echo "   Name: $RELEASE_NAME"
+        echo "   Draft: $IS_DRAFT"
 
         if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
           echo "❌ Release not found: ${{ steps.release_info.outputs.release_tag }}"
