@@ -157,63 +157,73 @@ runs:
             local filename=$(basename "$main_file")
             local download_url="https://github.com/$REPOSITORY/releases/download/$TAG_NAME/$filename"
             
-            echo "  ✅ $platform: $filename"
+            echo "  ✅ $platform: $filename" >&2  # Log to stderr
             
-            # Add platform to JSON (we'll build this incrementally)
-            echo "    \"$platform\": {"
-            echo "      \"signature\": \"$signature\","
-            echo "      \"url\": \"$download_url\""
-            echo "    },"
+            # Return platform JSON
+            cat << EOF
+    "$platform": {
+      "signature": "$signature",
+      "url": "$download_url"
+    }
+EOF
+            return 0
           else
-            echo "  ⏭️  Skipped $platform (missing files)"
+            echo "  ⏭️  Skipped $platform (missing files)" >&2  # Log to stderr
             return 1
           fi
         }
 
         # Start building the JSON
         cat > latest.json << EOF
-        {
-          "version": "$VERSION",
-          "notes": "$RELEASE_NOTES",
-          "pub_date": "$PUB_DATE",
-          "platforms": {
-        EOF
+{
+  "version": "$VERSION",
+  "notes": "$RELEASE_NOTES",
+  "pub_date": "$PUB_DATE",
+  "platforms": {
+EOF
 
-        # Track if we added any platforms
+        # Track platforms
         platforms_added=0
+        platform_entries=()
 
         # Generate platform entries
         echo "📦 Processing platforms..."
 
         # Linux x86_64
-        if generate_platform "linux-x86_64" "*.AppImage" "*.AppImage.sig" >> latest.json; then
+        if platform_json=$(generate_platform "linux-x86_64" "*.AppImage" "*.AppImage.sig"); then
+          platform_entries+=("$platform_json")
           platforms_added=$((platforms_added + 1))
         fi
 
-        # Windows x86_64  
-        if generate_platform "windows-x86_64" "*-setup.exe" "*-setup.exe.sig" >> latest.json; then
+        # Windows x86_64 (setup.exe)
+        if platform_json=$(generate_platform "windows-x86_64" "*-setup.exe" "*-setup.exe.sig"); then
+          platform_entries+=("$platform_json")
           platforms_added=$((platforms_added + 1))
         fi
 
-        # Try MSI if no setup.exe found
-        if [ $platforms_added -eq 0 ] || ! find assets -name "*-setup.exe" -type f | head -1 > /dev/null; then
-          if generate_platform "windows-x86_64" "*.msi" "*.msi.sig" >> latest.json; then
+        # Windows x86_64 (MSI fallback)
+        if [ $platforms_added -eq 0 ]; then
+          if platform_json=$(generate_platform "windows-x86_64" "*.msi" "*.msi.sig"); then
+            platform_entries+=("$platform_json")
             platforms_added=$((platforms_added + 1))
           fi
         fi
 
         # macOS x86_64
-        if generate_platform "darwin-x86_64" "*_x64.app.tar.gz" "*_x64.app.tar.gz.sig" >> latest.json; then
+        if platform_json=$(generate_platform "darwin-x86_64" "*_x64.app.tar.gz" "*_x64.app.tar.gz.sig"); then
+          platform_entries+=("$platform_json")
           platforms_added=$((platforms_added + 1))
         fi
 
         # macOS aarch64 (Apple Silicon)
-        if generate_platform "darwin-aarch64" "*_aarch64.app.tar.gz" "*_aarch64.app.tar.gz.sig" >> latest.json; then
+        if platform_json=$(generate_platform "darwin-aarch64" "*_aarch64.app.tar.gz" "*_aarch64.app.tar.gz.sig"); then
+          platform_entries+=("$platform_json")
           platforms_added=$((platforms_added + 1))
         fi
 
         # macOS Universal (fallback)
-        if generate_platform "darwin-universal" "*.app.tar.gz" "*.app.tar.gz.sig" >> latest.json; then
+        if platform_json=$(generate_platform "darwin-universal" "*.app.tar.gz" "*.app.tar.gz.sig"); then
+          platform_entries+=("$platform_json")
           platforms_added=$((platforms_added + 1))
         fi
 
@@ -225,14 +235,21 @@ runs:
           exit 1
         fi
 
-        # Remove the trailing comma from the last platform entry
-        sed -i '$ s/,$//' latest.json
+        # Add platform entries to JSON
+        for i in "${!platform_entries[@]}"; do
+          echo "${platform_entries[$i]}" >> latest.json
+          # Add comma if not the last entry
+          if [ $i -lt $((${#platform_entries[@]} - 1)) ]; then
+            echo "," >> latest.json
+          fi
+        done
 
         # Close the JSON
         cat >> latest.json << EOF
-          }
-        }
-        EOF
+
+  }
+}
+EOF
 
         echo ""
         echo "✅ Generated updater JSON for $platforms_added platform(s)"
@@ -246,8 +263,7 @@ runs:
           echo "❌ latest.json not found!"
           exit 1
         fi
-
-        # Validate JSON syntax
+# Validate JSON syntax
         if ! jq empty latest.json 2>/dev/null; then
           echo "❌ Invalid JSON syntax!"
           cat latest.json
@@ -276,7 +292,7 @@ runs:
         echo "Generated JSON:"
         jq '.' latest.json
 
-    - name: Upload and publish
+    - name: Upload JSON and publish release
       id: publish
       shell: bash
       env:
