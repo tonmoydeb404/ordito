@@ -1,10 +1,10 @@
 name: "Official Build"
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - release
+    tags:
+      - "v*"
+  workflow_dispatch:
 
 jobs:
   publish-tauri:
