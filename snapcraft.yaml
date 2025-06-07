@@ -48,7 +48,6 @@ parts:
       - librsvg2-dev
       - dpkg
       - pkg-config
-      - jq
     stage-packages:
       - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
@@ -71,29 +70,29 @@ parts:
       npm install -g pnpm
       pnpm --version
       
+      # Load environment variables from .env file if it exists
+      if [ -f ".env" ]; then
+        echo "🔑 Loading environment variables from .env file..."
+        export $(grep -v '^#' .env | xargs)
+        echo "✅ Environment variables loaded"
+        
+        # Verify signing keys are available
+        if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+          echo "✅ TAURI_SIGNING_PRIVATE_KEY is available"
+        else
+          echo "⚠️  TAURI_SIGNING_PRIVATE_KEY not found"
+        fi
+      else
+        echo "⚠️  .env file not found, building without signing"
+      fi
+      
       # Install dependencies
       echo "📦 Installing dependencies..."
       pnpm install
       
-      # Temporarily remove public key from tauri.conf.json for Snap build
-      echo "🔧 Modifying tauri.conf.json for Snap build (removing updater config)..."
-      
-      # Create a backup
-      cp src-tauri/tauri.conf.json src-tauri/tauri.conf.json.backup
-      
-      # Remove the updater section using jq
-      jq 'del(.plugins.updater)' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp
-      mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
-      
-      echo "Modified tauri.conf.json:"
-      cat src-tauri/tauri.conf.json
-      
       # Build the application
       echo "🚀 Building Tauri application..."
       pnpm tauri build --bundles deb
-      
-      # Restore the original config
-      mv src-tauri/tauri.conf.json.backup src-tauri/tauri.conf.json
       
       # Extract the DEB package
       echo "📋 Extracting DEB package..."
