@@ -70,18 +70,15 @@ parts:
       npm install -g pnpm
       pnpm --version
       
-      # Load environment variables from .env file if it exists
-      if [ -f ".env" ]; then
-        echo "🔑 Loading environment variables from .env file..."
+      # Load environment variables from files to avoid shell parsing issues
+      if [ -f "tauri_private_key.txt" ] && [ -f "tauri_password.txt" ]; then
+        echo "🔑 Loading signing keys from files..."
         
-        # Source the .env file properly with special character handling
-        while IFS= read -r line; do
-          if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
-            export "$line"
-          fi
-        done < .env
+        # Read directly from files to avoid any shell parsing
+        export TAURI_SIGNING_PRIVATE_KEY=$(cat tauri_private_key.txt)
+        export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$(cat tauri_password.txt)
         
-        echo "✅ Environment variables loaded"
+        echo "✅ Environment variables loaded from files"
         
         # Verify signing keys are available (without showing values)
         if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
@@ -95,8 +92,12 @@ parts:
         else
           echo "❌ TAURI_SIGNING_PRIVATE_KEY_PASSWORD not found"
         fi
+        
+        # Clean up files for security
+        rm -f tauri_private_key.txt tauri_password.txt
+        echo "🧹 Cleaned up temporary key files"
       else
-        echo "⚠️  .env file not found, building without signing"
+        echo "⚠️  Signing key files not found, building without signing"
       fi
       
       # Install dependencies
