@@ -74,10 +74,12 @@ parts:
       if [ -f ".env" ]; then
         echo "🔑 Loading environment variables from .env file..."
         
-        # Source the .env file properly
-        set -a  # automatically export all variables
-        source .env
-        set +a  # stop auto-exporting
+        # Source the .env file properly with special character handling
+        while IFS= read -r line; do
+          if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
+            export "$line"
+          fi
+        done < .env
         
         echo "✅ Environment variables loaded"
         

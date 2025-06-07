@@ -18,15 +18,18 @@ jobs:
           node-version: lts/*
 
       - name: Create .env file with signing keys
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          # Create .env file with proper escaping
-          cat > .env << 'EOF'
-          TAURI_SIGNING_PRIVATE_KEY=${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          EOF
+          # Create .env file with proper escaping for special characters
+          {
+            echo "TAURI_SIGNING_PRIVATE_KEY=\"$TAURI_SIGNING_PRIVATE_KEY\""
+            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=\"$TAURI_SIGNING_PRIVATE_KEY_PASSWORD\""
+          } > .env
 
           echo "✅ Created .env file with signing keys"
-          echo "📋 Environment file created (content hidden for security)"
+          echo "📋 Password length: ${#TAURI_SIGNING_PRIVATE_KEY_PASSWORD}"
 
       - name: Build Snap package
         uses: snapcore/action-build@v1
