@@ -68,7 +68,7 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.signing_private_key_password }}
       with:
         tagName: ${{ inputs.tag }}
-        releaseName: "Oridito ${{ inputs.tag }}"
+        releaseName: "Ordito ${{ inputs.tag }}"
         releaseBody: "See the assets to download this version and install."
         releaseDraft: true
         prerelease: false

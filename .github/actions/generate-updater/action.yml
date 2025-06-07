@@ -106,12 +106,21 @@ runs:
           exit 1
         fi
 
-        echo "$ASSETS" | jq -r '.[].browser_download_url' | while read url; do
-          filename=$(basename "$url")
-          echo "Downloading: $filename"
-          curl -L -H "Authorization: Bearer ${{ inputs.github_token }}" \
-               -o "assets/$filename" \
-               --fail --silent --show-error "$url"
+        # Download assets using GitHub API (works with draft releases)
+        echo "$ASSETS" | jq -r '.[] | select(.name | test("\\.(AppImage|AppImage\\.sig|msi|msi\\.sig|exe|exe\\.sig|app\\.tar\\.gz|app\\.tar\\.gz\\.sig)$")) | .url' | while read asset_url; do
+          # Get asset info
+          ASSET_INFO=$(echo "$ASSETS" | jq -r ".[] | select(.url == \"$asset_url\")")
+          ASSET_NAME=$(echo "$ASSET_INFO" | jq -r '.name')
+          
+          echo "Downloading: $ASSET_NAME"
+          
+          # Download using GitHub API (works with draft releases)
+          curl -L \
+               -H "Authorization: Bearer ${{ inputs.github_token }}" \
+               -H "Accept: application/octet-stream" \
+               "$asset_url" \
+               -o "assets/$ASSET_NAME" \
+               --fail --silent --show-error
         done
 
         echo "Downloaded assets:"
