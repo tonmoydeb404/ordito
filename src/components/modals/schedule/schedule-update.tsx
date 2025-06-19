@@ -1,81 +1,73 @@
-import { Button } from "@/components/ui/button";
+import { Button as Btn } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog as D,
+  DialogContent as DC,
+  DialogDescription as DD,
+  DialogFooter as DF,
+  DialogHeader as DH,
+  DialogTitle as DT,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input as Inp } from "@/components/ui/input";
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { TModalProps } from "@/hooks/use-modal";
 import { TSchedule } from "@/types/command";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast as Toast } from "sonner";
 import ScheduleDateTimePicker from "./date-field";
 import ScheduleRecurrenceField from "./recurrence-field";
 
-export default function ScheduleUpdateModal({
+export function ScheduleUpdateModal({
   isOpen,
   close,
   data,
 }: TModalProps<TSchedule>) {
   if (!data) return null;
   const { updateSchedule, loading } = useScheduleMutations();
-
-  // Initialize state
-  const initialDate = new Date(data.scheduled_time);
-  const [date, setDate] = useState<Date>(initialDate);
-  const [time, setTime] = useState<string>(
-    initialDate.toISOString().slice(11, 16)
-  );
-  const [recurrence, setRecurrence] = useState<string>(
+  const initDate = new Date(data.scheduled_time);
+  const [date, setDate] = useState(initDate);
+  const [time, setTime] = useState(initDate.toISOString().slice(11, 16));
+  const [recurrence, setRecurrence] = useState(
     data.recurrence.startsWith("custom:") ? "custom" : data.recurrence
   );
-  const [customInterval, setCustomInterval] = useState<string>(
+  const [customInterval, setCustomInterval] = useState(
     data.recurrence.startsWith("custom:") ? data.recurrence.split(":")[1] : "60"
   );
-  const [maxExecutions, setMaxExecutions] = useState<string>(
+  const [maxExecutions, setMaxExecutions] = useState(
     data.max_executions?.toString() || ""
   );
 
   const handleSave = async () => {
     try {
-      const [hours, minutes] = time.split(":");
+      const [h, m] = time.split(":");
       const dt = new Date(date);
-      dt.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      dt.setHours(+h, +m);
       if (dt <= new Date()) throw new Error("Time must be in the future");
       const iso = dt.toISOString();
       const finalRec =
         recurrence === "custom" ? `custom:${customInterval}` : recurrence;
-      const maxExec = maxExecutions.trim()
-        ? parseInt(maxExecutions, 10)
-        : undefined;
+      const maxExec = maxExecutions.trim() ? +maxExecutions : undefined;
       await updateSchedule(data.id, {
+        group_id: data.group_id,
+        command_id: data.command_id ?? null,
         scheduled_time: iso,
         recurrence: finalRec,
         max_executions: maxExec,
       });
-      toast.success("Schedule updated");
+      Toast.success("Schedule updated");
       close();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Update failed");
+    } catch (e) {
+      Toast.error(e instanceof Error ? e.message : "Update failed");
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => !loading && close()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Schedule</DialogTitle>
-          <DialogDescription>
-            Adjust the schedule details below.
-          </DialogDescription>
-        </DialogHeader>
+    <D open={isOpen} onOpenChange={() => !loading && close()}>
+      <DC className="max-w-md">
+        <DH>
+          <DT>Edit Schedule</DT>
+          <DD>Adjust schedule details.</DD>
+        </DH>
         <div className="grid gap-4">
-          {/* Date & Time */}
           <ScheduleDateTimePicker
             date={date}
             time={time}
@@ -83,7 +75,6 @@ export default function ScheduleUpdateModal({
             onTimeChange={setTime}
             disabled={loading}
           />
-          {/* Recurrence + interval */}
           <ScheduleRecurrenceField
             recurrence={recurrence}
             customInterval={customInterval}
@@ -91,27 +82,25 @@ export default function ScheduleUpdateModal({
             onIntervalChange={setCustomInterval}
             disabled={loading}
           />
-          {/* Max Executions */}
-          <div className="flex flex-col space-y-2">
-            <Label>Max Executions</Label>
-            <Input
+          <label className="flex flex-col space-y-1">
+            <span>Max Executions</span>
+            <Inp
               type="number"
               value={maxExecutions}
               onChange={(e) => setMaxExecutions(e.target.value)}
-              placeholder="Leave empty for unlimited"
               disabled={loading}
             />
-          </div>
+          </label>
         </div>
-        <DialogFooter className="space-x-2">
-          <Button variant="outline" onClick={close} disabled={loading}>
+        <DF className="space-x-2">
+          <Btn variant="outline" onClick={close} disabled={loading}>
             Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={loading}>
+          </Btn>
+          <Btn onClick={handleSave} disabled={loading}>
             Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </Btn>
+        </DF>
+      </DC>
+    </D>
   );
 }

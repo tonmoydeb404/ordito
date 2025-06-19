@@ -73,7 +73,7 @@ export class TauriAPI {
   // Schedule operations
   static async createSchedule(data: {
     groupId: string;
-    commandId: string;
+    commandId: string | null;
     scheduledTime: string; // ISO 8601 string
     recurrence: string;
     maxExecutions?: number;

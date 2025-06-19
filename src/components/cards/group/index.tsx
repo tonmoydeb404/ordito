@@ -8,7 +8,7 @@ import {
 import { useCommandExecution } from "@/contexts/hooks";
 import { TCommandGroup } from "@/types/command";
 import { copyAsShellScript } from "@/utils/clipboard";
-import { LucidePlay, LucidePlus } from "lucide-react";
+import { LucideClock, LucidePlay, LucidePlus } from "lucide-react";
 import { ReactNode } from "react";
 import GroupActions from "./actions";
 
@@ -17,11 +17,13 @@ type Props = {
   onCommandCreate: () => void;
   onDelete: () => void;
   onUpdate: () => void;
+  onSchedule: () => void;
   children: ReactNode;
 };
 
 const GroupCard = (props: Props) => {
-  const { data, onCommandCreate, onDelete, onUpdate, children } = props;
+  const { data, onCommandCreate, onDelete, onUpdate, children, onSchedule } =
+    props;
   const { executeGroupCommands, loading } = useCommandExecution();
 
   const onExecute = () => {
@@ -40,6 +42,9 @@ const GroupCard = (props: Props) => {
             onClick={onExecute}
           >
             <LucidePlay />
+          </Button>
+          <Button size={"icon_sm"} onClick={onSchedule}>
+            <LucideClock />
           </Button>
 
           <GroupActions

@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { TModalProps } from "@/hooks/use-modal";
 import { TCommandGroup, TCommmand } from "@/types/command";
@@ -20,26 +19,23 @@ import ScheduleRecurrenceField from "./recurrence-field";
 
 interface CreateScheduleData {
   group: TCommandGroup;
-  command: TCommmand;
+  command?: TCommmand;
 }
 
-type Props = TModalProps<CreateScheduleData>;
+type CreateProps = TModalProps<CreateScheduleData>;
 
-export default function CreateScheduleModal({ isOpen, close, data }: Props) {
+export function CreateScheduleModal({ isOpen, close, data }: CreateProps) {
   const { addSchedule, loading, clearError } = useScheduleMutations();
   const groupId = data?.group.id;
-  const commandId = data?.command.id;
-
-  // Form state
+  const commandId = data?.command?.id ?? null;
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string>("09:00");
-  const [recurrence, setRecurrence] = useState<string>("once");
-  const [customInterval, setCustomInterval] = useState<string>("60");
-  const [maxExecutions, setMaxExecutions] = useState<string>("");
+  const [time, setTime] = useState("09:00");
+  const [recurrence, setRecurrence] = useState("once");
+  const [customInterval, setCustomInterval] = useState("60");
+  const [maxExecutions, setMaxExecutions] = useState("");
 
   useEffect(() => {
     if (isOpen) {
-      // Initialize default date to tomorrow
       const dt = new Date();
       dt.setDate(dt.getDate() + 1);
       setDate(dt);
@@ -60,12 +56,11 @@ export default function CreateScheduleModal({ isOpen, close, data }: Props) {
       toast.error("Please select a time");
       return;
     }
-    if (!groupId || !commandId) {
-      toast.error("Missing context");
+    if (!groupId) {
+      toast.error("Missing group context");
       close();
       return;
     }
-    // Compute ISO datetime
     const [h, m] = time.split(":");
     const dt = new Date(date);
     dt.setHours(parseInt(h, 10), parseInt(m, 10));
@@ -76,16 +71,9 @@ export default function CreateScheduleModal({ isOpen, close, data }: Props) {
     const isoTime = dt.toISOString();
     const finalRec =
       recurrence === "custom" ? `custom:${customInterval}` : recurrence;
-    let maxExec: number | undefined;
-    if (maxExecutions.trim()) {
-      const parsed = parseInt(maxExecutions, 10);
-      if (isNaN(parsed) || parsed <= 0) {
-        toast.error("Max executions must be a positive number");
-        return;
-      }
-      maxExec = parsed;
-    }
-
+    const maxExec = maxExecutions.trim()
+      ? parseInt(maxExecutions, 10)
+      : undefined;
     try {
       await addSchedule(groupId, commandId, {
         scheduled_time: isoTime,
@@ -101,14 +89,24 @@ export default function CreateScheduleModal({ isOpen, close, data }: Props) {
     }
   };
 
+  if (!data?.group) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={() => !loading && close()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Schedule "{data?.command.label}"</DialogTitle>
+          <DialogTitle>
+            Schedule{" "}
+            {data.command
+              ? `"${data.command.label}"`
+              : `group "${data.group.title}"`}
+          </DialogTitle>
           <DialogDescription>
-            Create a new schedule for the "{data?.command.label}" command in
-            group "{data?.group.title}".
+            Create schedule for{" "}
+            {data.command
+              ? `command "${data.command.label}"`
+              : `group "${data.group.title}"`}
+            .
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -126,8 +124,8 @@ export default function CreateScheduleModal({ isOpen, close, data }: Props) {
             onIntervalChange={setCustomInterval}
             disabled={loading}
           />
-          <div className="flex flex-col space-y-2">
-            <Label>Max Executions</Label>
+          <label className="flex flex-col space-y-1">
+            <span>Max Executions</span>
             <Input
               type="number"
               placeholder="Optional"
@@ -135,7 +133,7 @@ export default function CreateScheduleModal({ isOpen, close, data }: Props) {
               onChange={(e) => setMaxExecutions(e.target.value)}
               disabled={loading}
             />
-          </div>
+          </label>
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={close} disabled={loading}>

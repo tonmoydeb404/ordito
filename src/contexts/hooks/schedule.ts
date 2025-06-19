@@ -12,7 +12,7 @@ export function useScheduleMutations() {
   const addSchedule = useCallback(
     async (
       groupId: string,
-      commandId: string,
+      commandId: string | null,
       scheduleData: Omit<
         TSchedule,
         | "id"

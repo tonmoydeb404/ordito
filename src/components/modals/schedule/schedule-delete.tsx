@@ -12,37 +12,30 @@ import { TModalProps } from "@/hooks/use-modal";
 import { TSchedule } from "@/types/command";
 import { toast } from "sonner";
 
-export default function ScheduleDeleteModal({
+export function ScheduleDeleteModal({
   isOpen,
   close,
   data,
 }: TModalProps<TSchedule>) {
+  if (!data) return null;
   const { deleteSchedule, loading } = useScheduleMutations();
-
   const handleDelete = async () => {
     try {
-      if (!data?.id) {
-        throw new Error("Schedule id not found");
-      }
       await deleteSchedule(data.id);
       toast.success("Schedule deleted");
       close();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
     }
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={() => !loading && close()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Delete Schedule</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the schedule set for{" "}
-            <strong>
-              {new Date(data?.scheduled_time || new Date()).toLocaleString()}
-            </strong>
-            ?
+            Delete scheduled at{" "}
+            <strong>{new Date(data.scheduled_time).toLocaleString()}</strong>?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="space-x-2">

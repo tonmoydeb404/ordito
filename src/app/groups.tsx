@@ -3,7 +3,7 @@ import GroupCard from "@/components/cards/group";
 import CreateCommandModal from "@/components/modals/create-command";
 import DeleteCommandModal from "@/components/modals/delete-command";
 import DeleteGroupModal from "@/components/modals/delete-group";
-import CreateScheduleModal from "@/components/modals/schedule/schedule-create";
+import { CreateScheduleModal } from "@/components/modals/schedule/schedule-create";
 import UpdateCommandModal from "@/components/modals/update-command";
 import UpdateGroupModal from "@/components/modals/update-group";
 import { useSearchContext } from "@/contexts/search";
@@ -31,7 +31,7 @@ const GroupsSection = (props: Props) => {
   }>();
   const scheduleCommandModal = useModal<{
     group: TCommandGroup;
-    command: TCommmand;
+    command?: TCommmand;
   }>();
 
   return (
@@ -51,6 +51,9 @@ const GroupsSection = (props: Props) => {
                 onCommandCreate={() => createCommandModal.open(item)}
                 onDelete={() => deleteGroupModal.open(item)}
                 onUpdate={() => updateGroupModal.open(item)}
+                onSchedule={() =>
+                  scheduleCommandModal.open({ command: undefined, group: item })
+                }
               >
                 {item.commands.map((command) => (
                   <CommandCard

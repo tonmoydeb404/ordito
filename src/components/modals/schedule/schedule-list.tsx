@@ -21,8 +21,8 @@ import { TModalProps, useModal } from "@/hooks/use-modal";
 import { TSchedule } from "@/types/command";
 import { Edit2, Pause, Play, Trash2 } from "lucide-react";
 import React from "react";
-import ScheduleDeleteModal from "./schedule-delete";
-import ScheduleUpdateModal from "./schedule-update";
+import { ScheduleDeleteModal } from "./schedule-delete";
+import { ScheduleUpdateModal } from "./schedule-update";
 
 export default function ListSchedulesModal({
   isOpen,
