@@ -177,10 +177,32 @@ impl SchedulerManager {
                     }
                 }
 
+                // Check if we need to save before processing updates
+                let need_to_save = !schedules_to_update.is_empty();
+
                 {
                     let mut schedules = schedules.lock().unwrap();
                     for (id, updated_schedule) in schedules_to_update {
                         schedules.insert(id, updated_schedule);
+                    }
+                }
+
+                // Save updated schedules to disk
+                if need_to_save {
+                    let state: State<AppState> = app_handle.state();
+                    let schedule_state: State<crate::state::ScheduleState> = app_handle.state();
+                    let groups = state.lock().unwrap();
+                    let mut persistent_schedules = schedule_state.lock().unwrap();
+
+                    // Update persistent storage with current schedules
+                    let current_schedules = schedules.lock().unwrap();
+                    *persistent_schedules = current_schedules.clone();
+                    drop(current_schedules);
+
+                    if let Err(e) =
+                        crate::storage::save_data(&app_handle, &groups, &persistent_schedules)
+                    {
+                        log::error!("Failed to save schedule updates: {}", e);
                     }
                 }
 

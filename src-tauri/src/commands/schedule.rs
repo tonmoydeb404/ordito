@@ -1,6 +1,7 @@
 use crate::models::{RecurrencePattern, Schedule};
 use crate::scheduler::SchedulerManager;
-use crate::state::AppState;
+use crate::state::{AppState, ScheduleState};
+use crate::storage::save_data;
 use chrono::{DateTime, Utc};
 use tauri::State;
 
@@ -8,6 +9,8 @@ use tauri::State;
 pub async fn create_schedule(
     scheduler: State<'_, SchedulerManager>,
     group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
+    app_handle: tauri::AppHandle,
     group_id: String,
     command_id: Option<String>,
     scheduled_time: String,
@@ -68,28 +71,46 @@ pub async fn create_schedule(
         max_executions,
     };
 
-    scheduler.add_schedule(schedule)
-}
+    let schedule_id = scheduler.add_schedule(schedule.clone())?;
 
-#[tauri::command]
-pub async fn get_schedules(
-    scheduler: State<'_, SchedulerManager>,
-) -> Result<Vec<Schedule>, String> {
-    Ok(scheduler.get_schedules())
+    // Save to persistent storage
+    {
+        let groups = group_state.lock().unwrap();
+        let mut schedules = schedule_state.lock().unwrap();
+        schedules.insert(schedule_id.clone(), schedule);
+        save_data(&app_handle, &groups, &schedules)?;
+    }
+
+    Ok(schedule_id)
 }
 
 #[tauri::command]
 pub async fn delete_schedule(
     scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
+    app_handle: tauri::AppHandle,
     id: String,
 ) -> Result<(), String> {
-    scheduler.remove_schedule(&id)
+    scheduler.remove_schedule(&id)?;
+
+    // Remove from persistent storage
+    {
+        let groups = group_state.lock().unwrap();
+        let mut schedules = schedule_state.lock().unwrap();
+        schedules.remove(&id);
+        save_data(&app_handle, &groups, &schedules)?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn update_schedule(
     scheduler: State<'_, SchedulerManager>,
     group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
+    app_handle: tauri::AppHandle,
     id: String,
     group_id: String,
     command_id: Option<String>,
@@ -151,15 +172,47 @@ pub async fn update_schedule(
         max_executions,
     };
 
-    scheduler.update_schedule(&id, updated_schedule)
+    scheduler.update_schedule(&id, updated_schedule.clone())?;
+
+    // Update persistent storage
+    {
+        let groups = group_state.lock().unwrap();
+        let mut schedules = schedule_state.lock().unwrap();
+        schedules.insert(id, updated_schedule);
+        save_data(&app_handle, &groups, &schedules)?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn toggle_schedule(
     scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
+    app_handle: tauri::AppHandle,
     id: String,
 ) -> Result<bool, String> {
-    scheduler.toggle_schedule(&id)
+    let is_active = scheduler.toggle_schedule(&id)?;
+
+    // Update persistent storage
+    {
+        let groups = group_state.lock().unwrap();
+        let mut schedules = schedule_state.lock().unwrap();
+        if let Some(schedule) = schedules.get_mut(&id) {
+            schedule.is_active = is_active;
+            save_data(&app_handle, &groups, &schedules)?;
+        }
+    }
+
+    Ok(is_active)
+}
+
+#[tauri::command]
+pub async fn get_schedules(
+    scheduler: State<'_, SchedulerManager>,
+) -> Result<Vec<Schedule>, String> {
+    Ok(scheduler.get_schedules())
 }
 
 #[tauri::command]
@@ -232,6 +285,21 @@ pub async fn get_schedules_with_info(
     Ok(schedule_infos)
 }
 
+// Helper struct for frontend to get enriched schedule information
+#[derive(serde::Serialize)]
+pub struct ScheduleInfo {
+    pub id: String,
+    pub display_name: String,
+    pub schedule_type: String, // "group" or "command"
+    pub group_id: String,
+    pub command_id: Option<String>,
+    pub is_active: bool,
+    pub next_execution: DateTime<Utc>,
+    pub last_execution: Option<DateTime<Utc>>,
+    pub execution_count: u32,
+    pub recurrence: RecurrencePattern,
+}
+
 fn parse_recurrence_pattern(recurrence: &str) -> Result<RecurrencePattern, String> {
     match recurrence.to_lowercase().as_str() {
         "once" => Ok(RecurrencePattern::Once),
@@ -252,19 +320,4 @@ fn parse_recurrence_pattern(recurrence: &str) -> Result<RecurrencePattern, Strin
         }
         _ => Err(format!("Invalid recurrence pattern: {}", recurrence)),
     }
-}
-
-// Helper struct for frontend to get enriched schedule information
-#[derive(serde::Serialize)]
-pub struct ScheduleInfo {
-    pub id: String,
-    pub display_name: String,
-    pub schedule_type: String, // "group" or "command"
-    pub group_id: String,
-    pub command_id: Option<String>,
-    pub is_active: bool,
-    pub next_execution: DateTime<Utc>,
-    pub last_execution: Option<DateTime<Utc>>,
-    pub execution_count: u32,
-    pub recurrence: RecurrencePattern,
 }
