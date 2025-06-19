@@ -27,7 +27,7 @@ pub struct AppData {
 pub struct Schedule {
     pub id: String,
     pub group_id: String,
-    pub command_id: String,
+    pub command_id: Option<String>,
     pub scheduled_time: DateTime<Utc>,
     pub recurrence: RecurrencePattern,
     pub is_active: bool,

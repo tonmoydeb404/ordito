@@ -1,13 +1,15 @@
 use crate::models::{RecurrencePattern, Schedule};
 use crate::scheduler::SchedulerManager;
+use crate::state::AppState;
 use chrono::{DateTime, Utc};
 use tauri::State;
 
 #[tauri::command]
 pub async fn create_schedule(
     scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
     group_id: String,
-    command_id: String,
+    command_id: Option<String>,
     scheduled_time: String,
     recurrence: String,
     max_executions: Option<u32>,
@@ -17,6 +19,40 @@ pub async fn create_schedule(
         .map_err(|e| format!("Invalid date format: {}", e))?;
 
     let recurrence_pattern = parse_recurrence_pattern(&recurrence)?;
+
+    // Validate that group exists and command exists if specified
+    {
+        let groups = group_state.lock().unwrap();
+        let group = groups
+            .get(&group_id)
+            .ok_or_else(|| format!("Group with ID '{}' not found", group_id))?;
+
+        if let Some(cmd_id) = &command_id {
+            group
+                .commands
+                .iter()
+                .find(|cmd| cmd.id == *cmd_id)
+                .ok_or_else(|| {
+                    format!(
+                        "Command with ID '{}' not found in group '{}'",
+                        cmd_id, group.title
+                    )
+                })?;
+
+            log::info!(
+                "Creating command schedule for '{}' in group '{}'",
+                group
+                    .commands
+                    .iter()
+                    .find(|cmd| cmd.id == *cmd_id)
+                    .unwrap()
+                    .label,
+                group.title
+            );
+        } else {
+            log::info!("Creating group schedule for entire group '{}'", group.title);
+        }
+    }
 
     let schedule = Schedule {
         id: String::new(),
@@ -53,9 +89,10 @@ pub async fn delete_schedule(
 #[tauri::command]
 pub async fn update_schedule(
     scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
     id: String,
     group_id: String,
-    command_id: String,
+    command_id: Option<String>,
     scheduled_time: String,
     recurrence: String,
     max_executions: Option<u32>,
@@ -65,6 +102,40 @@ pub async fn update_schedule(
         .map_err(|e| format!("Invalid date format: {}", e))?;
 
     let recurrence_pattern = parse_recurrence_pattern(&recurrence)?;
+
+    // Validate that group exists and command exists if specified
+    {
+        let groups = group_state.lock().unwrap();
+        let group = groups
+            .get(&group_id)
+            .ok_or_else(|| format!("Group with ID '{}' not found", group_id))?;
+
+        if let Some(cmd_id) = &command_id {
+            group
+                .commands
+                .iter()
+                .find(|cmd| cmd.id == *cmd_id)
+                .ok_or_else(|| {
+                    format!(
+                        "Command with ID '{}' not found in group '{}'",
+                        cmd_id, group.title
+                    )
+                })?;
+
+            log::info!(
+                "Updating command schedule for '{}' in group '{}'",
+                group
+                    .commands
+                    .iter()
+                    .find(|cmd| cmd.id == *cmd_id)
+                    .unwrap()
+                    .label,
+                group.title
+            );
+        } else {
+            log::info!("Updating group schedule for entire group '{}'", group.title);
+        }
+    }
 
     let updated_schedule = Schedule {
         id: id.clone(),
@@ -91,6 +162,76 @@ pub async fn toggle_schedule(
     scheduler.toggle_schedule(&id)
 }
 
+#[tauri::command]
+pub async fn get_schedule_info(
+    scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
+    id: String,
+) -> Result<ScheduleInfo, String> {
+    let schedules = scheduler.get_schedules();
+    let schedule = schedules
+        .iter()
+        .find(|s| s.id == id)
+        .ok_or("Schedule not found")?;
+
+    let groups = group_state.lock().unwrap();
+    let display_name = schedule.get_display_name(&groups);
+    let schedule_type = if schedule.is_group_schedule() {
+        "group".to_string()
+    } else {
+        "command".to_string()
+    };
+
+    Ok(ScheduleInfo {
+        id: schedule.id.clone(),
+        display_name,
+        schedule_type,
+        group_id: schedule.group_id.clone(),
+        command_id: schedule.command_id.clone(),
+        is_active: schedule.is_active,
+        next_execution: schedule.next_execution,
+        last_execution: schedule.last_execution,
+        execution_count: schedule.execution_count,
+        recurrence: schedule.recurrence.clone(),
+    })
+}
+
+#[tauri::command]
+pub async fn get_schedules_with_info(
+    scheduler: State<'_, SchedulerManager>,
+    group_state: State<'_, AppState>,
+) -> Result<Vec<ScheduleInfo>, String> {
+    let schedules = scheduler.get_schedules();
+    let groups = group_state.lock().unwrap();
+
+    let schedule_infos: Vec<ScheduleInfo> = schedules
+        .iter()
+        .map(|schedule| {
+            let display_name = schedule.get_display_name(&groups);
+            let schedule_type = if schedule.is_group_schedule() {
+                "group".to_string()
+            } else {
+                "command".to_string()
+            };
+
+            ScheduleInfo {
+                id: schedule.id.clone(),
+                display_name,
+                schedule_type,
+                group_id: schedule.group_id.clone(),
+                command_id: schedule.command_id.clone(),
+                is_active: schedule.is_active,
+                next_execution: schedule.next_execution,
+                last_execution: schedule.last_execution,
+                execution_count: schedule.execution_count,
+                recurrence: schedule.recurrence.clone(),
+            }
+        })
+        .collect();
+
+    Ok(schedule_infos)
+}
+
 fn parse_recurrence_pattern(recurrence: &str) -> Result<RecurrencePattern, String> {
     match recurrence.to_lowercase().as_str() {
         "once" => Ok(RecurrencePattern::Once),
@@ -111,4 +252,19 @@ fn parse_recurrence_pattern(recurrence: &str) -> Result<RecurrencePattern, Strin
         }
         _ => Err(format!("Invalid recurrence pattern: {}", recurrence)),
     }
+}
+
+// Helper struct for frontend to get enriched schedule information
+#[derive(serde::Serialize)]
+pub struct ScheduleInfo {
+    pub id: String,
+    pub display_name: String,
+    pub schedule_type: String, // "group" or "command"
+    pub group_id: String,
+    pub command_id: Option<String>,
+    pub is_active: bool,
+    pub next_execution: DateTime<Utc>,
+    pub last_execution: Option<DateTime<Utc>>,
+    pub execution_count: u32,
+    pub recurrence: RecurrencePattern,
 }

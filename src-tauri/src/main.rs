@@ -137,6 +137,8 @@ fn main() {
             commands::schedule::delete_schedule,
             commands::schedule::update_schedule,
             commands::schedule::toggle_schedule,
+            commands::schedule::get_schedule_info,
+            commands::schedule::get_schedules_with_info,
             refresh_tray_menu,
             is_startup_enabled,
             toggle_startup,

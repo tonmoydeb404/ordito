@@ -56,49 +56,124 @@ impl SchedulerManager {
 
                 for (id, mut schedule) in schedules_to_execute {
                     let state: State<AppState> = app_handle.state();
-                    let command = {
-                        let groups = state.lock().unwrap();
-                        schedule.get_command(&groups).cloned()
-                    };
 
-                    if let Some(cmd) = command {
-                        log::info!("⏰ Executing scheduled command: {}", cmd.label);
-
-                        let result = if cmd.is_detached.unwrap_or(false) {
-                            commands::execute::execute_command_detached(cmd.cmd).await
-                        } else {
-                            commands::execute::execute_command(cmd.cmd).await
+                    // Check if this is a group schedule (no specific command_id) or command schedule
+                    if schedule.is_command_schedule() {
+                        // Execute specific command
+                        let command = {
+                            let groups = state.lock().unwrap();
+                            schedule.get_command(&groups).cloned()
                         };
 
-                        match result {
-                            Ok(_) => {
-                                NotificationManager::show_success(
-                                    &app_handle,
-                                    "Scheduled Command",
-                                    &format!("'{}' executed successfully", cmd.label),
-                                );
-                                schedule.last_execution = Some(now);
-                                schedule.execution_count += 1;
-                            }
-                            Err(e) => {
-                                NotificationManager::show_error(
-                                    &app_handle,
-                                    "Scheduled Command Failed",
-                                    &format!("'{}': {}", cmd.label, e),
-                                );
-                            }
-                        }
+                        if let Some(cmd) = command {
+                            log::info!("⏰ Executing scheduled command: {}", cmd.label);
 
-                        if let Some(next_time) = Self::calculate_next_execution(&schedule) {
-                            schedule.next_execution = next_time;
-                            schedules_to_update.push((id, schedule));
+                            let result = if cmd.is_detached.unwrap_or(false) {
+                                commands::execute::execute_command_detached(cmd.cmd).await
+                            } else {
+                                commands::execute::execute_command(cmd.cmd).await
+                            };
+
+                            match result {
+                                Ok(_) => {
+                                    NotificationManager::show_success(
+                                        &app_handle,
+                                        "Scheduled Command",
+                                        &format!("'{}' executed successfully", cmd.label),
+                                    );
+                                    schedule.last_execution = Some(now);
+                                    schedule.execution_count += 1;
+                                }
+                                Err(e) => {
+                                    NotificationManager::show_error(
+                                        &app_handle,
+                                        "Scheduled Command Failed",
+                                        &format!("'{}': {}", cmd.label, e),
+                                    );
+                                }
+                            }
                         } else {
-                            schedule.is_active = false;
-                            schedules_to_update.push((id, schedule));
-                            log::info!("✅ Scheduled command '{}' completed", cmd.label);
+                            log::warn!("⚠️ Command not found for schedule: {}", id);
                         }
                     } else {
-                        log::warn!("⚠️ Command not found for schedule: {}", id);
+                        // Execute entire group
+                        let group_name = {
+                            let groups = state.lock().unwrap();
+                            schedule.get_group(&groups).map(|g| g.title.clone())
+                        };
+
+                        if let Some(group_title) = group_name {
+                            log::info!("⏰ Executing scheduled group: {}", group_title);
+
+                            let result = commands::execute::execute_group_commands(
+                                state,
+                                schedule.group_id.clone(),
+                            )
+                            .await;
+
+                            match result {
+                                Ok(results) => {
+                                    // Count successes and failures
+                                    let (success_count, error_count) =
+                                        results.iter().fold((0, 0), |(s, e), (_, output)| {
+                                            if output.starts_with("Error:") {
+                                                (s, e + 1)
+                                            } else {
+                                                (s + 1, e)
+                                            }
+                                        });
+
+                                    if error_count == 0 {
+                                        NotificationManager::show_success(
+                                            &app_handle,
+                                            "Scheduled Group",
+                                            &format!(
+                                                "Group '{}' executed successfully ({} commands)",
+                                                group_title, success_count
+                                            ),
+                                        );
+                                    } else {
+                                        NotificationManager::show_warning(
+                                            &app_handle,
+                                            "Scheduled Group Partial Success",
+                                            &format!(
+                                                "Group '{}': {} succeeded, {} failed",
+                                                group_title, success_count, error_count
+                                            ),
+                                        );
+                                    }
+
+                                    schedule.last_execution = Some(now);
+                                    schedule.execution_count += 1;
+                                }
+                                Err(e) => {
+                                    NotificationManager::show_error(
+                                        &app_handle,
+                                        "Scheduled Group Failed",
+                                        &format!("Group '{}': {}", group_title, e),
+                                    );
+                                }
+                            }
+                        } else {
+                            log::warn!("⚠️ Group not found for schedule: {}", id);
+                        }
+                    }
+
+                    // Determine item type before moving schedule
+                    let item_name = if schedule.is_command_schedule() {
+                        "command"
+                    } else {
+                        "group"
+                    };
+
+                    // Calculate next execution time (same logic for both command and group schedules)
+                    if let Some(next_time) = Self::calculate_next_execution(&schedule) {
+                        schedule.next_execution = next_time;
+                        schedules_to_update.push((id, schedule));
+                    } else {
+                        schedule.is_active = false;
+                        schedules_to_update.push((id, schedule));
+                        log::info!("✅ Scheduled {} completed", item_name);
                     }
                 }
 
@@ -275,14 +350,57 @@ impl SchedulerManager {
 }
 
 impl Schedule {
+    /// Get specific command if this is a command schedule
     pub fn get_command<'a>(
         &self,
         groups: &'a HashMap<String, CommandGroup>,
     ) -> Option<&'a crate::models::CommandItem> {
-        groups
-            .get(&self.group_id)?
-            .commands
-            .iter()
-            .find(|cmd| cmd.id == self.command_id)
+        // Only return command if command_id is specified
+        if let Some(command_id) = &self.command_id {
+            groups
+                .get(&self.group_id)?
+                .commands
+                .iter()
+                .find(|cmd| cmd.id == *command_id)
+        } else {
+            None
+        }
+    }
+
+    /// Get the group this schedule belongs to
+    #[allow(dead_code)]
+    pub fn get_group<'a>(
+        &self,
+        groups: &'a HashMap<String, CommandGroup>,
+    ) -> Option<&'a CommandGroup> {
+        groups.get(&self.group_id)
+    }
+
+    /// Check if this is a group schedule (executes all commands in group)
+    #[allow(dead_code)]
+    pub fn is_group_schedule(&self) -> bool {
+        self.command_id.is_none()
+    }
+
+    /// Check if this is a command schedule (executes specific command)
+    #[allow(dead_code)]
+    pub fn is_command_schedule(&self) -> bool {
+        self.command_id.is_some()
+    }
+
+    /// Get display name for this schedule
+    #[allow(dead_code)]
+    pub fn get_display_name(&self, groups: &HashMap<String, CommandGroup>) -> String {
+        if let Some(group) = self.get_group(groups) {
+            if self.is_group_schedule() {
+                format!("Group: {}", group.title)
+            } else if let Some(command) = self.get_command(groups) {
+                format!("{} → {}", group.title, command.label)
+            } else {
+                format!("{} → [Unknown Command]", group.title)
+            }
+        } else {
+            "[Unknown Group]".to_string()
+        }
     }
 }
