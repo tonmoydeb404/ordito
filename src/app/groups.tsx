@@ -1,5 +1,6 @@
 import CommandCard from "@/components/cards/command";
 import GroupCard from "@/components/cards/group";
+import CreateScheduleModal from "@/components/modals/command-schedule";
 import CreateCommandModal from "@/components/modals/create-command";
 import DeleteCommandModal from "@/components/modals/delete-command";
 import DeleteGroupModal from "@/components/modals/delete-group";
@@ -25,6 +26,10 @@ const GroupsSection = (props: Props) => {
     command: TCommmand;
   }>();
   const deleteCommandModal = useModal<{
+    group: TCommandGroup;
+    command: TCommmand;
+  }>();
+  const scheduleCommandModal = useModal<{
     group: TCommandGroup;
     command: TCommmand;
   }>();
@@ -57,6 +62,9 @@ const GroupsSection = (props: Props) => {
                     onUpdate={() =>
                       updateCommandModal.open({ command, group: item })
                     }
+                    onSchedule={() =>
+                      scheduleCommandModal.open({ command, group: item })
+                    }
                   />
                 ))}
               </GroupCard>
@@ -71,6 +79,8 @@ const GroupsSection = (props: Props) => {
 
       <UpdateGroupModal {...updateGroupModal} />
       <DeleteGroupModal {...deleteGroupModal} />
+
+      <CreateScheduleModal {...scheduleCommandModal} />
     </>
   );
 };
