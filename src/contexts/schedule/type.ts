@@ -1,4 +1,5 @@
-import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
+import { TCommandGroup, TCommmand } from "@/types/command";
+import { TSchedule } from "@/types/schedule";
 
 export type ScheduleContextType = {
   schedules: TSchedule[];

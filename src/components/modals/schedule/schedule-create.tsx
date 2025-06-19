@@ -7,15 +7,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { TModalProps } from "@/hooks/use-modal";
 import { TCommandGroup, TCommmand } from "@/types/command";
-import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import ScheduleDateTimePicker from "./date-field";
-import ScheduleRecurrenceField from "./recurrence-field";
+import { CronBuilder } from "./cron-builder";
 
 interface CreateScheduleData {
   group: TCommandGroup;
@@ -25,59 +25,33 @@ interface CreateScheduleData {
 type CreateProps = TModalProps<CreateScheduleData>;
 
 export function CreateScheduleModal({ isOpen, close, data }: CreateProps) {
-  const { addSchedule, loading, clearError } = useScheduleMutations();
+  const { addSchedule, loading } = useScheduleMutations();
   const groupId = data?.group.id;
   const commandId = data?.command?.id ?? null;
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState("09:00");
-  const [recurrence, setRecurrence] = useState("once");
-  const [customInterval, setCustomInterval] = useState("60");
+
+  // Cron expression state
+  const [cronExpression, setCronExpression] = useState("0 9 * * *");
   const [maxExecutions, setMaxExecutions] = useState("");
 
-  useEffect(() => {
-    if (isOpen) {
-      const dt = new Date();
-      dt.setDate(dt.getDate() + 1);
-      setDate(dt);
-      setTime("09:00");
-      setRecurrence("once");
-      setCustomInterval("60");
-      setMaxExecutions("");
-      clearError();
-    }
-  }, [isOpen, clearError]);
-
   const handleCreate = async () => {
-    if (!date) {
-      toast.error("Please pick a date");
+    if (!cronExpression.trim()) {
+      toast.error("Please provide a cron expression");
       return;
     }
-    if (!time) {
-      toast.error("Please select a time");
-      return;
-    }
+
     if (!groupId) {
       toast.error("Missing group context");
       close();
       return;
     }
-    const [h, m] = time.split(":");
-    const dt = new Date(date);
-    dt.setHours(parseInt(h, 10), parseInt(m, 10));
-    if (dt <= new Date()) {
-      toast.error("Scheduled time must be in the future");
-      return;
-    }
-    const isoTime = dt.toISOString();
-    const finalRec =
-      recurrence === "custom" ? `custom:${customInterval}` : recurrence;
+
     const maxExec = maxExecutions.trim()
       ? parseInt(maxExecutions, 10)
       : undefined;
+
     try {
       await addSchedule(groupId, commandId, {
-        scheduled_time: isoTime,
-        recurrence: finalRec,
+        cron_expression: cronExpression,
         max_executions: maxExec,
       });
       toast.success("Schedule created successfully!");
@@ -89,58 +63,62 @@ export function CreateScheduleModal({ isOpen, close, data }: CreateProps) {
     }
   };
 
-  if (!data?.group) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={() => !loading && close()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-4xl !w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Schedule{" "}
-            {data.command
-              ? `"${data.command.label}"`
-              : `group "${data.group.title}"`}
-          </DialogTitle>
-          <DialogDescription>
-            Create schedule for{" "}
-            {data.command
-              ? `command "${data.command.label}"`
-              : `group "${data.group.title}"`}
-            .
-          </DialogDescription>
+          {data && (
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Schedule{" "}
+              {data.command
+                ? `"${data.command.label}"`
+                : `group "${data.group.title}"`}
+            </DialogTitle>
+          )}
+          {data && (
+            <DialogDescription>
+              Create a schedule for{" "}
+              {data.command
+                ? `command "${data.command.label}"`
+                : `group "${data.group.title}"`}
+              . Use the builder below to configure when this should run.
+            </DialogDescription>
+          )}
         </DialogHeader>
-        <div className="grid gap-4">
-          <ScheduleDateTimePicker
-            date={date!}
-            time={time}
-            onDateChange={setDate!}
-            onTimeChange={setTime}
-            disabled={loading}
+
+        <div className="space-y-6">
+          {/* Cron Builder */}
+          <CronBuilder
+            value={cronExpression}
+            onChange={setCronExpression}
+            resetValue="0 9 * * *"
           />
-          <ScheduleRecurrenceField
-            recurrence={recurrence}
-            customInterval={customInterval}
-            onRecurrenceChange={setRecurrence}
-            onIntervalChange={setCustomInterval}
-            disabled={loading}
-          />
-          <label className="flex flex-col space-y-1">
-            <span>Max Executions</span>
+
+          {/* Max Executions */}
+          <div className="space-y-2">
+            <Label htmlFor="max-executions">Max Executions (Optional)</Label>
             <Input
+              id="max-executions"
               type="number"
-              placeholder="Optional"
+              placeholder="Leave empty for unlimited"
               value={maxExecutions}
               onChange={(e) => setMaxExecutions(e.target.value)}
               disabled={loading}
             />
-          </label>
+            <p className="text-xs text-muted-foreground">
+              Leave empty to run indefinitely, or specify a number to limit
+              executions.
+            </p>
+          </div>
         </div>
+
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={close} disabled={loading}>
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={loading}>
-            Create Schedule
+            {loading ? "Creating..." : "Create Schedule"}
           </Button>
         </DialogFooter>
       </DialogContent>

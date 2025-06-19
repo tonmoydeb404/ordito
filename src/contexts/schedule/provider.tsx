@@ -1,7 +1,8 @@
 import ListSchedulesModal from "@/components/modals/schedule/schedule-list";
 import { useModal } from "@/hooks/use-modal";
 import { TauriAPI } from "@/lib/tauri";
-import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
+import { TCommandGroup, TCommmand } from "@/types/command";
+import { TSchedule } from "@/types/schedule";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { ScheduleContext } from ".";
 import { ScheduleContextType } from "./type";
@@ -25,6 +26,8 @@ const ScheduleProvider = ({ children }: Props) => {
       setLoading(true);
       setError(null);
       const fetchedSchedules = await TauriAPI.getSchedules();
+      console.log(fetchedSchedules);
+
       setSchedules(fetchedSchedules);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load schedules");

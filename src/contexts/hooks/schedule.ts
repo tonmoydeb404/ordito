@@ -1,6 +1,6 @@
 import { useScheduleContext } from "@/contexts/schedule";
 import { TauriAPI } from "@/lib/tauri";
-import { TSchedule } from "@/types/command";
+import { TCronValidationResult, TSchedule } from "@/types/schedule";
 import { useCallback, useState } from "react";
 
 export function useScheduleMutations() {
@@ -13,17 +13,10 @@ export function useScheduleMutations() {
     async (
       groupId: string,
       commandId: string | null,
-      scheduleData: Omit<
-        TSchedule,
-        | "id"
-        | "group_id"
-        | "command_id"
-        | "is_active"
-        | "created_at"
-        | "last_execution"
-        | "next_execution"
-        | "execution_count"
-      >
+      scheduleData: {
+        cron_expression: string;
+        max_executions?: number;
+      }
     ) => {
       try {
         setLoading(true);
@@ -31,18 +24,19 @@ export function useScheduleMutations() {
         const scheduleId = await TauriAPI.createSchedule({
           groupId,
           commandId,
-          scheduledTime: scheduleData.scheduled_time,
-          recurrence: scheduleData.recurrence,
+          cronExpression: scheduleData.cron_expression,
           maxExecutions: scheduleData.max_executions,
         });
         _addSchedule({
           id: scheduleId,
           group_id: groupId,
           command_id: commandId,
-          scheduled_time: scheduleData.scheduled_time,
-          recurrence: scheduleData.recurrence,
+          cron_expression: scheduleData.cron_expression,
           max_executions: scheduleData.max_executions,
           is_active: true,
+          created_at: new Date().toISOString(),
+          next_execution: new Date().toISOString(), // Will be calculated by backend
+          execution_count: 0,
         } as TSchedule);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to add schedule");
@@ -61,8 +55,7 @@ export function useScheduleMutations() {
         await TauriAPI.updateSchedule(scheduleId, {
           groupId: data.group_id!,
           commandId: data.command_id!,
-          scheduledTime: data.scheduled_time!,
-          recurrence: data.recurrence!,
+          cronExpression: data.cron_expression!,
           maxExecutions: data.max_executions,
         });
         _updateSchedule(scheduleId, data);
@@ -113,6 +106,23 @@ export function useScheduleMutations() {
     [_toggleSchedule]
   );
 
+  // NEW: Validate cron expression
+  const validateCronExpression = useCallback(
+    async (cronExpression: string): Promise<TCronValidationResult> => {
+      try {
+        return await TauriAPI.validateCronExpression(cronExpression);
+      } catch (err) {
+        return {
+          is_valid: false,
+          error_message:
+            err instanceof Error ? err.message : "Validation failed",
+          next_executions: [],
+        };
+      }
+    },
+    []
+  );
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -124,6 +134,7 @@ export function useScheduleMutations() {
     updateSchedule,
     deleteSchedule,
     toggleSchedule,
+    validateCronExpression, // NEW
     clearError,
   };
 }
