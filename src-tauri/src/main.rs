@@ -139,6 +139,7 @@ fn main() {
             commands::schedule::toggle_schedule,
             commands::schedule::get_schedule_info,
             commands::schedule::get_schedules_with_info,
+            commands::schedule::validate_cron_expression_command,
             refresh_tray_menu,
             is_startup_enabled,
             toggle_startup,

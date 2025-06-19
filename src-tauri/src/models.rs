@@ -28,21 +28,11 @@ pub struct Schedule {
     pub id: String,
     pub group_id: String,
     pub command_id: Option<String>,
-    pub scheduled_time: DateTime<Utc>,
-    pub recurrence: RecurrencePattern,
+    pub cron_expression: String, // New: replaces scheduled_time + recurrence
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub last_execution: Option<DateTime<Utc>>,
     pub next_execution: DateTime<Utc>,
     pub execution_count: u32,
     pub max_executions: Option<u32>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum RecurrencePattern {
-    Once,
-    Daily,
-    Weekly,
-    Monthly,
-    Custom { interval_minutes: u32 },
 }

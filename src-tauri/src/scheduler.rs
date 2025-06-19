@@ -1,9 +1,11 @@
 use crate::commands;
-use crate::models::{CommandGroup, RecurrencePattern, Schedule};
+use crate::models::{CommandGroup, Schedule};
 use crate::notification::NotificationManager;
 use crate::state::AppState;
-use chrono::{DateTime, Datelike, Duration, Utc};
+use chrono::{DateTime, Utc};
+use cron::Schedule as CronSchedule;
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, State};
 use tokio::time::{sleep, Duration as TokioDuration};
@@ -57,16 +59,24 @@ impl SchedulerManager {
                 for (id, mut schedule) in schedules_to_execute {
                     let state: State<AppState> = app_handle.state();
 
-                    // Check if this is a group schedule (no specific command_id) or command schedule
-                    if schedule.is_command_schedule() {
+                    // Determine schedule type early to avoid borrow issues later
+                    let is_command = schedule.command_id.is_some();
+                    let item_type = if is_command { "command" } else { "group" };
+
+                    // Check if this is a group schedule or command schedule
+                    if is_command {
                         // Execute specific command
                         let command = {
                             let groups = state.lock().unwrap();
-                            schedule.get_command(&groups).cloned()
+                            get_schedule_command(&schedule, &groups).cloned()
                         };
 
                         if let Some(cmd) = command {
-                            log::info!("⏰ Executing scheduled command: {}", cmd.label);
+                            log::info!(
+                                "⏰ Executing scheduled command: {} ({})",
+                                cmd.label,
+                                schedule.cron_expression
+                            );
 
                             let result = if cmd.is_detached.unwrap_or(false) {
                                 commands::execute::execute_command_detached(cmd.cmd).await
@@ -99,11 +109,15 @@ impl SchedulerManager {
                         // Execute entire group
                         let group_name = {
                             let groups = state.lock().unwrap();
-                            schedule.get_group(&groups).map(|g| g.title.clone())
+                            get_schedule_group(&schedule, &groups).map(|g| g.title.clone())
                         };
 
                         if let Some(group_title) = group_name {
-                            log::info!("⏰ Executing scheduled group: {}", group_title);
+                            log::info!(
+                                "⏰ Executing scheduled group: {} ({})",
+                                group_title,
+                                schedule.cron_expression
+                            );
 
                             let result = commands::execute::execute_group_commands(
                                 state,
@@ -159,21 +173,34 @@ impl SchedulerManager {
                         }
                     }
 
-                    // Determine item type before moving schedule
-                    let item_name = if schedule.is_command_schedule() {
-                        "command"
-                    } else {
-                        "group"
-                    };
+                    // Calculate next execution using cron
+                    if let Some(next_time) =
+                        Self::calculate_next_execution(&schedule.cron_expression, now)
+                    {
+                        // Check if max executions reached
+                        if let Some(max_runs) = schedule.max_executions {
+                            if schedule.execution_count >= max_runs {
+                                schedule.is_active = false;
+                                schedules_to_update.push((id, schedule));
+                                log::info!(
+                                    "✅ Scheduled {} completed (max executions reached)",
+                                    item_type
+                                );
+                                continue;
+                            }
+                        }
 
-                    // Calculate next execution time (same logic for both command and group schedules)
-                    if let Some(next_time) = Self::calculate_next_execution(&schedule) {
                         schedule.next_execution = next_time;
                         schedules_to_update.push((id, schedule));
                     } else {
+                        // Invalid cron expression, deactivate schedule
+                        log::warn!(
+                            "⚠️ Invalid cron expression for schedule {}: {}",
+                            id,
+                            schedule.cron_expression
+                        );
                         schedule.is_active = false;
                         schedules_to_update.push((id, schedule));
-                        log::info!("✅ Scheduled {} completed", item_name);
                     }
                 }
 
@@ -222,16 +249,25 @@ impl SchedulerManager {
     }
 
     pub fn add_schedule(&self, mut schedule: Schedule) -> Result<String, String> {
+        // Validate cron expression
+        Self::validate_cron_expression(&schedule.cron_expression)?;
+
         let id = Uuid::new_v4().to_string();
         schedule.id = id.clone();
 
+        // Calculate initial next execution
         schedule.next_execution =
-            Self::calculate_next_execution(&schedule).ok_or("Invalid schedule configuration")?;
+            Self::calculate_next_execution(&schedule.cron_expression, Utc::now())
+                .ok_or("Failed to calculate next execution time")?;
 
         let mut schedules = self.schedules.lock().unwrap();
         schedules.insert(id.clone(), schedule);
 
-        log::info!("📅 Added schedule: {}", id);
+        log::info!(
+            "📅 Added cron schedule: {} ({})",
+            id,
+            schedules.get(&id).unwrap().cron_expression
+        );
         Ok(id)
     }
 
@@ -249,13 +285,24 @@ impl SchedulerManager {
     }
 
     pub fn update_schedule(&self, id: &str, mut updated_schedule: Schedule) -> Result<(), String> {
+        // Validate cron expression
+        Self::validate_cron_expression(&updated_schedule.cron_expression)?;
+
         let mut schedules = self.schedules.lock().unwrap();
         if schedules.contains_key(id) {
             updated_schedule.id = id.to_string();
-            updated_schedule.next_execution = Self::calculate_next_execution(&updated_schedule)
-                .ok_or("Invalid schedule configuration")?;
+
+            // Recalculate next execution with new cron expression
+            updated_schedule.next_execution =
+                Self::calculate_next_execution(&updated_schedule.cron_expression, Utc::now())
+                    .ok_or("Failed to calculate next execution time")?;
+
             schedules.insert(id.to_string(), updated_schedule);
-            log::info!("📝 Updated schedule: {}", id);
+            log::info!(
+                "📝 Updated cron schedule: {} ({})",
+                id,
+                schedules.get(id).unwrap().cron_expression
+            );
             Ok(())
         } else {
             Err("Schedule not found".to_string())
@@ -266,7 +313,11 @@ impl SchedulerManager {
         let mut schedules = self.schedules.lock().unwrap();
         if let Some(schedule) = schedules.get_mut(id) {
             schedule.is_active = !schedule.is_active;
-            log::info!("🔄 Toggled schedule: {}", schedule.is_active);
+            log::info!(
+                "🔄 Toggled schedule: {} (active: {})",
+                id,
+                schedule.is_active
+            );
             Ok(schedule.is_active)
         } else {
             Err("Schedule not found".to_string())
@@ -276,153 +327,43 @@ impl SchedulerManager {
     pub fn load_schedules(&self, schedules_data: HashMap<String, Schedule>) {
         let mut schedules = self.schedules.lock().unwrap();
         *schedules = schedules_data;
-        log::info!("📥 Loaded {} schedules", schedules.len());
+        log::info!("📥 Loaded {} cron schedules", schedules.len());
     }
 
-    fn calculate_next_execution(schedule: &Schedule) -> Option<DateTime<Utc>> {
-        let now = Utc::now();
-
-        if let Some(max_runs) = schedule.max_executions {
-            if schedule.execution_count >= max_runs {
-                return None;
-            }
-        }
-
-        match &schedule.recurrence {
-            RecurrencePattern::Once => {
-                if schedule.execution_count == 0 && schedule.scheduled_time > now {
-                    Some(schedule.scheduled_time)
-                } else {
-                    None
-                }
-            }
-            RecurrencePattern::Daily => Some(Self::next_daily_execution(schedule, now)),
-            RecurrencePattern::Weekly => Some(Self::next_weekly_execution(schedule, now)),
-            RecurrencePattern::Monthly => Some(Self::next_monthly_execution(schedule, now)),
-            RecurrencePattern::Custom { interval_minutes } => {
-                Some(now + Duration::minutes(*interval_minutes as i64))
-            }
-        }
+    /// Calculate next execution time using cron expression
+    fn calculate_next_execution(cron_expr: &str, _from: DateTime<Utc>) -> Option<DateTime<Utc>> {
+        let schedule = CronSchedule::from_str(cron_expr).ok()?;
+        schedule.upcoming(Utc).next()
     }
 
-    fn next_daily_execution(schedule: &Schedule, now: DateTime<Utc>) -> DateTime<Utc> {
-        let scheduled_time = schedule.scheduled_time;
-        let today_at_scheduled_time = now.date_naive().and_time(scheduled_time.time()).and_utc();
-
-        if today_at_scheduled_time > now {
-            today_at_scheduled_time
-        } else {
-            today_at_scheduled_time + Duration::days(1)
-        }
-    }
-
-    fn next_weekly_execution(schedule: &Schedule, now: DateTime<Utc>) -> DateTime<Utc> {
-        let scheduled_time = schedule.scheduled_time;
-        let current_weekday = now.weekday();
-        let target_weekday = scheduled_time.weekday();
-
-        let days_until_target =
-            if target_weekday.number_from_monday() >= current_weekday.number_from_monday() {
-                target_weekday.number_from_monday() - current_weekday.number_from_monday()
-            } else {
-                7 - (current_weekday.number_from_monday() - target_weekday.number_from_monday())
-            };
-
-        let target_date = now.date_naive() + Duration::days(days_until_target as i64);
-        let target_time = target_date.and_time(scheduled_time.time()).and_utc();
-
-        if target_time > now {
-            target_time
-        } else {
-            target_time + Duration::weeks(1)
-        }
-    }
-
-    fn next_monthly_execution(schedule: &Schedule, now: DateTime<Utc>) -> DateTime<Utc> {
-        let scheduled_time = schedule.scheduled_time;
-        let current_month = now.month();
-        let current_year = now.year();
-
-        if let Some(this_month) =
-            chrono::NaiveDate::from_ymd_opt(current_year, current_month, scheduled_time.day())
-        {
-            let this_month_time = this_month.and_time(scheduled_time.time()).and_utc();
-            if this_month_time > now {
-                return this_month_time;
-            }
-        }
-
-        let (next_month, next_year) = if current_month == 12 {
-            (1, current_year + 1)
-        } else {
-            (current_month + 1, current_year)
-        };
-
-        if let Some(next_month_date) =
-            chrono::NaiveDate::from_ymd_opt(next_year, next_month, scheduled_time.day())
-        {
-            next_month_date.and_time(scheduled_time.time()).and_utc()
-        } else {
-            let last_day_of_month = chrono::NaiveDate::from_ymd_opt(next_year, next_month + 1, 1)
-                .unwrap_or(chrono::NaiveDate::from_ymd_opt(next_year + 1, 1, 1).unwrap())
-                - Duration::days(1);
-            last_day_of_month.and_time(scheduled_time.time()).and_utc()
-        }
+    /// Validate cron expression
+    fn validate_cron_expression(cron_expr: &str) -> Result<(), String> {
+        CronSchedule::from_str(cron_expr)
+            .map_err(|e| format!("Invalid cron expression '{}': {}", cron_expr, e))?;
+        Ok(())
     }
 }
 
-impl Schedule {
-    /// Get specific command if this is a command schedule
-    pub fn get_command<'a>(
-        &self,
-        groups: &'a HashMap<String, CommandGroup>,
-    ) -> Option<&'a crate::models::CommandItem> {
-        // Only return command if command_id is specified
-        if let Some(command_id) = &self.command_id {
-            groups
-                .get(&self.group_id)?
-                .commands
-                .iter()
-                .find(|cmd| cmd.id == *command_id)
-        } else {
-            None
-        }
-    }
+/// Helper function to get the group for a schedule
+fn get_schedule_group<'a>(
+    schedule: &Schedule,
+    groups: &'a HashMap<String, CommandGroup>,
+) -> Option<&'a CommandGroup> {
+    groups.get(&schedule.group_id)
+}
 
-    /// Get the group this schedule belongs to
-    #[allow(dead_code)]
-    pub fn get_group<'a>(
-        &self,
-        groups: &'a HashMap<String, CommandGroup>,
-    ) -> Option<&'a CommandGroup> {
-        groups.get(&self.group_id)
-    }
-
-    /// Check if this is a group schedule (executes all commands in group)
-    #[allow(dead_code)]
-    pub fn is_group_schedule(&self) -> bool {
-        self.command_id.is_none()
-    }
-
-    /// Check if this is a command schedule (executes specific command)
-    #[allow(dead_code)]
-    pub fn is_command_schedule(&self) -> bool {
-        self.command_id.is_some()
-    }
-
-    /// Get display name for this schedule
-    #[allow(dead_code)]
-    pub fn get_display_name(&self, groups: &HashMap<String, CommandGroup>) -> String {
-        if let Some(group) = self.get_group(groups) {
-            if self.is_group_schedule() {
-                format!("Group: {}", group.title)
-            } else if let Some(command) = self.get_command(groups) {
-                format!("{} → {}", group.title, command.label)
-            } else {
-                format!("{} → [Unknown Command]", group.title)
-            }
-        } else {
-            "[Unknown Group]".to_string()
-        }
+/// Helper function to get specific command for a schedule
+fn get_schedule_command<'a>(
+    schedule: &Schedule,
+    groups: &'a HashMap<String, CommandGroup>,
+) -> Option<&'a crate::models::CommandItem> {
+    if let Some(command_id) = &schedule.command_id {
+        groups
+            .get(&schedule.group_id)?
+            .commands
+            .iter()
+            .find(|cmd| cmd.id == *command_id)
+    } else {
+        None
     }
 }
