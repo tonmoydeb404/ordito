@@ -1,5 +1,5 @@
 use crate::models::{AppData, CommandGroup};
-use crate::state::AppState;
+use crate::state::{AppState, ScheduleState};
 use crate::storage::{merge_data, save_data};
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
@@ -7,7 +7,8 @@ use uuid::Uuid;
 
 #[tauri::command]
 pub async fn create_group(
-    state: State<'_, AppState>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
     title: String,
 ) -> Result<String, String> {
@@ -19,9 +20,10 @@ pub async fn create_group(
     };
 
     {
-        let mut groups = state.lock().unwrap();
+        let mut groups = group_state.lock().unwrap();
+        let schedules = schedule_state.lock().unwrap();
         groups.insert(id.clone(), group);
-        save_data(&app_handle, &groups)?;
+        save_data(&app_handle, &groups, &schedules)?;
     }
 
     Ok(id)
@@ -35,30 +37,34 @@ pub async fn get_groups(state: State<'_, AppState>) -> Result<Vec<CommandGroup>,
 
 #[tauri::command]
 pub async fn delete_group(
-    state: State<'_, AppState>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
     group_id: String,
 ) -> Result<(), String> {
     {
-        let mut groups = state.lock().unwrap();
+        let mut groups = group_state.lock().unwrap();
+        let schedules = schedule_state.lock().unwrap();
         groups.remove(&group_id);
-        save_data(&app_handle, &groups)?;
+        save_data(&app_handle, &groups, &schedules)?;
     }
     Ok(())
 }
 
 #[tauri::command]
 pub async fn update_group(
-    state: State<'_, AppState>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
     group_id: String,
     title: String,
 ) -> Result<(), String> {
     {
-        let mut groups = state.lock().unwrap();
+        let mut groups = group_state.lock().unwrap();
+        let schedules = schedule_state.lock().unwrap();
         if let Some(group) = groups.get_mut(&group_id) {
             group.title = title;
-            save_data(&app_handle, &groups)?;
+            save_data(&app_handle, &groups, &schedules)?;
             Ok(())
         } else {
             Err("Group not found".to_string())
@@ -68,18 +74,20 @@ pub async fn update_group(
 
 #[tauri::command]
 pub async fn export_data(
-    state: State<'_, AppState>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    let groups = state.lock().unwrap();
+    let groups = group_state.lock().unwrap();
+    let schedules = schedule_state.lock().unwrap();
     let app_data = AppData {
         groups: groups.clone(),
+        schedules: Some(schedules.clone()),
     };
 
     let content = serde_json::to_string_pretty(&app_data)
         .map_err(|e| format!("Failed to serialize data: {}", e))?;
 
-    // Use the dialog plugin
     let file_path = app_handle
         .dialog()
         .file()
@@ -92,9 +100,7 @@ pub async fn export_data(
 
     match file_path {
         Some(FilePath::Path(path)) => {
-            // Write to selected path
             std::fs::write(&path, content).map_err(|e| format!("Failed to write file: {}", e))?;
-
             Ok(format!("Data exported to: {}", path.display()))
         }
         Some(FilePath::Url(_)) => Err("URL paths not supported for file export".to_string()),
@@ -104,10 +110,10 @@ pub async fn export_data(
 
 #[tauri::command]
 pub async fn import_data(
-    state: State<'_, AppState>,
+    group_state: State<'_, AppState>,
+    schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    // Open dialog for selecting .json file
     let file_path = app_handle
         .dialog()
         .file()
@@ -116,27 +122,27 @@ pub async fn import_data(
 
     match file_path {
         Some(FilePath::Path(path)) => {
-            // Read file content
             let content = std::fs::read_to_string(&path)
                 .map_err(|e| format!("Failed to read file: {}", e))?;
 
-            // Deserialize
             let app_data: AppData = serde_json::from_str(&content)
                 .map_err(|e| format!("Failed to parse import data: {}", e))?;
 
-            // Merge with existing state instead of replacing
             {
-                let mut groups = state.lock().unwrap();
+                let mut groups = group_state.lock().unwrap();
+                let mut schedules = schedule_state.lock().unwrap();
                 let (merged_groups, added_count, skipped_count) =
                     merge_data(&groups, app_data.groups);
 
                 *groups = merged_groups;
-                save_data(&app_handle, &groups)?;
+                if let Some(imported_schedules) = app_data.schedules {
+                    schedules.extend(imported_schedules);
+                }
+                save_data(&app_handle, &groups, &schedules)?;
 
-                // Return detailed success message
                 if skipped_count > 0 {
                     Ok(format!(
-                        "Import completed: {} new groups added, {} existing groups skipped (duplicate IDs)",
+                        "Import completed: {} new groups added, {} existing groups skipped",
                         added_count, skipped_count
                     ))
                 } else {
