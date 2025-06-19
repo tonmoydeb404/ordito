@@ -1,5 +1,7 @@
+import ListSchedulesModal from "@/components/modals/schedule-list";
+import { useModal } from "@/hooks/use-modal";
 import { TauriAPI } from "@/lib/tauri";
-import { TSchedule } from "@/types/command";
+import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { ScheduleContext } from ".";
 import { ScheduleContextType } from "./type";
@@ -12,6 +14,11 @@ const ScheduleProvider = ({ children }: Props) => {
   const [schedules, setSchedules] = useState<TSchedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const modal = useModal<{
+    group?: TCommandGroup;
+    command?: TCommmand;
+  }>();
 
   const refreshSchedules = useCallback(async () => {
     try {
@@ -105,11 +112,14 @@ const ScheduleProvider = ({ children }: Props) => {
     _updateSchedule,
     _deleteSchedule,
     _toggleSchedule,
+    closeModal: modal.close,
+    openModal: modal.open,
   };
 
   return (
     <ScheduleContext.Provider value={contextValue}>
       {children}
+      <ListSchedulesModal {...modal} />
     </ScheduleContext.Provider>
   );
 };

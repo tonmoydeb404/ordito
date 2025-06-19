@@ -3,14 +3,16 @@ import CreateGroupModal from "@/components/modals/create-group";
 import SearchInput from "@/components/search-input";
 import { Button } from "@/components/ui/button";
 import { useExecutionContext } from "@/contexts/execution";
+import { useScheduleContext } from "@/contexts/schedule";
 import { useModal } from "@/hooks/use-modal";
-import { LucidePlus, LucideTerminal } from "lucide-react";
+import { LucideClock, LucidePlus, LucideTerminal } from "lucide-react";
 
 type Props = {};
 
 const HeaderSection = (props: Props) => {
   const createModal = useModal<void>();
-  const { showModal } = useExecutionContext();
+  const execution = useExecutionContext();
+  const schedule = useScheduleContext();
 
   return (
     <>
@@ -46,9 +48,17 @@ const HeaderSection = (props: Props) => {
             <Button
               variant={"secondary"}
               size={"icon"}
-              onClick={() => showModal(null)}
+              onClick={() => execution.showModal(null)}
             >
               <LucideTerminal />
+            </Button>
+
+            <Button
+              variant={"secondary"}
+              size={"icon"}
+              onClick={() => schedule.openModal({})}
+            >
+              <LucideClock />
             </Button>
 
             <SettingsDropdown />

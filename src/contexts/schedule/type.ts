@@ -1,4 +1,4 @@
-import { TSchedule } from "@/types/command";
+import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
 
 export type ScheduleContextType = {
   schedules: TSchedule[];
@@ -18,4 +18,8 @@ export type ScheduleContextType = {
   ) => void;
   _deleteSchedule: (scheduleId: string) => void;
   _toggleSchedule: (scheduleId: string, isActive: boolean) => void;
+
+  // Modal
+  openModal: (props: { group?: TCommandGroup; command?: TCommmand }) => void;
+  closeModal: () => void;
 };
