@@ -1,4 +1,4 @@
-import { TCommandGroup, TCommmand } from "@/types/command";
+import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
 import { invoke } from "@tauri-apps/api/core";
 
 export class TauriAPI {
@@ -68,6 +68,55 @@ export class TauriAPI {
     groupId: string
   ): Promise<[string, string][]> {
     return await invoke("execute_group_commands", { groupId });
+  }
+
+  // Schedule operations
+  static async createSchedule(data: {
+    groupId: string;
+    commandId: string;
+    scheduledTime: string; // ISO 8601 string
+    recurrence: string;
+    maxExecutions?: number;
+  }): Promise<string> {
+    return await invoke("create_schedule", {
+      groupId: data.groupId,
+      commandId: data.commandId,
+      scheduledTime: data.scheduledTime,
+      recurrence: data.recurrence,
+      maxExecutions: data.maxExecutions,
+    });
+  }
+
+  static async getSchedules(): Promise<TSchedule[]> {
+    return await invoke("get_schedules");
+  }
+
+  static async deleteSchedule(id: string): Promise<void> {
+    return await invoke("delete_schedule", { id });
+  }
+
+  static async updateSchedule(
+    id: string,
+    data: {
+      groupId: string;
+      commandId: string;
+      scheduledTime: string;
+      recurrence: string;
+      maxExecutions?: number;
+    }
+  ): Promise<void> {
+    return await invoke("update_schedule", {
+      id,
+      groupId: data.groupId,
+      commandId: data.commandId,
+      scheduledTime: data.scheduledTime,
+      recurrence: data.recurrence,
+      maxExecutions: data.maxExecutions,
+    });
+  }
+
+  static async toggleSchedule(id: string): Promise<boolean> {
+    return await invoke("toggle_schedule", { id });
   }
 
   // Data operations
