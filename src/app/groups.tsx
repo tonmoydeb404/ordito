@@ -1,9 +1,9 @@
 import CommandCard from "@/components/cards/command";
 import GroupCard from "@/components/cards/group";
-import CreateScheduleModal from "@/components/modals/command-schedule";
 import CreateCommandModal from "@/components/modals/create-command";
 import DeleteCommandModal from "@/components/modals/delete-command";
 import DeleteGroupModal from "@/components/modals/delete-group";
+import CreateScheduleModal from "@/components/modals/schedule/schedule-create";
 import UpdateCommandModal from "@/components/modals/update-command";
 import UpdateGroupModal from "@/components/modals/update-group";
 import { useSearchContext } from "@/contexts/search";

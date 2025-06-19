@@ -1,4 +1,4 @@
-import ListSchedulesModal from "@/components/modals/schedule-list";
+import ListSchedulesModal from "@/components/modals/schedule/schedule-list";
 import { useModal } from "@/hooks/use-modal";
 import { TauriAPI } from "@/lib/tauri";
 import { TCommandGroup, TCommmand, TSchedule } from "@/types/command";
