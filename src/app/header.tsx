@@ -56,7 +56,7 @@ const HeaderSection = (props: Props) => {
             <Button
               variant={"secondary"}
               size={"icon"}
-              onClick={() => schedule.openModal({})}
+              onClick={() => schedule.openModal()}
             >
               <LucideClock />
             </Button>
