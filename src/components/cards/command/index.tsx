@@ -7,6 +7,7 @@ type Props = {
   data: TCommmand;
   onUpdate: () => void;
   onDelete: () => void;
+  onSchedule: () => void;
 };
 
 const CommandCard = (props: Props) => {
