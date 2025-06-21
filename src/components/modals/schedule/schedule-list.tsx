@@ -24,8 +24,17 @@ import {
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { useScheduleContext } from "@/contexts/schedule";
 import { TModalProps, useModal } from "@/hooks/use-modal";
+import { cn } from "@/lib/utils";
 import { TScheduleInfo } from "@/types/schedule";
-import { Clock, Edit2, Pause, Play, Trash2 } from "lucide-react";
+import {
+  Clock,
+  Edit2,
+  LucideRefreshCcw,
+  Pause,
+  Play,
+  Trash2,
+} from "lucide-react";
+import { useEffect } from "react";
 import { getCronDescription } from "./helpers";
 import { ScheduleDeleteModal } from "./schedule-delete";
 import { ScheduleUpdateModal } from "./schedule-update";
@@ -36,7 +45,11 @@ export default function ListSchedulesModal(props: TModalProps<void>) {
   const updateModal = useModal<TScheduleInfo>();
   const deleteModal = useModal<TScheduleInfo>();
 
-  const { schedules } = useScheduleContext();
+  const {
+    schedules,
+    refreshSchedules,
+    loading: scheduleLoading,
+  } = useScheduleContext();
   const { loading, toggleSchedule } = useScheduleMutations();
 
   // Helper function to format relative time
@@ -64,10 +77,16 @@ export default function ListSchedulesModal(props: TModalProps<void>) {
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      refreshSchedules();
+    }
+  }, [isOpen]);
+
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={() => !loading && close()}>
-        <DialogContent className="sm:max-w-7xl w-full h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-5xl md:max-w-6xl 2xl:max-w-7xl w-full h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -106,11 +125,6 @@ export default function ListSchedulesModal(props: TModalProps<void>) {
                       <TableCell>
                         <Badge
                           variant={sch.is_active ? "default" : "secondary"}
-                          className={
-                            sch.is_active
-                              ? "bg-green-100 text-green-800 border-green-200"
-                              : ""
-                          }
                         >
                           {sch.is_active ? "Active" : "Paused"}
                         </Badge>
@@ -238,6 +252,12 @@ export default function ListSchedulesModal(props: TModalProps<void>) {
           </div>
 
           <DialogFooter>
+            <Button variant={"secondary"} onClick={refreshSchedules}>
+              <LucideRefreshCcw
+                className={cn(scheduleLoading ? "animate-spin" : "")}
+              />
+              Refresh
+            </Button>
             <Button
               variant="outline"
               onClick={() => !loading && close()}

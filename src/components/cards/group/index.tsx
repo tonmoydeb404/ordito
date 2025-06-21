@@ -54,6 +54,7 @@ const GroupCard = (props: Props) => {
             onCopy={() => {
               copyAsShellScript(data.commands, data.title);
             }}
+            onSchedule={onSchedule}
           />
         </div>
       </CardHeader>

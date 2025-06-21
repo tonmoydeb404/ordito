@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LucideClipboard,
+  LucideClock,
   LucideEdit,
   LucideMoreVertical,
   LucidePlay,
@@ -17,11 +18,12 @@ type Props = {
   onDelete: () => void;
   onUpdate: () => void;
   onExecute: () => void;
+  onSchedule: () => void;
   onCopy: () => void;
 };
 
 const GroupActions = (props: Props) => {
-  const { onDelete, onUpdate, onCopy, onExecute } = props;
+  const { onDelete, onUpdate, onCopy, onExecute, onSchedule } = props;
   return (
     <DropdownMenu>
       <Button size={"icon_sm"} variant={"secondary"} asChild>
@@ -35,6 +37,9 @@ const GroupActions = (props: Props) => {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onCopy}>
           <LucideClipboard /> Copy
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSchedule}>
+          <LucideClock /> Schedule
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onUpdate}>
           <LucideEdit /> Update Title
