@@ -21,6 +21,9 @@ apps:
     plugs:
       - network
       - home
+      - process-control
+      - system-observe
+      - hardware-observe
       - removable-media
 
 package-repositories:
