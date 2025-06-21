@@ -2,8 +2,8 @@ name: Snapcraft Builds
 
 on:
   push:
-    branches:
-      - release
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
