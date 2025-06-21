@@ -27,17 +27,10 @@ export function useScheduleMutations() {
           cronExpression: scheduleData.cron_expression,
           maxExecutions: scheduleData.max_executions,
         });
-        _addSchedule({
-          id: scheduleId,
-          group_id: groupId,
-          command_id: commandId,
-          cron_expression: scheduleData.cron_expression,
-          max_executions: scheduleData.max_executions,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          next_execution: new Date().toISOString(), // Will be calculated by backend
-          execution_count: 0,
-        } as TSchedule);
+
+        const schedule = await TauriAPI.getScheduleInfo(scheduleId);
+
+        _addSchedule(schedule);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to add schedule");
       } finally {
@@ -58,7 +51,8 @@ export function useScheduleMutations() {
           cronExpression: data.cron_expression!,
           maxExecutions: data.max_executions,
         });
-        _updateSchedule(scheduleId, data);
+        const schedule = await TauriAPI.getScheduleInfo(scheduleId);
+        _updateSchedule(scheduleId, schedule);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to update schedule"

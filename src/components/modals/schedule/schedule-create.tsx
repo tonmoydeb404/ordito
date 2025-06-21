@@ -30,7 +30,7 @@ export function CreateScheduleModal({ isOpen, close, data }: CreateProps) {
   const commandId = data?.command?.id ?? null;
 
   // Cron expression state
-  const [cronExpression, setCronExpression] = useState("0 9 * * *");
+  const [cronExpression, setCronExpression] = useState("0 0 9 * * *");
   const [maxExecutions, setMaxExecutions] = useState("");
 
   const handleCreate = async () => {
@@ -92,7 +92,7 @@ export function CreateScheduleModal({ isOpen, close, data }: CreateProps) {
           <CronBuilder
             value={cronExpression}
             onChange={setCronExpression}
-            resetValue="0 9 * * *"
+            resetValue="0 0 9 * * *"
           />
 
           {/* Max Executions */}

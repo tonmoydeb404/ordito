@@ -12,7 +12,7 @@ import { Input as Inp } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { TModalProps } from "@/hooks/use-modal";
-import { TCronValidationResult, TSchedule } from "@/types/schedule";
+import { TCronValidationResult, TScheduleInfo } from "@/types/schedule";
 import { Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast as Toast } from "sonner";
@@ -22,7 +22,7 @@ export function ScheduleUpdateModal({
   isOpen,
   close,
   data,
-}: TModalProps<TSchedule>) {
+}: TModalProps<TScheduleInfo>) {
   if (!data) return null;
 
   const { updateSchedule, validateCronExpression, loading } =
@@ -30,7 +30,7 @@ export function ScheduleUpdateModal({
 
   // Initialize state with existing schedule data
   const [cronExpression, setCronExpression] = useState(
-    data.cron_expression || "0 9 * * *"
+    data.cron_expression || "0 0 9 * * *"
   );
   const [maxExecutions, setMaxExecutions] = useState(
     data.max_executions?.toString() || ""
@@ -42,7 +42,7 @@ export function ScheduleUpdateModal({
   // Reset form when modal opens or data changes
   useEffect(() => {
     if (isOpen && data) {
-      setCronExpression(data.cron_expression || "0 9 * * *");
+      setCronExpression(data.cron_expression || "0 0 9 * * *");
       setMaxExecutions(data.max_executions?.toString() || "");
       setValidation(null);
     }
@@ -51,7 +51,7 @@ export function ScheduleUpdateModal({
   // Validate cron expression when it changes
   useEffect(() => {
     const validateCron = async () => {
-      if (cronExpression && cronExpression !== "* * * * *") {
+      if (cronExpression && cronExpression !== "* * * * * *") {
         try {
           const result = await validateCronExpression(cronExpression);
           setValidation(result);
@@ -124,7 +124,7 @@ export function ScheduleUpdateModal({
           <CronBuilder
             value={cronExpression}
             onChange={setCronExpression}
-            resetValue="0 9 * * *"
+            resetValue="0 0 9 * * *"
           />
 
           {/* Validation and Preview Section */}

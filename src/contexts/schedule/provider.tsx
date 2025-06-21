@@ -1,8 +1,7 @@
 import ListSchedulesModal from "@/components/modals/schedule/schedule-list";
 import { useModal } from "@/hooks/use-modal";
 import { TauriAPI } from "@/lib/tauri";
-import { TCommandGroup, TCommmand } from "@/types/command";
-import { TSchedule } from "@/types/schedule";
+import { TScheduleInfo } from "@/types/schedule";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { ScheduleContext } from ".";
 import { ScheduleContextType } from "./type";
@@ -12,20 +11,17 @@ interface Props {
 }
 
 const ScheduleProvider = ({ children }: Props) => {
-  const [schedules, setSchedules] = useState<TSchedule[]>([]);
+  const [schedules, setSchedules] = useState<TScheduleInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const modal = useModal<{
-    group?: TCommandGroup;
-    command?: TCommmand;
-  }>();
+  const modal = useModal<void>();
 
   const refreshSchedules = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const fetchedSchedules = await TauriAPI.getSchedules();
+      const fetchedSchedules = await TauriAPI.getSchedulesWithInfo();
       console.log(fetchedSchedules);
 
       setSchedules(fetchedSchedules);
@@ -61,12 +57,12 @@ const ScheduleProvider = ({ children }: Props) => {
   );
 
   // Internal methods for mutation hooks to update context directly
-  const _addSchedule = useCallback((schedule: TSchedule) => {
+  const _addSchedule = useCallback((schedule: TScheduleInfo) => {
     setSchedules((prev) => [...prev, schedule]);
   }, []);
 
   const _updateSchedule = useCallback(
-    (scheduleId: string, scheduleData: Partial<TSchedule>) => {
+    (scheduleId: string, scheduleData: Partial<TScheduleInfo>) => {
       setSchedules((prev) =>
         prev.map((schedule) =>
           schedule.id === scheduleId

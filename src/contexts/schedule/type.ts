@@ -1,26 +1,28 @@
-import { TCommandGroup, TCommmand } from "@/types/command";
-import { TSchedule } from "@/types/schedule";
+import { TScheduleInfo } from "@/types/schedule";
 
 export type ScheduleContextType = {
-  schedules: TSchedule[];
+  schedules: TScheduleInfo[];
   loading: boolean;
   error: string | null;
   refreshSchedules: () => Promise<void>;
-  getScheduleById: (scheduleId: string) => TSchedule | undefined;
-  getSchedulesByGroupId: (groupId: string) => TSchedule[];
-  getSchedulesByCommandId: (groupId: string, commandId: string) => TSchedule[];
+  getScheduleById: (scheduleId: string) => TScheduleInfo | undefined;
+  getSchedulesByGroupId: (groupId: string) => TScheduleInfo[];
+  getSchedulesByCommandId: (
+    groupId: string,
+    commandId: string
+  ) => TScheduleInfo[];
 
   // Internal methods for mutation hooks
-  _setSchedules: (schedules: TSchedule[]) => void;
-  _addSchedule: (schedule: TSchedule) => void;
+  _setSchedules: (schedules: TScheduleInfo[]) => void;
+  _addSchedule: (schedule: TScheduleInfo) => void;
   _updateSchedule: (
     scheduleId: string,
-    scheduleData: Partial<TSchedule>
+    scheduleData: Partial<TScheduleInfo>
   ) => void;
   _deleteSchedule: (scheduleId: string) => void;
   _toggleSchedule: (scheduleId: string, isActive: boolean) => void;
 
   // Modal
-  openModal: (props: { group?: TCommandGroup; command?: TCommmand }) => void;
+  openModal: () => void;
   closeModal: () => void;
 };

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { useScheduleMutations } from "@/contexts/hooks/schedule";
 import { TModalProps } from "@/hooks/use-modal";
-import { TSchedule } from "@/types/schedule";
+import { TScheduleInfo } from "@/types/schedule";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +18,7 @@ export function ScheduleDeleteModal({
   isOpen,
   close,
   data,
-}: TModalProps<TSchedule>) {
+}: TModalProps<TScheduleInfo>) {
   if (!data) return null;
 
   const { deleteSchedule, loading } = useScheduleMutations();

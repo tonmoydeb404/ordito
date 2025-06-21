@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/select";
 import { RotateCcw } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import {
+  DAYS,
+  getCronDescription,
+  HOURS,
+  MINUTES,
+  MONTHS,
+  WEEKDAYS,
+} from "./helpers";
 import { MultiSelect } from "./multi-select";
 
 interface CronBuilderProps {
@@ -25,50 +33,8 @@ interface CronBuilderProps {
   resetValue?: string;
 }
 
-const MINUTES = Array.from({ length: 12 }, (_, i) => ({
-  value: (i * 5).toString(),
-  label: `${i * 5}`.padStart(2, "0"),
-}));
-
-const HOURS = Array.from({ length: 24 }, (_, i) => ({
-  value: i.toString(),
-  label: `${i}:00 (${i === 0 ? "12" : i > 12 ? i - 12 : i}${
-    i < 12 ? "AM" : "PM"
-  })`,
-}));
-
-const DAYS = Array.from({ length: 31 }, (_, i) => ({
-  value: (i + 1).toString(),
-  label: (i + 1).toString(),
-}));
-
-const MONTHS = [
-  { value: "1", label: "January" },
-  { value: "2", label: "February" },
-  { value: "3", label: "March" },
-  { value: "4", label: "April" },
-  { value: "5", label: "May" },
-  { value: "6", label: "June" },
-  { value: "7", label: "July" },
-  { value: "8", label: "August" },
-  { value: "9", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-const WEEKDAYS = [
-  { value: "0", label: "Sunday" },
-  { value: "1", label: "Monday" },
-  { value: "2", label: "Tuesday" },
-  { value: "3", label: "Wednesday" },
-  { value: "4", label: "Thursday" },
-  { value: "5", label: "Friday" },
-  { value: "6", label: "Saturday" },
-];
-
 export function CronBuilder({
-  value = "* * * * *",
+  value = "0 0 0 * * *",
   onChange,
   className,
   resetValue,
@@ -76,8 +42,9 @@ export function CronBuilder({
   // Parse the cron value into component parts using useMemo
   const cronParts = useMemo(() => {
     const parts = value.split(" ");
-    if (parts.length !== 5) {
+    if (parts.length !== 6) {
       return {
+        second: "",
         minute: "",
         hour: "",
         days: [] as string[],
@@ -87,28 +54,31 @@ export function CronBuilder({
     }
 
     return {
-      minute: parts[0] === "*" ? "" : parts[0],
-      hour: parts[1] === "*" ? "" : parts[1],
+      second: parts[0] === "*" ? "" : parts[0],
+      minute: parts[1] === "*" ? "" : parts[1],
+      hour: parts[2] === "*" ? "" : parts[2],
       // For multiselects: * means ALL options selected
-      days: parts[2] === "*" ? DAYS.map((d) => d.value) : parts[2].split(","),
+      days: parts[3] === "*" ? DAYS.map((d) => d.value) : parts[3].split(","),
       months:
-        parts[3] === "*" ? MONTHS.map((m) => m.value) : parts[3].split(","),
+        parts[4] === "*" ? MONTHS.map((m) => m.value) : parts[4].split(","),
       weekdays:
-        parts[4] === "*" ? WEEKDAYS.map((w) => w.value) : parts[4].split(","),
+        parts[5] === "*" ? WEEKDAYS.map((w) => w.value) : parts[5].split(","),
     };
   }, [value]);
 
   // Helper function to build cron string from individual parts
   const buildCronString = useCallback(
     (
+      second: string,
       minute: string,
       hour: string,
       days: string[],
       months: string[],
       weekdays: string[]
     ) => {
-      const minutePart = minute || "*";
-      const hourPart = hour || "*";
+      const secondPart = second || "0";
+      const minutePart = minute || "0";
+      const hourPart = hour || "0";
 
       // For multiselects:
       // - Empty array = nothing specific selected (this would be invalid cron, so use *)
@@ -135,7 +105,7 @@ export function CronBuilder({
           ? "*"
           : weekdays.sort((a, b) => Number(a) - Number(b)).join(",");
 
-      return `${minutePart} ${hourPart} ${dayPart} ${monthPart} ${weekdayPart}`;
+      return `${secondPart} ${minutePart} ${hourPart} ${dayPart} ${monthPart} ${weekdayPart}`;
     },
     []
   );
@@ -144,6 +114,7 @@ export function CronBuilder({
   const updateMinute = useCallback(
     (newMinute: string) => {
       const newCron = buildCronString(
+        cronParts.second,
         newMinute,
         cronParts.hour,
         cronParts.days,
@@ -154,6 +125,7 @@ export function CronBuilder({
     },
     [
       buildCronString,
+      cronParts.second,
       cronParts.hour,
       cronParts.days,
       cronParts.months,
@@ -165,6 +137,7 @@ export function CronBuilder({
   const updateHour = useCallback(
     (newHour: string) => {
       const newCron = buildCronString(
+        cronParts.second,
         cronParts.minute,
         newHour,
         cronParts.days,
@@ -175,6 +148,7 @@ export function CronBuilder({
     },
     [
       buildCronString,
+      cronParts.second,
       cronParts.minute,
       cronParts.days,
       cronParts.months,
@@ -186,6 +160,7 @@ export function CronBuilder({
   const updateDays = useCallback(
     (newDays: string[]) => {
       const newCron = buildCronString(
+        cronParts.second,
         cronParts.minute,
         cronParts.hour,
         newDays,
@@ -196,6 +171,7 @@ export function CronBuilder({
     },
     [
       buildCronString,
+      cronParts.second,
       cronParts.minute,
       cronParts.hour,
       cronParts.months,
@@ -207,6 +183,7 @@ export function CronBuilder({
   const updateMonths = useCallback(
     (newMonths: string[]) => {
       const newCron = buildCronString(
+        cronParts.second,
         cronParts.minute,
         cronParts.hour,
         cronParts.days,
@@ -217,6 +194,7 @@ export function CronBuilder({
     },
     [
       buildCronString,
+      cronParts.second,
       cronParts.minute,
       cronParts.hour,
       cronParts.days,
@@ -228,6 +206,7 @@ export function CronBuilder({
   const updateWeekdays = useCallback(
     (newWeekdays: string[]) => {
       const newCron = buildCronString(
+        cronParts.second,
         cronParts.minute,
         cronParts.hour,
         cronParts.days,
@@ -238,6 +217,7 @@ export function CronBuilder({
     },
     [
       buildCronString,
+      cronParts.second,
       cronParts.minute,
       cronParts.hour,
       cronParts.days,
@@ -250,61 +230,14 @@ export function CronBuilder({
     if (resetValue && onChange) {
       onChange(resetValue);
     } else {
-      onChange?.("* * * * *");
+      onChange?.("0 0 0 * * *");
     }
   }, [resetValue, onChange]);
 
   // Memoized description based on current cron parts
   const cronDescription = useMemo(() => {
-    const parts = [];
-
-    if (cronParts.minute) {
-      parts.push(`at minute ${cronParts.minute}`);
-    }
-
-    if (cronParts.hour) {
-      const hour = Number.parseInt(cronParts.hour);
-      const ampm = hour >= 12 ? "PM" : "AM";
-      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-      parts.push(`at ${displayHour}${ampm}`);
-    }
-
-    if (cronParts.days.length > 0) {
-      if (cronParts.days.length === DAYS.length) {
-        parts.push("every day of the month");
-      } else {
-        parts.push(`on day(s) ${cronParts.days.join(", ")}`);
-      }
-    }
-
-    if (cronParts.months.length > 0) {
-      if (cronParts.months.length === MONTHS.length) {
-        parts.push("every month");
-      } else {
-        const monthLabels = cronParts.months
-          .map((m) => MONTHS.find((month) => month.value === m)?.label)
-          .filter(Boolean);
-        parts.push(`in ${monthLabels.join(", ")}`);
-      }
-    }
-
-    if (cronParts.weekdays.length > 0) {
-      if (cronParts.weekdays.length === WEEKDAYS.length) {
-        parts.push("every day of the week");
-      } else {
-        const weekdayLabels = cronParts.weekdays
-          .map((w) => WEEKDAYS.find((weekday) => weekday.value === w)?.label)
-          .filter(Boolean);
-        parts.push(`on ${weekdayLabels.join(", ")}`);
-      }
-    }
-
-    if (parts.length === 0) {
-      return "Runs every minute";
-    }
-
-    return `Runs ${parts.join(" ")}`;
-  }, [cronParts]);
+    return getCronDescription(value);
+  }, [value]);
 
   return (
     <Card className={className}>
