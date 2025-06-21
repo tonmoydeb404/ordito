@@ -94,7 +94,7 @@ pub async fn export_data(
         .add_filter("JSON Files", &["json"])
         .set_file_name(&format!(
             "ordito-commands-{}.json",
-            chrono::Utc::now().format("%Y-%m-%d")
+            chrono::Local::now().format("%Y-%m-%d")
         ))
         .blocking_save_file();
 

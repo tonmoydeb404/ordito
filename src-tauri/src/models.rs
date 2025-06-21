@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -30,9 +30,9 @@ pub struct Schedule {
     pub command_id: Option<String>,
     pub cron_expression: String, // New: replaces scheduled_time + recurrence
     pub is_active: bool,
-    pub created_at: DateTime<Utc>,
-    pub last_execution: Option<DateTime<Utc>>,
-    pub next_execution: DateTime<Utc>,
+    pub created_at: DateTime<Local>,
+    pub last_execution: Option<DateTime<Local>>,
+    pub next_execution: DateTime<Local>,
     pub execution_count: u32,
     pub max_executions: Option<u32>,
 }

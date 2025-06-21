@@ -2,7 +2,7 @@ use crate::models::Schedule;
 use crate::scheduler::SchedulerManager;
 use crate::state::{AppState, ScheduleState};
 use crate::storage::save_data;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use cron::Schedule as CronSchedule;
 use std::str::FromStr;
 use tauri::State;
@@ -66,9 +66,9 @@ pub async fn create_schedule(
         command_id,
         cron_expression,
         is_active: true,
-        created_at: Utc::now(),
+        created_at: Local::now(),
         last_execution: None,
-        next_execution: Utc::now(), // Will be calculated by SchedulerManager
+        next_execution: Local::now(), // Will be calculated by SchedulerManager
         execution_count: 0,
         max_executions,
     };
@@ -174,9 +174,9 @@ pub async fn update_schedule(
         command_id,
         cron_expression,
         is_active: true,
-        created_at: Utc::now(),
+        created_at: Local::now(),
         last_execution: None,
-        next_execution: Utc::now(), // Will be recalculated by SchedulerManager
+        next_execution: Local::now(), // Will be recalculated by SchedulerManager
         execution_count: 0,
         max_executions,
     };
@@ -355,9 +355,9 @@ fn validate_cron_expression(cron_expr: &str) -> Result<(), String> {
 }
 
 /// Get next N execution times for cron expression (for preview)
-fn get_next_executions(cron_expr: &str, count: usize) -> Vec<DateTime<Utc>> {
+fn get_next_executions(cron_expr: &str, count: usize) -> Vec<DateTime<Local>> {
     if let Ok(schedule) = CronSchedule::from_str(cron_expr) {
-        schedule.upcoming(Utc).take(count).collect()
+        schedule.upcoming(Local).take(count).collect()
     } else {
         vec![]
     }
@@ -373,8 +373,8 @@ pub struct ScheduleInfo {
     pub command_id: Option<String>,
     pub cron_expression: String,
     pub is_active: bool,
-    pub next_execution: DateTime<Utc>,
-    pub last_execution: Option<DateTime<Utc>>,
+    pub next_execution: DateTime<Local>,
+    pub last_execution: Option<DateTime<Local>>,
     pub execution_count: u32,
     pub max_executions: Option<u32>,
 }
@@ -384,5 +384,5 @@ pub struct ScheduleInfo {
 pub struct CronValidationResult {
     pub is_valid: bool,
     pub error_message: Option<String>,
-    pub next_executions: Vec<DateTime<Utc>>, // Preview of next execution times
+    pub next_executions: Vec<DateTime<Local>>, // Preview of next execution times
 }

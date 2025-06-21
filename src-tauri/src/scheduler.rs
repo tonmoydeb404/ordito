@@ -2,7 +2,7 @@ use crate::commands;
 use crate::models::{CommandGroup, Schedule};
 use crate::notification::NotificationManager;
 use crate::state::AppState;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use cron::Schedule as CronSchedule;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -43,7 +43,7 @@ impl SchedulerManager {
             log::info!("📅 Scheduler started");
 
             while *is_running_flag.lock().unwrap() {
-                let now = Utc::now();
+                let now = Local::now();
                 let mut schedules_to_execute = Vec::new();
                 let mut schedules_to_update = Vec::new();
 
@@ -257,7 +257,7 @@ impl SchedulerManager {
 
         // Calculate initial next execution
         schedule.next_execution =
-            Self::calculate_next_execution(&schedule.cron_expression, Utc::now())
+            Self::calculate_next_execution(&schedule.cron_expression, Local::now())
                 .ok_or("Failed to calculate next execution time")?;
 
         let mut schedules = self.schedules.lock().unwrap();
@@ -294,7 +294,7 @@ impl SchedulerManager {
 
             // Recalculate next execution with new cron expression
             updated_schedule.next_execution =
-                Self::calculate_next_execution(&updated_schedule.cron_expression, Utc::now())
+                Self::calculate_next_execution(&updated_schedule.cron_expression, Local::now())
                     .ok_or("Failed to calculate next execution time")?;
 
             schedules.insert(id.to_string(), updated_schedule);
@@ -331,9 +331,12 @@ impl SchedulerManager {
     }
 
     /// Calculate next execution time using cron expression
-    fn calculate_next_execution(cron_expr: &str, _from: DateTime<Utc>) -> Option<DateTime<Utc>> {
-        let schedule = CronSchedule::from_str(cron_expr).ok()?;
-        schedule.upcoming(Utc).next()
+    fn calculate_next_execution(
+        cron_expr: &str,
+        _from: DateTime<Local>,
+    ) -> Option<DateTime<Local>> {
+        let schedule: CronSchedule = CronSchedule::from_str(cron_expr).ok()?;
+        schedule.upcoming(Local).next()
     }
 
     /// Validate cron expression
