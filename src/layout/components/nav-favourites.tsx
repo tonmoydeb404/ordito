@@ -26,13 +26,13 @@ import {
 import { LucideFolder, LucideHeartCrack } from "lucide-react";
 import { Link } from "react-router";
 import { NavLink } from "../config";
-import { useCommandsStore } from "@/stores/commands";
-import { useEffect, useMemo } from "react";
+import { useGetCommandGroupsQuery } from "@/store/api/commands-api";
+import { useMemo } from "react";
 import paths from "@/router/paths";
 
 export function NavFavourites() {
   const { isMobile } = useSidebar();
-  const { groups, loadGroups } = useCommandsStore();
+  const { data: groups = [], isLoading } = useGetCommandGroupsQuery();
   
   const favouriteGroups: Omit<NavLink, "icon">[] = useMemo(() => 
     groups
@@ -44,17 +44,18 @@ export function NavFavourites() {
     [groups]
   );
 
-  useEffect(() => {
-    loadGroups();
-  }, [loadGroups]);
-
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Favourites</SidebarGroupLabel>
-      {favouriteGroups?.length === 0 && (
+      {!isLoading && favouriteGroups?.length === 0 && (
         <div className="flex flex-col items-center justify-center border border-dashed min-h-[200px] rounded-lg">
           <LucideHeartCrack className="mb-2 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">No favourites yet</p>
+        </div>
+      )}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center min-h-[200px]">
+          <p className="text-xs text-muted-foreground">Loading favourites...</p>
         </div>
       )}
       {favouriteGroups?.length > 0 && (

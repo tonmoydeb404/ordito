@@ -1,0 +1,23 @@
+import { configureStore } from '@reduxjs/toolkit';
+import { commandsApi } from './api/commands-api';
+import { schedulesApi } from './api/schedules-api';
+import { executionsApi } from './api/executions-api';
+import { appApi } from './api/app-api';
+
+export const store = configureStore({
+  reducer: {
+    [commandsApi.reducerPath]: commandsApi.reducer,
+    [schedulesApi.reducerPath]: schedulesApi.reducer,
+    [executionsApi.reducerPath]: executionsApi.reducer,
+    [appApi.reducerPath]: appApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware()
+      .concat(commandsApi.middleware)
+      .concat(schedulesApi.middleware)
+      .concat(executionsApi.middleware)
+      .concat(appApi.middleware),
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
