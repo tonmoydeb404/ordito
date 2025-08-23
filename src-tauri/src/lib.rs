@@ -11,6 +11,7 @@ pub mod utils;
 pub use error::Result;
 
 use commands::*;
+use tauri::Manager;
 use services::{AppService, NotificationService};
 use std::sync::Arc;
 
@@ -65,13 +66,24 @@ pub fn run() {
             create_command_group,
             update_command_group,
             delete_command_group,
+            execute_command_group,
             get_schedules,
             create_schedule,
             update_schedule,
             delete_schedule,
             toggle_schedule,
+            get_execution_status,
+            get_running_executions,
+            get_execution_history,
+            kill_execution,
+            search_commands,
+            get_favorite_commands,
+            get_commands_by_group,
+            get_next_scheduled_executions,
             import_config,
             export_config,
+            validate_cron_expression,
+            get_app_info,
             send_test_notification,
             check_notification_permission,
             request_notification_permission

@@ -44,7 +44,7 @@ impl CommandService {
 
         let mut storage = self.storage.write().await;
         let config = storage.get_config_mut();
-        
+
         if config.commands.iter().any(|c| c.name == command.name) {
             return Err(OrditoError::Command(
                 "Command with this name already exists".to_string(),
@@ -62,7 +62,7 @@ impl CommandService {
         info!("Updating command: {}", request.id);
 
         let mut storage = self.storage.write().await;
-        
+
         // First check for name conflicts
         if let Some(name) = &request.name {
             let config = storage.get_config();
@@ -255,7 +255,7 @@ impl CommandService {
         info!("Updating command group: {}", request.id);
 
         let mut storage = self.storage.write().await;
-        
+
         // First check for name conflicts
         if let Some(name) = &request.name {
             let config = storage.get_config();
@@ -336,14 +336,19 @@ impl CommandService {
 
     pub async fn execute_command_group(&self, id: Uuid, detached: bool) -> Result<Vec<Uuid>> {
         let commands = self.get_commands_by_group(Some(id)).await?;
-        
+
         if commands.is_empty() {
-            return Err(OrditoError::Command("No commands found in group".to_string()));
+            return Err(OrditoError::Command(
+                "No commands found in group".to_string(),
+            ));
         }
 
         info!("Executing command group: {} commands", commands.len());
-        
-        let execution_ids = self.executor.execute_command_group(&commands, detached).await?;
+
+        let execution_ids = self
+            .executor
+            .execute_command_group(&commands, detached)
+            .await?;
 
         {
             let mut storage = self.storage.write().await;
@@ -359,4 +364,3 @@ impl CommandService {
         Ok(execution_ids)
     }
 }
-

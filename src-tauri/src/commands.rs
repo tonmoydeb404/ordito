@@ -31,12 +31,9 @@ pub async fn update_command(
 }
 
 #[tauri::command]
-pub async fn delete_command(
-    app_service: State<'_, Arc<AppService>>,
-    id: String,
-) -> Result<()> {
-    let uuid = Uuid::parse_str(&id)
-        .map_err(|_| OrditoError::Command("Invalid command ID".to_string()))?;
+pub async fn delete_command(app_service: State<'_, Arc<AppService>>, id: String) -> Result<()> {
+    let uuid =
+        Uuid::parse_str(&id).map_err(|_| OrditoError::Command("Invalid command ID".to_string()))?;
     info!("Deleting command: {}", uuid);
     app_service.commands().delete_command(uuid).await
 }
@@ -47,17 +44,22 @@ pub async fn execute_command(
     id: String,
     detached: Option<bool>,
 ) -> Result<String> {
-    let uuid = Uuid::parse_str(&id)
-        .map_err(|_| OrditoError::Command("Invalid command ID".to_string()))?;
+    let uuid =
+        Uuid::parse_str(&id).map_err(|_| OrditoError::Command("Invalid command ID".to_string()))?;
     let detached = detached.unwrap_or(false);
-    
+
     info!("Executing command: {} (detached: {})", uuid, detached);
-    let execution_id = app_service.commands().execute_command(uuid, detached).await?;
+    let execution_id = app_service
+        .commands()
+        .execute_command(uuid, detached)
+        .await?;
     Ok(execution_id.to_string())
 }
 
 #[tauri::command]
-pub async fn get_command_groups(app_service: State<'_, Arc<AppService>>) -> Result<Vec<CommandGroup>> {
+pub async fn get_command_groups(
+    app_service: State<'_, Arc<AppService>>,
+) -> Result<Vec<CommandGroup>> {
     debug!("Getting all command groups");
     app_service.commands().get_command_groups().await
 }
@@ -85,8 +87,8 @@ pub async fn delete_command_group(
     app_service: State<'_, Arc<AppService>>,
     id: String,
 ) -> Result<()> {
-    let uuid = Uuid::parse_str(&id)
-        .map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?;
+    let uuid =
+        Uuid::parse_str(&id).map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?;
     info!("Deleting command group: {}", uuid);
     app_service.commands().delete_command_group(uuid).await
 }
@@ -97,12 +99,15 @@ pub async fn execute_command_group(
     id: String,
     detached: Option<bool>,
 ) -> Result<Vec<String>> {
-    let uuid = Uuid::parse_str(&id)
-        .map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?;
+    let uuid =
+        Uuid::parse_str(&id).map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?;
     let detached = detached.unwrap_or(false);
-    
+
     info!("Executing command group: {} (detached: {})", uuid, detached);
-    let execution_ids = app_service.commands().execute_command_group(uuid, detached).await?;
+    let execution_ids = app_service
+        .commands()
+        .execute_command_group(uuid, detached)
+        .await?;
     Ok(execution_ids.into_iter().map(|id| id.to_string()).collect())
 }
 
@@ -131,10 +136,7 @@ pub async fn update_schedule(
 }
 
 #[tauri::command]
-pub async fn delete_schedule(
-    app_service: State<'_, Arc<AppService>>,
-    id: String,
-) -> Result<()> {
+pub async fn delete_schedule(app_service: State<'_, Arc<AppService>>, id: String) -> Result<()> {
     let uuid = Uuid::parse_str(&id)
         .map_err(|_| OrditoError::Scheduler("Invalid schedule ID".to_string()))?;
     info!("Deleting schedule: {}", uuid);
@@ -164,7 +166,9 @@ pub async fn get_execution_status(
 }
 
 #[tauri::command]
-pub async fn get_running_executions(app_service: State<'_, Arc<AppService>>) -> Result<Vec<CommandExecution>> {
+pub async fn get_running_executions(
+    app_service: State<'_, Arc<AppService>>,
+) -> Result<Vec<CommandExecution>> {
     debug!("Getting running executions");
     Ok(app_service.executor().get_running_executions().await)
 }
@@ -199,7 +203,9 @@ pub async fn search_commands(
 }
 
 #[tauri::command]
-pub async fn get_favorite_commands(app_service: State<'_, Arc<AppService>>) -> Result<Vec<Command>> {
+pub async fn get_favorite_commands(
+    app_service: State<'_, Arc<AppService>>,
+) -> Result<Vec<Command>> {
     debug!("Getting favorite commands");
     app_service.commands().get_favorite_commands().await
 }
@@ -210,8 +216,10 @@ pub async fn get_commands_by_group(
     group_id: Option<String>,
 ) -> Result<Vec<Command>> {
     let uuid = if let Some(id) = group_id {
-        Some(Uuid::parse_str(&id)
-            .map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?)
+        Some(
+            Uuid::parse_str(&id)
+                .map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?,
+        )
     } else {
         None
     };
@@ -241,10 +249,10 @@ pub async fn import_config(
     info!("Importing configuration");
     let config: AppConfig = serde_json::from_str(&config_json)
         .map_err(|e| OrditoError::Config(format!("Invalid configuration format: {}", e)))?;
-    
+
     let mut storage = app_service.storage().write().await;
     storage.import_config(config).await?;
-    
+
     info!("Configuration imported successfully");
     Ok(())
 }
@@ -256,7 +264,7 @@ pub async fn export_config(app_service: State<'_, Arc<AppService>>) -> Result<St
     let config = storage.export_config();
     let json = serde_json::to_string_pretty(&config)
         .map_err(|e| OrditoError::Config(format!("Failed to serialize configuration: {}", e)))?;
-    
+
     info!("Configuration exported successfully");
     Ok(json)
 }
@@ -287,12 +295,7 @@ pub async fn send_test_notification(
     body: String,
 ) -> Result<()> {
     debug!("Sending test notification: {}", title);
-    notification_service.send_custom_notification(
-        &title,
-        &body,
-        Some("🔔"),
-        None,
-    )
+    notification_service.send_custom_notification(&title, &body, Some("🔔"), None)
 }
 
 #[tauri::command]
@@ -310,4 +313,3 @@ pub async fn request_notification_permission(
     debug!("Requesting notification permission");
     notification_service.initialize().await
 }
-

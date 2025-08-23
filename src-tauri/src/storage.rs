@@ -42,16 +42,16 @@ impl Storage {
 
     pub async fn save_to_file(&self, path: &std::path::Path) -> Result<()> {
         let json = serde_json::to_string_pretty(&self.config)?;
-        
+
         if let Some(parent) = path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent)?;
             }
         }
 
-        tokio::fs::write(path, json).await.map_err(|e| {
-            OrditoError::Storage(format!("Failed to write config file: {}", e))
-        })?;
+        tokio::fs::write(path, json)
+            .await
+            .map_err(|e| OrditoError::Storage(format!("Failed to write config file: {}", e)))?;
 
         debug!("Configuration saved to {:?}", path);
         Ok(())
@@ -59,10 +59,9 @@ impl Storage {
 
     fn load_from_file(path: &std::path::Path) -> Result<AppConfig> {
         debug!("Loading configuration from {:?}", path);
-        
-        let contents = fs::read_to_string(path).map_err(|e| {
-            OrditoError::Storage(format!("Failed to read config file: {}", e))
-        })?;
+
+        let contents = fs::read_to_string(path)
+            .map_err(|e| OrditoError::Storage(format!("Failed to read config file: {}", e)))?;
 
         let config: AppConfig = serde_json::from_str(&contents).map_err(|e| {
             warn!("Failed to parse config file, creating backup and using default");
@@ -89,10 +88,11 @@ impl Storage {
     }
 
     pub async fn create_backup(&self) -> Result<std::path::PathBuf> {
-        let backup_path = self.file_path.with_extension(
-            format!("backup.{}.json", chrono::Utc::now().format("%Y%m%d_%H%M%S"))
-        );
-        
+        let backup_path = self.file_path.with_extension(format!(
+            "backup.{}.json",
+            chrono::Utc::now().format("%Y%m%d_%H%M%S")
+        ));
+
         self.save_to_file(&backup_path).await?;
         info!("Backup created at {:?}", backup_path);
         Ok(backup_path)
@@ -101,7 +101,9 @@ impl Storage {
     pub fn validate_config(&self) -> Result<()> {
         for command in &self.config.commands {
             if command.name.trim().is_empty() {
-                return Err(OrditoError::Config("Command name cannot be empty".to_string()));
+                return Err(OrditoError::Config(
+                    "Command name cannot be empty".to_string(),
+                ));
             }
             if command.command.trim().is_empty() {
                 return Err(OrditoError::Config("Command cannot be empty".to_string()));
@@ -110,13 +112,17 @@ impl Storage {
 
         for group in &self.config.groups {
             if group.name.trim().is_empty() {
-                return Err(OrditoError::Config("Group name cannot be empty".to_string()));
+                return Err(OrditoError::Config(
+                    "Group name cannot be empty".to_string(),
+                ));
             }
         }
 
         for schedule in &self.config.schedules {
             if schedule.name.trim().is_empty() {
-                return Err(OrditoError::Config("Schedule name cannot be empty".to_string()));
+                return Err(OrditoError::Config(
+                    "Schedule name cannot be empty".to_string(),
+                ));
             }
             crate::utils::validate_cron_expression(&schedule.cron_expression)?;
         }
@@ -130,4 +136,3 @@ impl Default for Storage {
         Self::new().expect("Failed to initialize storage")
     }
 }
-

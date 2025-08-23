@@ -25,11 +25,15 @@ pub struct AppService {
 impl AppService {
     pub fn new() -> Self {
         let storage = Arc::new(RwLock::new(
-            Storage::new().expect("Failed to initialize storage")
+            Storage::new().expect("Failed to initialize storage"),
         ));
 
-        let executor_service = Arc::new(ExecutorService::new().expect("Failed to initialize executor service"));
-        let command_service = Arc::new(CommandService::new(storage.clone(), executor_service.clone()));
+        let executor_service =
+            Arc::new(ExecutorService::new().expect("Failed to initialize executor service"));
+        let command_service = Arc::new(CommandService::new(
+            storage.clone(),
+            executor_service.clone(),
+        ));
         let scheduler_service = Arc::new(SchedulerService::new(
             storage.clone(),
             command_service.clone(),
@@ -74,17 +78,17 @@ impl AppService {
         drop(storage);
 
         self.scheduler_service.start().await?;
-        
+
         Ok(())
     }
 
     pub async fn shutdown(&self) -> Result<()> {
         self.scheduler_service.stop().await?;
         self.executor_service.shutdown().await?;
-        
+
         let storage = self.storage.read().await;
         storage.save().await?;
-        
+
         Ok(())
     }
 }

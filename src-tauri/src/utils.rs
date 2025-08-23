@@ -6,13 +6,13 @@ use std::str::FromStr;
 pub fn get_app_data_dir() -> Result<PathBuf> {
     let project_dirs = ProjectDirs::from("com", "ordito", "ordito")
         .ok_or_else(|| OrditoError::Config("Unable to determine app data directory".to_string()))?;
-    
+
     let data_dir = project_dirs.data_dir();
-    
+
     if !data_dir.exists() {
         std::fs::create_dir_all(data_dir)?;
     }
-    
+
     Ok(data_dir.to_path_buf())
 }
 
@@ -25,11 +25,11 @@ pub fn get_config_file_path() -> Result<PathBuf> {
 pub fn get_logs_dir() -> Result<PathBuf> {
     let mut path = get_app_data_dir()?;
     path.push("logs");
-    
+
     if !path.exists() {
         std::fs::create_dir_all(&path)?;
     }
-    
+
     Ok(path)
 }
 
@@ -55,7 +55,11 @@ pub fn format_duration(seconds: u64) -> String {
     } else if seconds < 3600 {
         format!("{}m {}s", seconds / 60, seconds % 60)
     } else {
-        format!("{}h {}m {}s", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+        format!(
+            "{}h {}m {}s",
+            seconds / 3600,
+            (seconds % 3600) / 60,
+            seconds % 60
+        )
     }
 }
-

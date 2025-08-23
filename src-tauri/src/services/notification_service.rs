@@ -1,5 +1,4 @@
 use crate::error::{OrditoError, Result};
-use tauri::Manager;
 use tauri_plugin_notification::{NotificationExt, PermissionState};
 use tracing::{debug, error, warn};
 
@@ -29,13 +28,15 @@ impl NotificationType {
         match self {
             NotificationType::ScheduleFailure | NotificationType::ExecutionFailure => Some("error"),
             NotificationType::ScheduleWarning => Some("warning"),
-            NotificationType::ScheduleSuccess | NotificationType::ExecutionSuccess => Some("success"),
+            NotificationType::ScheduleSuccess | NotificationType::ExecutionSuccess => {
+                Some("success")
+            }
             NotificationType::SystemAlert => Some("default"),
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NotificationService {
     app_handle: tauri::AppHandle,
 }
@@ -47,7 +48,7 @@ impl NotificationService {
 
     pub async fn initialize(&self) -> Result<()> {
         debug!("Initializing notification service");
-        
+
         // Request notification permission
         match self.app_handle.notification().permission_state() {
             Ok(PermissionState::Granted) => {
@@ -56,9 +57,11 @@ impl NotificationService {
             }
             Ok(PermissionState::Denied) => {
                 warn!("Notification permission denied");
-                Err(OrditoError::Notification("Notification permission denied".to_string()))
+                Err(OrditoError::Notification(
+                    "Notification permission denied".to_string(),
+                ))
             }
-            Ok(PermissionState::Unknown) => {
+            Ok(_) => {
                 debug!("Requesting notification permission");
                 match self.app_handle.notification().request_permission() {
                     Ok(PermissionState::Granted) => {
@@ -67,21 +70,31 @@ impl NotificationService {
                     }
                     Ok(PermissionState::Denied) => {
                         warn!("Notification permission denied by user");
-                        Err(OrditoError::Notification("Notification permission denied by user".to_string()))
+                        Err(OrditoError::Notification(
+                            "Notification permission denied by user".to_string(),
+                        ))
                     }
-                    Ok(PermissionState::Unknown) => {
+                    Ok(_) => {
                         warn!("Notification permission status unknown");
-                        Err(OrditoError::Notification("Notification permission status unknown".to_string()))
+                        Err(OrditoError::Notification(
+                            "Notification permission status unknown".to_string(),
+                        ))
                     }
                     Err(e) => {
                         error!("Failed to request notification permission: {}", e);
-                        Err(OrditoError::Notification(format!("Failed to request notification permission: {}", e)))
+                        Err(OrditoError::Notification(format!(
+                            "Failed to request notification permission: {}",
+                            e
+                        )))
                     }
                 }
             }
             Err(e) => {
                 error!("Failed to check notification permission: {}", e);
-                Err(OrditoError::Notification(format!("Failed to check notification permission: {}", e)))
+                Err(OrditoError::Notification(format!(
+                    "Failed to check notification permission: {}",
+                    e
+                )))
             }
         }
     }
@@ -91,14 +104,18 @@ impl NotificationService {
         notification_type: NotificationType,
         title: &str,
         body: &str,
-        actions: Option<Vec<(&str, &str)>>,
+        _actions: Option<Vec<(&str, &str)>>,
     ) -> Result<()> {
-        debug!("Sending {} notification: {}", 
-               std::any::type_name::<NotificationType>(), title);
+        debug!(
+            "Sending {} notification: {}",
+            std::any::type_name::<NotificationType>(),
+            title
+        );
 
         let formatted_title = format!("{} {}", notification_type.icon(), title);
-        
-        let mut notification = self.app_handle
+
+        let mut notification = self
+            .app_handle
             .notification()
             .builder()
             .title(formatted_title)
@@ -109,12 +126,12 @@ impl NotificationService {
             notification = notification.sound(sound);
         }
 
-        // Add actions if provided
-        if let Some(actions) = actions {
-            for (action_id, action_label) in actions {
-                notification = notification.action(action_id, action_label);
-            }
-        }
+        // Note: Actions may not be supported in current version of tauri-plugin-notification
+        // if let Some(actions) = actions {
+        //     for (action_id, action_label) in actions {
+        //         notification = notification.action(action_id, action_label);
+        //     }
+        // }
 
         match notification.show() {
             Ok(_) => {
@@ -123,7 +140,10 @@ impl NotificationService {
             }
             Err(e) => {
                 error!("Failed to send notification: {}", e);
-                Err(OrditoError::Notification(format!("Failed to send notification: {}", e)))
+                Err(OrditoError::Notification(format!(
+                    "Failed to send notification: {}",
+                    e
+                )))
             }
         }
     }
@@ -132,7 +152,10 @@ impl NotificationService {
         self.send_notification(
             NotificationType::ScheduleSuccess,
             "Schedule Executed Successfully",
-            &format!("'{}' completed successfully at {}", schedule_name, execution_time),
+            &format!(
+                "'{}' completed successfully at {}",
+                schedule_name, execution_time
+            ),
             Some(vec![("view_logs", "View Logs")]),
         )
     }
@@ -142,10 +165,7 @@ impl NotificationService {
             NotificationType::ScheduleFailure,
             "Schedule Execution Failed",
             &format!("'{}' failed: {}", schedule_name, error_message),
-            Some(vec![
-                ("view_logs", "View Logs"),
-                ("retry", "Retry"),
-            ]),
+            Some(vec![("view_logs", "View Logs"), ("retry", "Retry")]),
         )
     }
 
@@ -153,7 +173,10 @@ impl NotificationService {
         self.send_notification(
             NotificationType::ScheduleWarning,
             "Scheduled Task Starting Soon",
-            &format!("'{}' will execute in 10 minutes at {}", schedule_name, next_execution),
+            &format!(
+                "'{}' will execute in 10 minutes at {}",
+                schedule_name, next_execution
+            ),
             Some(vec![
                 ("view_schedule", "View Schedule"),
                 ("disable", "Disable"),
@@ -175,20 +198,12 @@ impl NotificationService {
             NotificationType::ExecutionFailure,
             "Command Execution Failed",
             &format!("'{}' failed with exit code {}", command_name, exit_code),
-            Some(vec![
-                ("view_output", "View Output"),
-                ("retry", "Retry"),
-            ]),
+            Some(vec![("view_output", "View Output"), ("retry", "Retry")]),
         )
     }
 
     pub fn send_system_alert(&self, message: &str) -> Result<()> {
-        self.send_notification(
-            NotificationType::SystemAlert,
-            "System Alert",
-            message,
-            None,
-        )
+        self.send_notification(NotificationType::SystemAlert, "System Alert", message, None)
     }
 
     pub fn send_custom_notification(
@@ -196,7 +211,7 @@ impl NotificationService {
         title: &str,
         body: &str,
         icon: Option<&str>,
-        actions: Option<Vec<(&str, &str)>>,
+        _actions: Option<Vec<(&str, &str)>>,
     ) -> Result<()> {
         let formatted_title = if let Some(icon) = icon {
             format!("{} {}", icon, title)
@@ -204,17 +219,19 @@ impl NotificationService {
             title.to_string()
         };
 
-        let mut notification = self.app_handle
+        let notification = self
+            .app_handle
             .notification()
             .builder()
             .title(formatted_title)
             .body(body);
 
-        if let Some(actions) = actions {
-            for (action_id, action_label) in actions {
-                notification = notification.action(action_id, action_label);
-            }
-        }
+        // Note: Actions may not be supported in current version of tauri-plugin-notification
+        // if let Some(actions) = actions {
+        //     for (action_id, action_label) in actions {
+        //         notification = notification.action(action_id, action_label);
+        //     }
+        // }
 
         match notification.show() {
             Ok(_) => {
@@ -223,7 +240,10 @@ impl NotificationService {
             }
             Err(e) => {
                 error!("Failed to send custom notification: {}", e);
-                Err(OrditoError::Notification(format!("Failed to send custom notification: {}", e)))
+                Err(OrditoError::Notification(format!(
+                    "Failed to send custom notification: {}",
+                    e
+                )))
             }
         }
     }
