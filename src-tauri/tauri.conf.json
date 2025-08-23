@@ -4,9 +4,9 @@
   "version": "../package.json",
   "identifier": "com.tonmoydeb.ordito",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "bun dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "bun build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -33,23 +33,7 @@
     ],
     "license": "LICENSE",
     "licenseFile": "LICENSE",
-    "createUpdaterArtifacts": true,
-    "macOS": {
-      "dmg": {
-        "appPosition": {
-          "x": 180,
-          "y": 170
-        },
-        "applicationFolderPosition": {
-          "x": 480,
-          "y": 170
-        },
-        "windowSize": {
-          "width": 660,
-          "height": 400
-        }
-      }
-    }
+    "createUpdaterArtifacts": true
   },
   "plugins": {
     "updater": {
