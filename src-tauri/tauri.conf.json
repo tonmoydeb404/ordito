@@ -37,47 +37,6 @@
       "tooltip": "Ordito - Command Management"
     }
   },
-  "plugins": {
-    "notification": {
-      "identifier": "com.ordito.app"
-    },
-    "fs": {
-      "scope": {
-        "allow": [
-          "$APPDATA/**",
-          "$APPCONFIG/**",
-          "$APPLOCALDATA/**"
-        ],
-        "deny": []
-      }
-    },
-    "shell": {
-      "scope": {
-        "allow": [
-          {
-            "name": "sh",
-            "cmd": "sh",
-            "args": [
-              "-c",
-              {
-                "validator": "\\S+"
-              }
-            ]
-          },
-          {
-            "name": "cmd",
-            "cmd": "cmd",
-            "args": [
-              "/C",
-              {
-                "validator": "\\S+"
-              }
-            ]
-          }
-        ]
-      }
-    }
-  },
   "bundle": {
     "active": true,
     "targets": "all",
