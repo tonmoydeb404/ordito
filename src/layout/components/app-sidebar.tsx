@@ -8,7 +8,6 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
   IconListDetails,
   IconReport,
   IconSearch,
@@ -23,13 +22,14 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import brand from "@/config/brand";
 import { NavDocuments } from "@/layout/components/nav-documents";
 import { NavMain } from "@/layout/components/nav-main";
 import { NavSecondary } from "@/layout/components/nav-secondary";
 import { NavUser } from "@/layout/components/nav-user";
+import { useNavLinks } from "../config";
 
 const data = {
   user: {
@@ -149,25 +149,19 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navLinks = useNavLinks();
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="mb-5">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
-            </SidebarMenuButton>
+          <SidebarMenuItem className="flex items-center gap-2">
+            <img src={brand.logo} alt={brand.name} className="size-8" />
+            <span className="text-2xl font-semibold">{brand.name}</span>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navLinks} />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
