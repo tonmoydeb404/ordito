@@ -133,7 +133,7 @@ runs:
           fi
         }
 
-        cat > latest.json << 'EOF'
+        cat > latest.json << EOF
         {
           "version": "$VERSION",
           "notes": "$RELEASE_NOTES",
@@ -177,7 +177,7 @@ runs:
         fi
 
         sed -i '$ s/,$//' latest.json
-        cat >> latest.json << 'EOF'
+        cat >> latest.json << EOF
           }
         }
         EOF
