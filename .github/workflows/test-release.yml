@@ -74,7 +74,7 @@ jobs:
             build-essential
 
       - name: Install frontend dependencies
-        run: bun install
+        run: pnpm install
 
       - uses: tauri-apps/tauri-action@v0
         env:
