@@ -7,7 +7,7 @@ description: |
   a native experience with web technologies.
 
 grade: stable
-confinement: strict
+confinement: classic
 
 layout:
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
@@ -25,6 +25,14 @@ apps:
       - system-observe
       - hardware-observe
       - removable-media
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      - audio-playback
+      - unity7
+      - gsettings
 
 package-repositories:
   - type: apt
@@ -54,6 +62,14 @@ parts:
     stage-packages:
       - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
+      - libgtk-3-0
+      - libglib2.0-0
+      - libcairo-gobject2
+      - libgdk-pixbuf2.0-0
+      - libpango-1.0-0
+      - libatk1.0-0
+      - libxss1
+      - libasound2
     source: .
     override-build: |
       set -eu
