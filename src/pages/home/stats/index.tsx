@@ -1,4 +1,11 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
+import {
+  IconActivity,
+  IconClock,
+  IconFolders,
+  IconTerminal2,
+  IconTrendingDown,
+  IconTrendingUp,
+} from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,94 +16,168 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  useGetCommandGroupsQuery,
+  useGetCommandsQuery,
+} from "@/store/api/commands-api";
+import {
+  useGetExecutionHistoryQuery,
+  useGetRunningExecutionsQuery,
+} from "@/store/api/executions-api";
+import {
+  useGetNextScheduledExecutionsQuery,
+  useGetSchedulesQuery,
+} from "@/store/api/schedules-api";
+import { useMemo } from "react";
+
+type Stat = {
+  title: string;
+  value: string | number;
+  description: string;
+  badge: {
+    icon: React.ReactNode;
+    text: string;
+    variant?: "outline" | "default";
+  };
+  footer: {
+    text: string;
+    icon: React.ReactNode;
+    subtext: string;
+  };
+};
 
 const StatsSection = () => {
+  const { data: commands = [] } = useGetCommandsQuery();
+  const { data: groups = [] } = useGetCommandGroupsQuery();
+  const { data: schedules = [] } = useGetSchedulesQuery();
+  const { data: nextExecutions = [] } = useGetNextScheduledExecutionsQuery(10);
+  const { data: executionHistory = [] } = useGetExecutionHistoryQuery(50);
+  const { data: runningExecutions = [] } = useGetRunningExecutionsQuery();
+
+  const stats = useMemo<Stat[]>(() => {
+    const favoriteCommands = commands.filter((cmd) => cmd.is_favorite).length;
+    const activeSchedules = schedules.filter(
+      (schedule) => schedule.is_enabled
+    ).length;
+    const todayExecutions = nextExecutions.filter((exec) => {
+      const today = new Date().toDateString();
+      return new Date(exec.next_execution).toDateString() === today;
+    }).length;
+
+    const totalExecutions = commands.reduce(
+      (sum, cmd) => sum + cmd.execution_count,
+      0
+    );
+    const avgExecutionsPerCommand =
+      commands.length > 0 ? Math.round(totalExecutions / commands.length) : 0;
+
+    const recentSuccessful = executionHistory.filter(
+      (exec) => exec.exit_code === 0 && exec.finished_at
+    ).length;
+    const successRate =
+      executionHistory.length > 0
+        ? Math.round((recentSuccessful / executionHistory.length) * 100)
+        : 0;
+
+    return [
+      {
+        title: "Commands",
+        value: commands.length,
+        description: "Total Commands",
+        badge: {
+          icon: <IconTerminal2 className="size-3" />,
+          text: `${favoriteCommands} favorites`,
+        },
+        footer: {
+          text: `${totalExecutions} total executions`,
+          icon: <IconActivity className="size-4" />,
+          subtext: `Average ${avgExecutionsPerCommand} runs per command`,
+        },
+      },
+      {
+        title: "Command Groups",
+        value: groups.length,
+        description: "Total Groups",
+        badge: {
+          icon: <IconFolders className="size-3" />,
+          text: "Organized",
+        },
+        footer: {
+          text: "Better organization",
+          icon: <IconTrendingUp className="size-4" />,
+          subtext: "Commands grouped efficiently",
+        },
+      },
+      {
+        title: "Schedules",
+        value: schedules.length,
+        description: "Total Schedules",
+        badge: {
+          icon: <IconClock className="size-3" />,
+          text: `${activeSchedules} active`,
+        },
+        footer: {
+          text: `${todayExecutions} scheduled today`,
+          icon: <IconClock className="size-4" />,
+          subtext: "Automated task execution",
+        },
+      },
+      {
+        title: "Success Rate",
+        value: `${successRate}%`,
+        description: "Execution Success Rate",
+        badge: {
+          icon: successRate >= 80 ? <IconTrendingUp /> : <IconTrendingDown />,
+          text:
+            runningExecutions.length > 0
+              ? `${runningExecutions.length} running`
+              : "Stable",
+        },
+        footer: {
+          text: successRate >= 80 ? "Excellent performance" : "Needs attention",
+          icon:
+            successRate >= 80 ? (
+              <IconTrendingUp className="size-4" />
+            ) : (
+              <IconTrendingDown className="size-4" />
+            ),
+          subtext: "Based on recent executions",
+        },
+      },
+    ];
+  }, [
+    commands,
+    groups,
+    schedules,
+    nextExecutions,
+    executionHistory,
+    runningExecutions,
+  ]);
+
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter>
-      </Card>
+      {stats.map((stat, index) => (
+        <Card key={index} className="@container/card">
+          <CardHeader>
+            <CardDescription>{stat.description}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {stat.value}
+            </CardTitle>
+            <CardAction>
+              <Badge variant={stat.badge.variant || "outline"}>
+                {stat.badge.icon}
+                {stat.badge.text}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex gap-2 font-medium">
+              {stat.footer.text} {stat.footer.icon}
+            </div>
+            <div className="text-muted-foreground">{stat.footer.subtext}</div>
+          </CardFooter>
+        </Card>
+      ))}
     </div>
   );
 };

@@ -43,7 +43,7 @@ export const executionsApi = createApi({
           return { error: { status: "FETCH_ERROR", error: String(error) } };
         }
       },
-      providesTags: (result, error, executionId) => [
+      providesTags: (_result, _error, executionId) => [
         { type: "ExecutionStatus", id: executionId },
       ],
     }),
@@ -57,7 +57,7 @@ export const executionsApi = createApi({
           return { error: { status: "FETCH_ERROR", error: String(error) } };
         }
       },
-      invalidatesTags: (result, error, executionId) => [
+      invalidatesTags: (_result, _error, executionId) => [
         "RunningExecutions",
         "ExecutionHistory",
         { type: "ExecutionStatus", id: executionId },
