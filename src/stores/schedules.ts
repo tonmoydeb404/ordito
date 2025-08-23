@@ -1,7 +1,12 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { Schedule, SchedulesState, CreateScheduleRequest, UpdateScheduleRequest } from '../types';
-import { ApiService } from '../services/api';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { ApiService } from "../services/api";
+import {
+  CreateScheduleRequest,
+  Schedule,
+  SchedulesState,
+  UpdateScheduleRequest,
+} from "../types";
 
 interface SchedulesActions {
   // Schedule actions
@@ -32,7 +37,7 @@ const initialState: SchedulesState = {
 
 export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
 
       // Schedule actions
@@ -42,9 +47,12 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
           const schedules = await ApiService.getSchedules();
           set({ schedules, isLoading: false });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to load schedules',
-            isLoading: false 
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to load schedules",
+            isLoading: false,
           });
         }
       },
@@ -53,13 +61,16 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
         set({ isLoading: true, error: undefined });
         try {
           const schedule = await ApiService.createSchedule(request);
-          set(state => ({ 
+          set((state) => ({
             schedules: [...state.schedules, schedule],
-            isLoading: false 
+            isLoading: false,
           }));
           return schedule;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to create schedule';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to create schedule";
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -69,16 +80,22 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
         set({ isLoading: true, error: undefined });
         try {
           const updatedSchedule = await ApiService.updateSchedule(request);
-          set(state => ({
-            schedules: state.schedules.map(schedule => 
+          set((state) => ({
+            schedules: state.schedules.map((schedule) =>
               schedule.id === request.id ? updatedSchedule : schedule
             ),
-            selectedSchedule: state.selectedSchedule?.id === request.id ? updatedSchedule : state.selectedSchedule,
-            isLoading: false
+            selectedSchedule:
+              state.selectedSchedule?.id === request.id
+                ? updatedSchedule
+                : state.selectedSchedule,
+            isLoading: false,
           }));
           return updatedSchedule;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to update schedule';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to update schedule";
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -88,13 +105,19 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
         set({ isLoading: true, error: undefined });
         try {
           await ApiService.deleteSchedule(id);
-          set(state => ({
-            schedules: state.schedules.filter(schedule => schedule.id !== id),
-            selectedSchedule: state.selectedSchedule?.id === id ? undefined : state.selectedSchedule,
-            isLoading: false
+          set((state) => ({
+            schedules: state.schedules.filter((schedule) => schedule.id !== id),
+            selectedSchedule:
+              state.selectedSchedule?.id === id
+                ? undefined
+                : state.selectedSchedule,
+            isLoading: false,
           }));
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to delete schedule';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to delete schedule";
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -104,16 +127,22 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
         set({ isLoading: true, error: undefined });
         try {
           const updatedSchedule = await ApiService.toggleSchedule(id);
-          set(state => ({
-            schedules: state.schedules.map(schedule => 
+          set((state) => ({
+            schedules: state.schedules.map((schedule) =>
               schedule.id === id ? updatedSchedule : schedule
             ),
-            selectedSchedule: state.selectedSchedule?.id === id ? updatedSchedule : state.selectedSchedule,
-            isLoading: false
+            selectedSchedule:
+              state.selectedSchedule?.id === id
+                ? updatedSchedule
+                : state.selectedSchedule,
+            isLoading: false,
           }));
           return updatedSchedule;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to toggle schedule';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to toggle schedule";
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -121,11 +150,16 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
 
       loadNextExecutions: async (limit?: number) => {
         try {
-          const nextExecutions = await ApiService.getNextScheduledExecutions(limit);
+          const nextExecutions = await ApiService.getNextScheduledExecutions(
+            limit
+          );
           set({ nextExecutions });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to load next executions'
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to load next executions",
           });
         }
       },
@@ -156,6 +190,6 @@ export const useSchedulesStore = create<SchedulesState & SchedulesActions>()(
         set({ error: undefined });
       },
     }),
-    { name: 'schedules-store' }
+    { name: "schedules-store" }
   )
 );

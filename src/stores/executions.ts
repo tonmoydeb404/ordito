@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { CommandExecution, ExecutionsState } from '../types';
-import { ApiService } from '../services/api';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { ApiService } from "../services/api";
+import { CommandExecution, ExecutionsState } from "../types";
 
 interface ExecutionsActions {
   // Execution actions
@@ -43,9 +43,12 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
           const runningExecutions = await ApiService.getRunningExecutions();
           set({ runningExecutions, isLoading: false });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to load running executions',
-            isLoading: false 
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to load running executions",
+            isLoading: false,
           });
         }
       },
@@ -56,9 +59,12 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
           const executionHistory = await ApiService.getExecutionHistory(limit);
           set({ executionHistory, isLoading: false });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to load execution history',
-            isLoading: false 
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to load execution history",
+            isLoading: false,
           });
         }
       },
@@ -66,22 +72,30 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
       getExecutionStatus: async (executionId: string) => {
         try {
           const execution = await ApiService.getExecutionStatus(executionId);
-          
+
           // Update the execution in running executions if it exists
           if (execution) {
-            set(state => ({
-              runningExecutions: state.runningExecutions.map(exec => 
-                exec.id === executionId ? execution : exec
-              ).filter(exec => exec.is_running), // Remove completed executions
-              executionHistory: execution.is_running 
-                ? state.executionHistory 
-                : [execution, ...state.executionHistory.filter(exec => exec.id !== executionId)]
+            set((state) => ({
+              runningExecutions: state.runningExecutions
+                .map((exec) => (exec.id === executionId ? execution : exec))
+                .filter((exec) => exec.is_running), // Remove completed executions
+              executionHistory: execution.is_running
+                ? state.executionHistory
+                : [
+                    execution,
+                    ...state.executionHistory.filter(
+                      (exec) => exec.id !== executionId
+                    ),
+                  ],
             }));
           }
-          
+
           return execution;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to get execution status';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to get execution status";
           set({ error: errorMessage });
           throw new Error(errorMessage);
         }
@@ -90,16 +104,19 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
       killExecution: async (executionId: string) => {
         try {
           await ApiService.killExecution(executionId);
-          
+
           // Remove from running executions
-          set(state => ({
-            runningExecutions: state.runningExecutions.filter(exec => exec.id !== executionId)
+          set((state) => ({
+            runningExecutions: state.runningExecutions.filter(
+              (exec) => exec.id !== executionId
+            ),
           }));
-          
+
           // Refresh execution history to include the killed execution
           get().loadExecutionHistory();
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to kill execution';
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to kill execution";
           set({ error: errorMessage });
           throw new Error(errorMessage);
         }
@@ -122,7 +139,7 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
             const runningExecutions = await ApiService.getRunningExecutions();
             set({ runningExecutions });
           } catch (error) {
-            console.error('Failed to poll running executions:', error);
+            console.error("Failed to poll running executions:", error);
           }
         }, intervalMs);
       },
@@ -147,6 +164,6 @@ export const useExecutionsStore = create<ExecutionsState & ExecutionsActions>()(
         set({ error: undefined });
       },
     }),
-    { name: 'executions-store' }
+    { name: "executions-store" }
   )
 );
