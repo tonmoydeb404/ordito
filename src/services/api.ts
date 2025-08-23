@@ -128,4 +128,17 @@ export class ApiService {
   static async getAppInfo(): Promise<AppInfo> {
     return invoke('get_app_info');
   }
+
+  // Notification operations
+  static async sendTestNotification(title: string, body: string): Promise<void> {
+    return invoke('send_test_notification', { title, body });
+  }
+
+  static async checkNotificationPermission(): Promise<boolean> {
+    return invoke('check_notification_permission');
+  }
+
+  static async requestNotificationPermission(): Promise<void> {
+    return invoke('request_notification_permission');
+  }
 }

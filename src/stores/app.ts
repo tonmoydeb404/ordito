@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { AppConfig, AppSettings, AppInfo, AppState, Theme, LogLevel } from '../types';
+import { AppConfig, AppSettings, AppInfo, AppState, Theme, LogLevel, NotificationSettings } from '../types';
 import { ApiService } from '../services/api';
+import { NotificationService } from '../services/notifications';
 
 interface AppActions {
   // Config actions
@@ -15,6 +16,12 @@ interface AppActions {
   updateAutoStart: (autoStart: boolean) => void;
   updateMinimizeToTray: (minimizeToTray: boolean) => void;
   updateShowNotifications: (showNotifications: boolean) => void;
+  updateNotificationSettings: (settings: Partial<NotificationSettings>) => void;
+
+  // Notification actions
+  sendTestNotification: (title?: string, body?: string) => Promise<boolean>;
+  checkNotificationPermission: () => Promise<boolean>;
+  requestNotificationPermission: () => Promise<boolean>;
 
   // State actions
   setLoading: (loading: boolean) => void;
@@ -27,6 +34,14 @@ const defaultSettings: AppSettings = {
   auto_start: false,
   minimize_to_tray: true,
   show_notifications: true,
+  notification_settings: {
+    schedule_success: true,
+    schedule_failure: true,
+    schedule_warnings: true,
+    execution_success: false,
+    execution_failure: true,
+    system_alerts: true,
+  },
   theme: Theme.System,
   log_level: LogLevel.Info,
 };
@@ -148,6 +163,60 @@ export const useAppStore = create<AppState & AppActions>()(
               updated_at: new Date().toISOString(),
             }
           }));
+        },
+
+        updateNotificationSettings: (notificationSettings: Partial<NotificationSettings>) => {
+          set(state => {
+            const updatedNotificationSettings = { ...state.settings.notification_settings, ...notificationSettings };
+            
+            // Update the notification service settings
+            NotificationService.getInstance().updateSettings(updatedNotificationSettings);
+            
+            return {
+              settings: { 
+                ...state.settings, 
+                notification_settings: updatedNotificationSettings 
+              },
+              config: {
+                ...state.config,
+                settings: { 
+                  ...state.config.settings, 
+                  notification_settings: updatedNotificationSettings 
+                },
+                updated_at: new Date().toISOString(),
+              }
+            };
+          });
+        },
+
+        // Notification actions
+        sendTestNotification: async (title?: string, body?: string) => {
+          try {
+            return await NotificationService.getInstance().sendTestNotification(title, body);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to send test notification';
+            set({ error: errorMessage });
+            return false;
+          }
+        },
+
+        checkNotificationPermission: async () => {
+          try {
+            return await ApiService.checkNotificationPermission();
+          } catch (error) {
+            console.error('Failed to check notification permission:', error);
+            return false;
+          }
+        },
+
+        requestNotificationPermission: async () => {
+          try {
+            return await NotificationService.getInstance().requestPermission();
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to request notification permission';
+            set({ error: errorMessage });
+            return false;
+          }
         },
 
         // State actions

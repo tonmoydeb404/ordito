@@ -71,10 +71,20 @@ export enum LogLevel {
   Trace = 'Trace',
 }
 
+export interface NotificationSettings {
+  schedule_success: boolean;
+  schedule_failure: boolean;
+  schedule_warnings: boolean;
+  execution_success: boolean;
+  execution_failure: boolean;
+  system_alerts: boolean;
+}
+
 export interface AppSettings {
   auto_start: boolean;
   minimize_to_tray: boolean;
   show_notifications: boolean;
+  notification_settings: NotificationSettings;
   theme: Theme;
   log_level: LogLevel;
 }

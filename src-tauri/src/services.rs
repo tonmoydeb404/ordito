@@ -1,5 +1,6 @@
 pub mod command_service;
 pub mod executor_service;
+pub mod notification_service;
 pub mod scheduler_service;
 
 use crate::error::Result;
@@ -9,6 +10,7 @@ use tokio::sync::RwLock;
 
 pub use command_service::CommandService;
 pub use executor_service::ExecutorService;
+pub use notification_service::NotificationService;
 pub use scheduler_service::SchedulerService;
 
 #[derive(Debug)]
@@ -17,6 +19,7 @@ pub struct AppService {
     command_service: Arc<CommandService>,
     executor_service: Arc<ExecutorService>,
     scheduler_service: Arc<SchedulerService>,
+    notification_service: Option<Arc<NotificationService>>,
 }
 
 impl AppService {
@@ -37,6 +40,7 @@ impl AppService {
             command_service,
             executor_service,
             scheduler_service,
+            notification_service: None,
         }
     }
 
@@ -54,6 +58,14 @@ impl AppService {
 
     pub fn scheduler(&self) -> &Arc<SchedulerService> {
         &self.scheduler_service
+    }
+
+    pub fn notifications(&self) -> Option<&Arc<NotificationService>> {
+        self.notification_service.as_ref()
+    }
+
+    pub fn set_notification_service(&mut self, notification_service: Arc<NotificationService>) {
+        self.notification_service = Some(notification_service);
     }
 
     pub async fn initialize(&self) -> Result<()> {

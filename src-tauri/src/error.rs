@@ -25,6 +25,9 @@ pub enum OrditoError {
     #[error("Configuration error: {0}")]
     Config(String),
 
+    #[error("Notification error: {0}")]
+    Notification(String),
+
     #[error("Tauri error: {0}")]
     Tauri(#[from] tauri::Error),
 

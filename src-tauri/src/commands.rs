@@ -1,6 +1,6 @@
 use crate::error::{OrditoError, Result};
 use crate::models::*;
-use crate::services::AppService;
+use crate::services::{AppService, NotificationService};
 use std::sync::Arc;
 use tauri::State;
 use tracing::{debug, info};
@@ -278,5 +278,36 @@ pub async fn get_app_info() -> Result<serde_json::Value> {
         "name": env!("CARGO_PKG_NAME"),
         "description": env!("CARGO_PKG_DESCRIPTION")
     }))
+}
+
+#[tauri::command]
+pub async fn send_test_notification(
+    notification_service: State<'_, Arc<NotificationService>>,
+    title: String,
+    body: String,
+) -> Result<()> {
+    debug!("Sending test notification: {}", title);
+    notification_service.send_custom_notification(
+        &title,
+        &body,
+        Some("🔔"),
+        None,
+    )
+}
+
+#[tauri::command]
+pub async fn check_notification_permission(
+    notification_service: State<'_, Arc<NotificationService>>,
+) -> Result<bool> {
+    debug!("Checking notification permission");
+    Ok(notification_service.is_permission_granted())
+}
+
+#[tauri::command]
+pub async fn request_notification_permission(
+    notification_service: State<'_, Arc<NotificationService>>,
+) -> Result<()> {
+    debug!("Requesting notification permission");
+    notification_service.initialize().await
 }
 

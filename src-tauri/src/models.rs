@@ -224,10 +224,34 @@ impl AppConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationSettings {
+    pub schedule_success: bool,
+    pub schedule_failure: bool,
+    pub schedule_warnings: bool,
+    pub execution_success: bool,
+    pub execution_failure: bool,
+    pub system_alerts: bool,
+}
+
+impl Default for NotificationSettings {
+    fn default() -> Self {
+        Self {
+            schedule_success: true,
+            schedule_failure: true,
+            schedule_warnings: true,
+            execution_success: false,
+            execution_failure: true,
+            system_alerts: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
     pub auto_start: bool,
     pub minimize_to_tray: bool,
     pub show_notifications: bool,
+    pub notification_settings: NotificationSettings,
     pub theme: Theme,
     pub log_level: LogLevel,
 }
@@ -238,6 +262,7 @@ impl Default for AppSettings {
             auto_start: false,
             minimize_to_tray: true,
             show_notifications: true,
+            notification_settings: NotificationSettings::default(),
             theme: Theme::System,
             log_level: LogLevel::Info,
         }

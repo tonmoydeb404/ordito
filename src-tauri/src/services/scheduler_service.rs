@@ -1,6 +1,6 @@
 use crate::error::{OrditoError, Result};
 use crate::models::*;
-use crate::services::CommandService;
+use crate::services::{CommandService, NotificationService};
 use crate::storage::StorageHandle;
 use chrono::{DateTime, Utc};
 use cron::Schedule;
@@ -17,6 +17,7 @@ use uuid::Uuid;
 pub struct SchedulerService {
     storage: StorageHandle,
     command_service: Arc<CommandService>,
+    notification_service: Option<Arc<NotificationService>>,
     running_schedules: Arc<RwLock<HashMap<Uuid, ScheduleRunner>>>,
     is_running: Arc<Mutex<bool>>,
 }
@@ -33,9 +34,14 @@ impl SchedulerService {
         Self {
             storage,
             command_service,
+            notification_service: None,
             running_schedules: Arc::new(RwLock::new(HashMap::new())),
             is_running: Arc::new(Mutex::new(false)),
         }
+    }
+
+    pub fn set_notification_service(&mut self, notification_service: Arc<NotificationService>) {
+        self.notification_service = Some(notification_service);
     }
 
     pub async fn start(&self) -> Result<()> {
@@ -53,6 +59,12 @@ impl SchedulerService {
         let service_clone = self.clone();
         tokio::spawn(async move {
             service_clone.run_scheduler_loop().await;
+        });
+
+        // Start warning notification loop (checks every 5 minutes for upcoming schedules)
+        let warning_service_clone = self.clone();
+        tokio::spawn(async move {
+            warning_service_clone.run_warning_loop().await;
         });
 
         Ok(())
@@ -339,15 +351,31 @@ impl SchedulerService {
     async fn execute_schedule(&self, schedule: &crate::models::Schedule) -> Result<()> {
         info!("Executing schedule: {}", schedule.name);
 
-        if let Some(command_id) = schedule.command_id {
-            self.command_service.execute_command(command_id, true).await?;
+        let execution_start = Utc::now();
+        let mut execution_success = false;
+        let mut error_message = String::new();
+
+        let execution_result = if let Some(command_id) = schedule.command_id {
+            self.command_service.execute_command(command_id, true).await
         } else if let Some(group_id) = schedule.group_id {
-            self.command_service.execute_command_group(group_id, true).await?;
+            self.command_service.execute_command_group(group_id, true).await
         } else {
             warn!("Schedule {} has no command or group to execute", schedule.name);
             return Ok(());
+        };
+
+        match execution_result {
+            Ok(_) => {
+                execution_success = true;
+                debug!("Schedule executed successfully: {}", schedule.name);
+            }
+            Err(e) => {
+                error_message = e.to_string();
+                error!("Failed to execute schedule {}: {}", schedule.name, e);
+            }
         }
 
+        // Update schedule state
         {
             let mut storage = self.storage.write().await;
             let config = storage.get_config_mut();
@@ -364,11 +392,99 @@ impl SchedulerService {
             let mut running_schedules = self.running_schedules.write().await;
             if let Some(runner) = running_schedules.get_mut(&schedule.id) {
                 runner.schedule.execution_count += 1;
-                runner.schedule.last_executed = Some(Utc::now());
+                runner.schedule.last_executed = Some(execution_start);
             }
         }
 
-        debug!("Schedule executed successfully: {}", schedule.name);
+        // Send notification (check settings first)
+        if let Some(notification_service) = &self.notification_service {
+            let storage = self.storage.read().await;
+            let settings = &storage.get_config().settings;
+            
+            if settings.show_notifications {
+                let execution_time = execution_start.format("%H:%M:%S").to_string();
+                
+                if execution_success && settings.notification_settings.schedule_success {
+                    if let Err(e) = notification_service.send_schedule_success(&schedule.name, &execution_time) {
+                        warn!("Failed to send success notification: {}", e);
+                    }
+                } else if !execution_success && settings.notification_settings.schedule_failure {
+                    if let Err(e) = notification_service.send_schedule_failure(&schedule.name, &error_message) {
+                        warn!("Failed to send failure notification: {}", e);
+                    }
+                }
+            }
+        }
+
+        if execution_success {
+            Ok(())
+        } else {
+            Err(OrditoError::Scheduler(error_message))
+        }
+    }
+
+    async fn run_warning_loop(&self) {
+        let mut interval = interval(Duration::from_secs(300)); // Check every 5 minutes
+
+        loop {
+            let is_running = *self.is_running.lock().await;
+            if !is_running {
+                break;
+            }
+
+            interval.tick().await;
+
+            if let Err(e) = self.check_and_send_warnings().await {
+                error!("Error in warning loop: {}", e);
+            }
+        }
+
+        info!("Warning loop stopped");
+    }
+
+    async fn check_and_send_warnings(&self) -> Result<()> {
+        let notification_service = match &self.notification_service {
+            Some(service) => service,
+            None => return Ok(()), // No notification service, skip warnings
+        };
+
+        let now = Utc::now();
+        let warning_threshold = now + chrono::Duration::minutes(10);
+
+        let running_schedules = self.running_schedules.read().await;
+        
+        for (_id, runner) in running_schedules.iter() {
+            if !runner.schedule.is_enabled || !runner.schedule.should_execute() {
+                continue;
+            }
+
+            if let Some(next_execution) = runner.schedule.next_execution {
+                // Check if execution is within 10 minutes and we haven't sent a warning recently
+                if next_execution <= warning_threshold && next_execution > now {
+                    // Check if we've already sent a warning for this execution time
+                    // (Simple check: if last execution was more than 1 hour ago, we can send warning)
+                    let should_send_warning = runner.schedule.last_executed
+                        .map(|last| (now - last).num_hours() >= 1)
+                        .unwrap_or(true);
+
+                    if should_send_warning {
+                        // Check settings before sending warning
+                        let storage = self.storage.read().await;
+                        let settings = &storage.get_config().settings;
+                        drop(storage);
+                        
+                        if settings.show_notifications && settings.notification_settings.schedule_warnings {
+                            let next_execution_time = next_execution.format("%H:%M:%S").to_string();
+                            
+                            if let Err(e) = notification_service.send_schedule_warning(&runner.schedule.name, &next_execution_time) {
+                                warn!("Failed to send warning notification: {}", e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -389,6 +505,7 @@ impl Clone for SchedulerService {
         Self {
             storage: self.storage.clone(),
             command_service: self.command_service.clone(),
+            notification_service: self.notification_service.clone(),
             running_schedules: self.running_schedules.clone(),
             is_running: self.is_running.clone(),
         }
