@@ -1,6 +1,9 @@
 use crate::error::{OrditoError, Result};
 use crate::models::{Command, CommandExecution};
+use crate::utils::get_app_data_dir;
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
 use tokio::process::Command as TokioCommand;
@@ -14,14 +17,21 @@ pub type ExecutionHandle = Arc<RwLock<CommandExecution>>;
 pub struct ExecutorService {
     running_executions: Arc<Mutex<HashMap<Uuid, ExecutionHandle>>>,
     execution_history: Arc<RwLock<Vec<CommandExecution>>>,
+    history_file_path: PathBuf,
 }
 
 impl ExecutorService {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Result<Self> {
+        let mut history_file_path = get_app_data_dir()?;
+        history_file_path.push("execution_history.json");
+        
+        let execution_history = Self::load_history_from_file(&history_file_path)?;
+        
+        Ok(Self {
             running_executions: Arc::new(Mutex::new(HashMap::new())),
-            execution_history: Arc::new(RwLock::new(Vec::new())),
-        }
+            execution_history: Arc::new(RwLock::new(execution_history)),
+            history_file_path,
+        })
     }
 
     pub async fn execute_command(&self, command: &Command, detached: bool) -> Result<Uuid> {
@@ -216,10 +226,58 @@ impl ExecutorService {
             let mut history = self.execution_history.write().await;
             history.push(execution);
             
+            // Keep only the last 1000 executions
             if history.len() > 1000 {
                 history.drain(0..100);
             }
+            
+            // Save to file after adding new execution
+            if let Err(e) = self.save_history_to_file(&history).await {
+                error!("Failed to save execution history: {}", e);
+            }
         }
+    }
+
+    fn load_history_from_file(file_path: &PathBuf) -> Result<Vec<CommandExecution>> {
+        if !file_path.exists() {
+            info!("Execution history file not found, starting with empty history");
+            return Ok(Vec::new());
+        }
+
+        debug!("Loading execution history from {:?}", file_path);
+        
+        let contents = fs::read_to_string(file_path)
+            .map_err(|e| OrditoError::Storage(format!("Failed to read execution history file: {}", e)))?;
+
+        let history: Vec<CommandExecution> = serde_json::from_str(&contents)
+            .map_err(|e| {
+                warn!("Failed to parse execution history file, creating backup and starting fresh");
+                if let Err(backup_err) = fs::copy(file_path, file_path.with_extension("json.backup")) {
+                    warn!("Failed to create backup: {}", backup_err);
+                }
+                OrditoError::Storage(format!("Failed to parse execution history file: {}", e))
+            })?;
+
+        info!("Loaded {} execution records from history", history.len());
+        Ok(history)
+    }
+
+    async fn save_history_to_file(&self, history: &[CommandExecution]) -> Result<()> {
+        let json = serde_json::to_string_pretty(history)
+            .map_err(|e| OrditoError::Storage(format!("Failed to serialize execution history: {}", e)))?;
+        
+        if let Some(parent) = self.history_file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| OrditoError::Storage(format!("Failed to create history directory: {}", e)))?;
+            }
+        }
+
+        tokio::fs::write(&self.history_file_path, json).await
+            .map_err(|e| OrditoError::Storage(format!("Failed to write execution history file: {}", e)))?;
+
+        debug!("Saved {} execution records to history file", history.len());
+        Ok(())
     }
 }
 
@@ -228,6 +286,7 @@ impl Clone for ExecutorService {
         Self {
             running_executions: self.running_executions.clone(),
             execution_history: self.execution_history.clone(),
+            history_file_path: self.history_file_path.clone(),
         }
     }
 }

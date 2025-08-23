@@ -28,7 +28,7 @@ impl AppService {
             Storage::new().expect("Failed to initialize storage")
         ));
 
-        let executor_service = Arc::new(ExecutorService::new());
+        let executor_service = Arc::new(ExecutorService::new().expect("Failed to initialize executor service"));
         let command_service = Arc::new(CommandService::new(storage.clone(), executor_service.clone()));
         let scheduler_service = Arc::new(SchedulerService::new(
             storage.clone(),
