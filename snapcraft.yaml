@@ -17,7 +17,6 @@ apps:
   ordito:
     command: usr/bin/ordito
     desktop: usr/share/applications/ordito.desktop
-    extensions: [gnome]
     plugs:
       - network
       - home
