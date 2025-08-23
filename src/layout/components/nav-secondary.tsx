@@ -1,7 +1,4 @@
-"use client"
-
-import * as React from "react"
-import { type Icon } from "@tabler/icons-react"
+"use client";
 
 import {
   SidebarGroup,
@@ -9,20 +6,30 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { LucideHelpCircle, LucideSearch, LucideSettings } from "lucide-react";
 
-export function NavSecondary({
-  items,
-  ...props
-}: {
-  items: {
-    title: string
-    url: string
-    icon: Icon
-  }[]
-} & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+const items = [
+  {
+    title: "Settings",
+    url: "#",
+    icon: LucideSettings,
+  },
+  {
+    title: "Get Help",
+    url: "#",
+    icon: LucideHelpCircle,
+  },
+  {
+    title: "Search",
+    url: "#",
+    icon: LucideSearch,
+  },
+];
+
+export function NavSecondary() {
   return (
-    <SidebarGroup {...props}>
+    <SidebarGroup>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -38,5 +45,5 @@ export function NavSecondary({
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  )
+  );
 }

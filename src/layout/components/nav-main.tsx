@@ -8,9 +8,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
-import { NavLink } from "../config";
+import { useNavLinks } from "../config";
 
-export function NavMain({ items }: { items: NavLink[] }) {
+export function NavMain() {
+  const navLinks = useNavLinks();
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -26,7 +27,7 @@ export function NavMain({ items }: { items: NavLink[] }) {
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
-          {items.map((item) => (
+          {navLinks.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} asChild>
                 <Link to={item.url}>
