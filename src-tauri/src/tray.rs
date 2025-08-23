@@ -134,7 +134,6 @@ pub async fn show_notification(app_handle: &AppHandle, title: &str, body: &str) 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_handle_menu_event() {
