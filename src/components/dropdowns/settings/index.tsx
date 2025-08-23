@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LucideCog } from "lucide-react";
 
+import { Updater } from "@/components/updater";
 import { ImportExport } from "./import-export";
 import { Startup } from "./startup";
 
@@ -20,7 +21,9 @@ const SettingsDropdown = (props: Props) => {
           <LucideCog />
         </DropdownMenuTrigger>
       </Button>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-80">
+        <Updater checkOnMount={false} />
+        <DropdownMenuSeparator />
         <ImportExport />
         <DropdownMenuSeparator />
         <Startup />
