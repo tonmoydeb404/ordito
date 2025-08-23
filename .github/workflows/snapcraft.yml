@@ -1,4 +1,4 @@
-name: Snapcraft Builds
+name: Snapcraft Build and Publish
 
 on:
   push:
@@ -7,42 +7,62 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-snapcraft:
+  build-and-publish-snap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Create signing key files
+      - name: Create signing key files for snapcraft
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          # Create individual files to avoid shell parsing issues
-          echo "$TAURI_SIGNING_PRIVATE_KEY" > tauri_private_key.txt
-          echo "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" > tauri_password.txt
-
-          echo "✅ Created signing key files"
-          echo "📋 Key length: $(wc -c < tauri_private_key.txt)"
-          echo "📋 Password length: $(wc -c < tauri_password.txt)"
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && [ -n "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" ]; then
+            echo "$TAURI_SIGNING_PRIVATE_KEY" > tauri_private_key.txt
+            echo "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" > tauri_password.txt
+            echo "✅ Created signing key files"
+            echo "📋 Key length: $(wc -c < tauri_private_key.txt)"
+            echo "📋 Password length: $(wc -c < tauri_password.txt)"
+          else
+            echo "⚠️ Signing keys not provided, building without signatures"
+          fi
 
       - name: Build Snap package
         uses: snapcore/action-build@v1
-        id: build
-        with:
-          snapcraft-args: pack
+        id: snapcraft
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: Publish to snap store
+      - name: Upload snap artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ordito-snap
+          path: ${{ steps.snapcraft.outputs.snap }}
+          retention-days: 30
+
+      - name: Verify snap package
+        run: |
+          echo "📦 Built snap: ${{ steps.snapcraft.outputs.snap }}"
+          ls -la ${{ steps.snapcraft.outputs.snap }}
+          snap info --local ${{ steps.snapcraft.outputs.snap }}
+
+      - name: Publish to Snap Store (Edge)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: snapcore/action-publish@v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
         with:
-          snap: ${{ steps.build.outputs.snap }}
+          snap: ${{ steps.snapcraft.outputs.snap }}
           release: edge
+
+      - name: Publish to Snap Store (Stable)
+        if: github.event_name == 'workflow_dispatch'
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+        with:
+          snap: ${{ steps.snapcraft.outputs.snap }}
+          release: stable
