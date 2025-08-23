@@ -1,11 +1,7 @@
 name: Test Release
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch to release"
-        required: true
-        default: "main"
+
 jobs:
   build:
     permissions:
@@ -33,18 +29,18 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: latest
+          version: 10.12.1
 
-      - name: Cache Bun dependencies
+      - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-bun-
+            ${{ runner.os }}-pnpm-
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
