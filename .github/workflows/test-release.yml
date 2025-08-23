@@ -29,18 +29,18 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10.12.1
+          bun-version: latest
 
-      - name: Cache pnpm dependencies
+      - name: Cache Bun dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-bun-
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
@@ -74,7 +74,7 @@ jobs:
             build-essential
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: bun install
 
       - uses: tauri-apps/tauri-action@v0
         env:
