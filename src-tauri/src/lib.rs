@@ -1,0 +1,65 @@
+pub mod commands;
+pub mod config;
+pub mod error;
+pub mod models;
+pub mod scheduler;
+pub mod services;
+pub mod storage;
+pub mod tray;
+pub mod utils;
+
+pub use error::Result;
+
+use commands::*;
+use services::AppService;
+use std::sync::Arc;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tracing_subscriber::fmt()
+        .with_env_filter("ordito=debug,tauri=info")
+        .init();
+
+    let app_service = Arc::new(AppService::new());
+    let scheduler_service = app_service.scheduler().clone();
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_os::init())
+        .manage(app_service)
+        .setup(move |app| {
+            tray::setup_system_tray(app)?;
+            
+            let scheduler_service_clone = scheduler_service.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = scheduler_service_clone.start().await {
+                    tracing::error!("Failed to start scheduler: {}", e);
+                }
+            });
+            
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            get_commands,
+            create_command,
+            update_command,
+            delete_command,
+            execute_command,
+            get_command_groups,
+            create_command_group,
+            update_command_group,
+            delete_command_group,
+            get_schedules,
+            create_schedule,
+            update_schedule,
+            delete_schedule,
+            toggle_schedule,
+            import_config,
+            export_config
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
