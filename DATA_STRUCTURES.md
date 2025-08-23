@@ -1,7 +1,8 @@
 # Ordito Data Structures
 
 *Last updated: August 23, 2025*  
-*Version: 0.1.0*
+*Version: 0.1.0*  
+*Dependencies: Updated to latest versions*
 
 This document provides a comprehensive overview of all data structures used in the Ordito application, including their purpose, relationships, and validation rules.
 

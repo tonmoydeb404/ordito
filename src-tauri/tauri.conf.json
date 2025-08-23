@@ -5,7 +5,7 @@
   "identifier": "com.ordito.app",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
@@ -43,7 +43,11 @@
     },
     "fs": {
       "scope": {
-        "allow": ["$APPDATA/**", "$APPCONFIG/**", "$APPLOCALDATA/**"],
+        "allow": [
+          "$APPDATA/**",
+          "$APPCONFIG/**",
+          "$APPLOCALDATA/**"
+        ],
         "deny": []
       }
     },
@@ -53,12 +57,22 @@
           {
             "name": "sh",
             "cmd": "sh",
-            "args": ["-c", { "validator": "\\S+" }]
+            "args": [
+              "-c",
+              {
+                "validator": "\\S+"
+              }
+            ]
           },
           {
             "name": "cmd",
             "cmd": "cmd",
-            "args": ["/C", { "validator": "\\S+" }]
+            "args": [
+              "/C",
+              {
+                "validator": "\\S+"
+              }
+            ]
           }
         ]
       }
