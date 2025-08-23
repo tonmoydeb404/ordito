@@ -30,14 +30,16 @@ export const MONTHS = [
   { value: "12", label: "December" },
 ];
 
+// Note: zslayton/cron library uses non-standard weekday numbering:
+// Sunday = 1, Monday = 2, Tuesday = 3, etc. (not the usual Unix 0-6)
 export const WEEKDAYS = [
-  { value: "0", label: "Sunday" },
-  { value: "1", label: "Monday" },
-  { value: "2", label: "Tuesday" },
-  { value: "3", label: "Wednesday" },
-  { value: "4", label: "Thursday" },
-  { value: "5", label: "Friday" },
-  { value: "6", label: "Saturday" },
+  { value: "2", label: "Monday" },
+  { value: "3", label: "Tuesday" },
+  { value: "4", label: "Wednesday" },
+  { value: "5", label: "Thursday" },
+  { value: "6", label: "Friday" },
+  { value: "7", label: "Saturday" },
+  { value: "1", label: "Sunday" },
 ];
 
 export function getCronDescription(cronString: string): string {
@@ -86,7 +88,13 @@ export function getCronDescription(cronString: string): string {
 
   if (dayOfWeek !== "*") {
     const weekdays = dayOfWeek.split(",");
-    if (weekdays.length === WEEKDAYS.length) {
+    // Check if all 7 weekday values (1-7) are present for "every day"
+    const allWeekdayValues = WEEKDAYS.map(w => w.value).sort();
+    const selectedValues = weekdays.sort();
+    const isEveryDay = allWeekdayValues.length === selectedValues.length && 
+                      allWeekdayValues.every((val, idx) => val === selectedValues[idx]);
+    
+    if (isEveryDay) {
       parts.push("every day of the week");
     } else {
       const weekdayLabels = weekdays
