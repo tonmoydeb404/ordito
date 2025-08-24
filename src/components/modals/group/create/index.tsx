@@ -8,18 +8,15 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCreateCommandGroupMutation } from "@/store/api/commands-api";
 import { useAppDispatch, useModalsSlice } from "@/store/hooks";
 import { setGroupCreate } from "@/store/slices/modals-slice";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 
-interface Props {
-  trigger: ReactNode;
-}
+interface Props {}
 
-const GroupCreateModal = ({ trigger }: Props) => {
+const GroupCreateModal = (_props: Props) => {
   const { group } = useModalsSlice();
   const dispatch = useAppDispatch();
   const [formData, setFormData] = useState({
@@ -73,8 +70,7 @@ const GroupCreateModal = ({ trigger }: Props) => {
   };
 
   return (
-    <Sheet open={group.create} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+    <Sheet open={group.create} onOpenChange={handleCancel}>
       <SheetContent>
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
           <SheetHeader>

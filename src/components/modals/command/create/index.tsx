@@ -15,7 +15,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import {
   useCreateCommandMutation,
@@ -27,7 +26,7 @@ import { CreateCommandRequest, EnvironmentVariable } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderIcon, PlusIcon, XIcon } from "lucide-react";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -61,11 +60,9 @@ const defaultValues: CreateCommandForm = {
   environment_variables: [],
 };
 
-interface CommandCreateModalProps {
-  trigger: ReactNode;
-}
+interface Props {}
 
-export function CommandCreateModal({ trigger }: CommandCreateModalProps) {
+const CommandCreateModal = (_props: Props) => {
   const { command } = useModalsSlice();
   const dispatch = useAppDispatch();
   const [createCommand, { isLoading }] = useCreateCommandMutation();
@@ -149,11 +146,8 @@ export function CommandCreateModal({ trigger }: CommandCreateModalProps) {
     onOpenChange(false);
   };
 
-  console.log({ groups });
-
   return (
-    <Sheet open={command.create} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+    <Sheet open={command.create} onOpenChange={handleClose}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create New Command</SheetTitle>
@@ -348,4 +342,6 @@ export function CommandCreateModal({ trigger }: CommandCreateModalProps) {
       </SheetContent>
     </Sheet>
   );
-}
+};
+
+export default CommandCreateModal;
