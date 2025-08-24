@@ -14,8 +14,8 @@ type Props = {
   data: Command;
 };
 
-const Actions = (props: Props) => {
-  const { data } = props;
+const Actions = (_props: Props) => {
+  // const { data } = props;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
