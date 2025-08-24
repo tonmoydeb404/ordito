@@ -11,9 +11,9 @@ pub mod utils;
 pub use error::Result;
 
 use commands::*;
-use tauri::Manager;
 use services::{AppService, NotificationService};
 use std::sync::Arc;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,6 +22,7 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
@@ -29,11 +30,11 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .setup(move |app| {
             tray::setup_system_tray(app)?;
-            
+
             // Create app service and notification service
             let app_service = Arc::new(AppService::new());
             let notification_service = Arc::new(NotificationService::new(app.handle().clone()));
-            
+
             // Initialize notifications
             let notification_service_clone = notification_service.clone();
             tauri::async_runtime::spawn(async move {
@@ -45,7 +46,7 @@ pub fn run() {
             // Store notification service reference for later use
             app.manage(notification_service);
             app.manage(app_service.clone());
-            
+
             // Start scheduler
             let scheduler_service_clone = app_service.scheduler().clone();
             tauri::async_runtime::spawn(async move {
@@ -53,7 +54,7 @@ pub fn run() {
                     tracing::error!("Failed to start scheduler: {}", e);
                 }
             });
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

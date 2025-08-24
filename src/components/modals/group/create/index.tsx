@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -6,18 +8,20 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useCreateCommandGroupMutation } from "@/store/api/commands-api";
+import { useAppDispatch, useModalsSlice } from "@/store/hooks";
+import { setGroupCreate } from "@/store/slices/modals-slice";
+import { ReactNode, useState } from "react";
 
 interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  trigger: ReactNode;
 }
 
-const GroupCreateModal = ({ open, onOpenChange }: Props) => {
+const GroupCreateModal = ({ trigger }: Props) => {
+  const { group } = useModalsSlice();
+  const dispatch = useAppDispatch();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -27,9 +31,13 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
 
   const [createGroup, { isLoading }] = useCreateCommandGroupMutation();
 
+  const onOpenChange = (value: boolean) => {
+    dispatch(setGroupCreate(value));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       return;
     }
@@ -65,7 +73,8 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={group.create} onOpenChange={onOpenChange}>
+      <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent>
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
           <SheetHeader>
@@ -81,7 +90,9 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Enter group name"
                 required
               />
@@ -92,7 +103,9 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
               <Input
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Enter group description (optional)"
               />
             </div>
@@ -102,7 +115,9 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
               <Input
                 id="icon"
                 value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, icon: e.target.value })
+                }
                 placeholder="Enter emoji icon"
                 maxLength={2}
               />
@@ -115,12 +130,16 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
                   id="color"
                   type="color"
                   value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, color: e.target.value })
+                  }
                   className="w-16 h-10 p-1 rounded"
                 />
                 <Input
                   value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, color: e.target.value })
+                  }
                   placeholder="#3B82F6"
                   className="flex-1"
                 />
@@ -130,16 +149,18 @@ const GroupCreateModal = ({ open, onOpenChange }: Props) => {
             <div className="p-4 border rounded-lg">
               <Label className="text-sm font-medium mb-2 block">Preview</Label>
               <div className="flex items-center gap-3">
-                <div 
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                  style={{ backgroundColor: formData.color + '20' }}
+                  style={{ backgroundColor: formData.color + "20" }}
                 >
-                  {formData.icon || '📁'}
+                  {formData.icon || "📁"}
                 </div>
                 <div>
-                  <div className="font-medium">{formData.name || 'Group Name'}</div>
+                  <div className="font-medium">
+                    {formData.name || "Group Name"}
+                  </div>
                   <div className="text-sm text-muted-foreground">
-                    {formData.description || 'Group description'}
+                    {formData.description || "Group description"}
                   </div>
                 </div>
               </div>

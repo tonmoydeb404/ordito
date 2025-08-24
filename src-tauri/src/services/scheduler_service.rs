@@ -427,8 +427,16 @@ impl SchedulerService {
         if let Some(notification_service) = &self.notification_service {
             let storage = self.storage.read().await;
             let show_notifications = storage.get_config().settings.show_notifications;
-            let schedule_success = storage.get_config().settings.notification_settings.schedule_success;
-            let schedule_failure = storage.get_config().settings.notification_settings.schedule_failure;
+            let schedule_success = storage
+                .get_config()
+                .settings
+                .notification_settings
+                .schedule_success;
+            let schedule_failure = storage
+                .get_config()
+                .settings
+                .notification_settings
+                .schedule_failure;
             drop(storage);
 
             if show_notifications {
