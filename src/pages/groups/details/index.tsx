@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useGetCommandsByGroupQuery } from "@/store/api/commands-api";
+import { LucideArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 
 type Props = {};
@@ -58,12 +59,19 @@ const GroupDetailsPage = (_props: Props) => {
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <div className="px-4 lg:px-6">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
-          ← Back to Groups
+      <div className="px-4 lg:px-6 flex items-start gap-x-3">
+        <Button
+          variant="outline"
+          onClick={() => navigate(-1)}
+          size={"icon"}
+          className="self-center"
+        >
+          <LucideArrowLeft />
         </Button>
-        <h1 className="text-2xl font-bold">Group Commands</h1>
-        <p className="text-muted-foreground">Commands in this group</p>
+        <div>
+          <h1 className="text-2xl font-bold">Group Commands</h1>
+          <p className="text-muted-foreground">Commands in this group</p>
+        </div>
       </div>
 
       <div className="px-4 lg:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
