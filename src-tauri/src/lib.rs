@@ -64,6 +64,8 @@ pub fn run() {
             delete_command,
             execute_command,
             get_command_groups,
+            get_command_groups_with_count,
+            get_command_group_by_id,
             create_command_group,
             update_command_group,
             delete_command_group,

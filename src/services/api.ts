@@ -4,6 +4,7 @@ import {
   Command,
   CommandExecution,
   CommandGroup,
+  CommandGroupWithCount,
   CreateCommandRequest,
   CreateGroupRequest,
   CreateScheduleRequest,
@@ -50,6 +51,14 @@ export class ApiService {
   // Command Group operations
   static async getCommandGroups(): Promise<CommandGroup[]> {
     return invoke("get_command_groups");
+  }
+
+  static async getCommandGroupsWithCount(): Promise<CommandGroupWithCount[]> {
+    return invoke("get_command_groups_with_count");
+  }
+
+  static async getCommandGroupById(id: string): Promise<CommandGroup | null> {
+    return invoke("get_command_group_by_id", { id });
   }
 
   static async createCommandGroup(

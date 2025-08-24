@@ -6,7 +6,6 @@ use uuid::Uuid;
 pub struct Command {
     pub id: Uuid,
     pub name: String,
-    pub description: Option<String>,
     pub command: String,
     pub working_directory: Option<String>,
     pub environment_variables: Vec<EnvironmentVariable>,
@@ -25,7 +24,6 @@ impl Command {
         Self {
             id: Uuid::new_v4(),
             name,
-            description: None,
             command,
             working_directory: None,
             environment_variables: Vec::new(),
@@ -54,12 +52,23 @@ impl Command {
 pub struct CommandGroup {
     pub id: Uuid,
     pub name: String,
-    pub description: Option<String>,
     pub color: Option<String>,
     pub icon: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub is_favorite: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandGroupWithCount {
+    pub id: Uuid,
+    pub name: String,
+    pub color: Option<String>,
+    pub icon: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub is_favorite: bool,
+    pub commands_count: usize,
 }
 
 impl CommandGroup {
@@ -68,7 +77,6 @@ impl CommandGroup {
         Self {
             id: Uuid::new_v4(),
             name,
-            description: None,
             color: None,
             icon: None,
             created_at: now,
@@ -79,6 +87,19 @@ impl CommandGroup {
 
     pub fn update(&mut self) {
         self.updated_at = Utc::now();
+    }
+
+    pub fn with_commands_count(self, commands_count: usize) -> CommandGroupWithCount {
+        CommandGroupWithCount {
+            id: self.id,
+            name: self.name,
+            color: self.color,
+            icon: self.icon,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+            is_favorite: self.is_favorite,
+            commands_count,
+        }
     }
 }
 
@@ -288,7 +309,6 @@ pub enum LogLevel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateCommandRequest {
     pub name: String,
-    pub description: Option<String>,
     pub command: String,
     pub working_directory: Option<String>,
     pub environment_variables: Vec<EnvironmentVariable>,
@@ -300,7 +320,6 @@ pub struct CreateCommandRequest {
 pub struct UpdateCommandRequest {
     pub id: Uuid,
     pub name: Option<String>,
-    pub description: Option<String>,
     pub command: Option<String>,
     pub working_directory: Option<String>,
     pub environment_variables: Option<Vec<EnvironmentVariable>>,
@@ -312,7 +331,6 @@ pub struct UpdateCommandRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateGroupRequest {
     pub name: String,
-    pub description: Option<String>,
     pub color: Option<String>,
     pub icon: Option<String>,
 }
@@ -321,7 +339,6 @@ pub struct CreateGroupRequest {
 pub struct UpdateGroupRequest {
     pub id: Uuid,
     pub name: Option<String>,
-    pub description: Option<String>,
     pub color: Option<String>,
     pub icon: Option<String>,
     pub is_favorite: Option<bool>,

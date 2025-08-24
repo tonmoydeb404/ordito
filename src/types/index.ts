@@ -6,7 +6,6 @@ export interface EnvironmentVariable {
 export interface Command {
   id: string;
   name: string;
-  description?: string;
   command: string;
   working_directory?: string;
   environment_variables: EnvironmentVariable[];
@@ -22,12 +21,22 @@ export interface Command {
 export interface CommandGroup {
   id: string;
   name: string;
-  description?: string;
   color?: string;
   icon?: string;
   created_at: string;
   updated_at: string;
   is_favorite: boolean;
+}
+
+export interface CommandGroupWithCount {
+  id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  created_at: string;
+  updated_at: string;
+  is_favorite: boolean;
+  commands_count: number;
 }
 
 export interface Schedule {
@@ -108,7 +117,6 @@ export interface AppInfo {
 // Request types
 export interface CreateCommandRequest {
   name: string;
-  description?: string;
   command: string;
   working_directory?: string;
   environment_variables: EnvironmentVariable[];
@@ -119,7 +127,6 @@ export interface CreateCommandRequest {
 export interface UpdateCommandRequest {
   id: string;
   name?: string;
-  description?: string;
   command?: string;
   working_directory?: string;
   environment_variables?: EnvironmentVariable[];
@@ -130,7 +137,6 @@ export interface UpdateCommandRequest {
 
 export interface CreateGroupRequest {
   name: string;
-  description?: string;
   color?: string;
   icon?: string;
 }
@@ -138,7 +144,6 @@ export interface CreateGroupRequest {
 export interface UpdateGroupRequest {
   id: string;
   name?: string;
-  description?: string;
   color?: string;
   icon?: string;
   is_favorite?: boolean;

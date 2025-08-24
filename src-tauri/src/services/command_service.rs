@@ -36,7 +36,6 @@ impl CommandService {
         info!("Creating command: {}", request.name);
 
         let mut command = Command::new(request.name, request.command);
-        command.description = request.description;
         command.working_directory = request.working_directory;
         command.environment_variables = request.environment_variables;
         command.group_id = request.group_id;
@@ -86,10 +85,6 @@ impl CommandService {
 
         if let Some(name) = request.name {
             command.name = name;
-        }
-
-        if let Some(description) = request.description {
-            command.description = Some(description);
         }
 
         if let Some(cmd) = request.command {
@@ -190,9 +185,6 @@ impl CommandService {
             .filter(|c| {
                 c.name.to_lowercase().contains(&query_lower)
                     || c.command.to_lowercase().contains(&query_lower)
-                    || c.description
-                        .as_ref()
-                        .map_or(false, |d| d.to_lowercase().contains(&query_lower))
                     || c.tags
                         .iter()
                         .any(|tag| tag.to_lowercase().contains(&query_lower))
@@ -217,6 +209,24 @@ impl CommandService {
         Ok(storage.get_config().groups.clone())
     }
 
+    pub async fn get_command_groups_with_count(&self) -> Result<Vec<CommandGroupWithCount>> {
+        let storage = self.storage.read().await;
+        let config = storage.get_config();
+        
+        let groups_with_count = config.groups
+            .iter()
+            .map(|group| {
+                let commands_count = config.commands
+                    .iter()
+                    .filter(|cmd| cmd.group_id == Some(group.id))
+                    .count();
+                group.clone().with_commands_count(commands_count)
+            })
+            .collect();
+        
+        Ok(groups_with_count)
+    }
+
     pub async fn get_command_group_by_id(&self, id: Uuid) -> Result<Option<CommandGroup>> {
         let storage = self.storage.read().await;
         Ok(storage
@@ -231,7 +241,6 @@ impl CommandService {
         info!("Creating command group: {}", request.name);
 
         let mut group = CommandGroup::new(request.name);
-        group.description = request.description;
         group.color = request.color;
         group.icon = request.icon;
 
@@ -279,10 +288,6 @@ impl CommandService {
 
         if let Some(name) = request.name {
             group.name = name;
-        }
-
-        if let Some(description) = request.description {
-            group.description = Some(description);
         }
 
         if let Some(color) = request.color {

@@ -1,4 +1,12 @@
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,166 +20,179 @@ import {
 import { useCreateCommandGroupMutation } from "@/store/api/commands-api";
 import { useAppDispatch, useModalsSlice } from "@/store/hooks";
 import { setGroupCreate } from "@/store/slices/modals-slice";
-import { useState } from "react";
+import { CreateGroupRequest } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const createGroupSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  color: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+type CreateGroupForm = z.infer<typeof createGroupSchema>;
+
+const defaultValues: CreateGroupForm = {
+  name: "",
+  color: "#3B82F6",
+  icon: "📁",
+};
 
 interface Props {}
 
 const GroupCreateModal = (_props: Props) => {
   const { group } = useModalsSlice();
   const dispatch = useAppDispatch();
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    color: "#3B82F6",
-    icon: "📁",
+  const [createGroup, { isLoading }] = useCreateCommandGroupMutation();
+
+  const form = useForm<CreateGroupForm>({
+    resolver: zodResolver(createGroupSchema),
+    defaultValues,
   });
 
-  const [createGroup, { isLoading }] = useCreateCommandGroupMutation();
+  const watchedValues = form.watch();
 
   const onOpenChange = (value: boolean) => {
     dispatch(setGroupCreate(value));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      return;
-    }
-
+  const onSubmit = async (data: CreateGroupForm) => {
     try {
-      await createGroup({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        color: formData.color,
-        icon: formData.icon,
-      }).unwrap();
+      const request: CreateGroupRequest = {
+        name: data.name,
+        color: data.color,
+        icon: data.icon,
+      };
 
-      setFormData({
-        name: "",
-        description: "",
-        color: "#3B82F6",
-        icon: "📁",
-      });
+      await createGroup(request).unwrap();
+      toast.success("Group created successfully");
+      form.reset();
       onOpenChange(false);
     } catch (error) {
+      toast.error("Failed to create group");
       console.error("Failed to create group:", error);
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name: "",
-      description: "",
-      color: "#3B82F6",
-      icon: "📁",
-    });
+  const handleClose = () => {
+    form.reset();
     onOpenChange(false);
   };
 
   return (
-    <Sheet open={group.create} onOpenChange={handleCancel}>
-      <SheetContent>
-        <form onSubmit={handleSubmit} className="h-full flex flex-col">
-          <SheetHeader>
-            <SheetTitle>Create New Group</SheetTitle>
-            <SheetDescription>
-              Create a new group to organize your commands.
-            </SheetDescription>
-          </SheetHeader>
+    <Sheet open={group.create} onOpenChange={handleClose}>
+      <SheetContent side="right" className="w-full sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>Create New Group</SheetTitle>
+          <SheetDescription>
+            Create a new group to organize your commands
+          </SheetDescription>
+        </SheetHeader>
 
-          <div className="flex-1 space-y-4 p-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Enter group name"
-                required
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="w-full h-full flex-1 flex flex-col"
+          >
+            <div className="space-y-6 p-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter group name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Enter group description (optional)"
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter emoji icon (e.g., 📁, ⚡, 🔧)"
+                        maxLength={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="icon">Icon</Label>
-              <Input
-                id="icon"
-                value={formData.icon}
-                onChange={(e) =>
-                  setFormData({ ...formData, icon: e.target.value })
-                }
-                placeholder="Enter emoji icon"
-                maxLength={2}
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="color"
+                          className="w-16 h-10 p-1 rounded"
+                          {...field}
+                        />
+                        <Input
+                          placeholder="#3B82F6"
+                          className="flex-1"
+                          pattern="^#[0-9A-Fa-f]{6}$"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) =>
-                    setFormData({ ...formData, color: e.target.value })
-                  }
-                  className="w-16 h-10 p-1 rounded"
-                />
-                <Input
-                  value={formData.color}
-                  onChange={(e) =>
-                    setFormData({ ...formData, color: e.target.value })
-                  }
-                  placeholder="#3B82F6"
-                  className="flex-1"
-                />
+              <div className="p-4 border rounded-lg bg-muted/20">
+                <Label className="text-sm font-medium mb-3 block">
+                  Preview
+                </Label>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-xl border"
+                    style={{
+                      backgroundColor: watchedValues.color
+                        ? watchedValues.color + "15"
+                        : "#3B82F615",
+                      borderColor: watchedValues.color || "#3B82F6",
+                    }}
+                  >
+                    {watchedValues.icon || "📁"}
+                  </div>
+                  <div>
+                    <div className="font-medium text-lg">
+                      {watchedValues.name || "Group Name"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Command group
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="p-4 border rounded-lg">
-              <Label className="text-sm font-medium mb-2 block">Preview</Label>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                  style={{ backgroundColor: formData.color + "20" }}
-                >
-                  {formData.icon || "📁"}
-                </div>
-                <div>
-                  <div className="font-medium">
-                    {formData.name || "Group Name"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {formData.description || "Group description"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <SheetFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading || !formData.name.trim()}>
-              {isLoading ? "Creating..." : "Create Group"}
-            </Button>
-          </SheetFooter>
-        </form>
+            <SheetFooter className="gap-2">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Group"}
+              </Button>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+            </SheetFooter>
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   );

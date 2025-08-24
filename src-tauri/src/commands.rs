@@ -65,6 +65,25 @@ pub async fn get_command_groups(
 }
 
 #[tauri::command]
+pub async fn get_command_groups_with_count(
+    app_service: State<'_, Arc<AppService>>,
+) -> Result<Vec<CommandGroupWithCount>> {
+    debug!("Getting all command groups with commands count");
+    app_service.commands().get_command_groups_with_count().await
+}
+
+#[tauri::command]
+pub async fn get_command_group_by_id(
+    app_service: State<'_, Arc<AppService>>,
+    id: String,
+) -> Result<Option<CommandGroup>> {
+    let uuid =
+        Uuid::parse_str(&id).map_err(|_| OrditoError::Command("Invalid group ID".to_string()))?;
+    debug!("Getting command group by ID: {}", uuid);
+    app_service.commands().get_command_group_by_id(uuid).await
+}
+
+#[tauri::command]
 pub async fn create_command_group(
     app_service: State<'_, Arc<AppService>>,
     request: CreateGroupRequest,

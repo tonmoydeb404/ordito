@@ -3,6 +3,7 @@ import { ApiService } from "../../services/api";
 import {
   Command,
   CommandGroup,
+  CommandGroupWithCount,
   CreateCommandRequest,
   CreateGroupRequest,
   UpdateCommandRequest,
@@ -127,6 +128,30 @@ export const commandsApi = createApi({
       providesTags: ["CommandGroup"],
     }),
 
+    getCommandGroupsWithCount: builder.query<CommandGroupWithCount[], void>({
+      queryFn: async () => {
+        try {
+          const data = await ApiService.getCommandGroupsWithCount();
+          return { data };
+        } catch (error) {
+          return { error: { status: "FETCH_ERROR", error: String(error) } };
+        }
+      },
+      providesTags: ["CommandGroup"],
+    }),
+
+    getCommandGroupById: builder.query<CommandGroup | null, string>({
+      queryFn: async (id) => {
+        try {
+          const data = await ApiService.getCommandGroupById(id);
+          return { data };
+        } catch (error) {
+          return { error: { status: "FETCH_ERROR", error: String(error) } };
+        }
+      },
+      providesTags: ["CommandGroup"],
+    }),
+
     createCommandGroup: builder.mutation<CommandGroup, CreateGroupRequest>({
       queryFn: async (request) => {
         try {
@@ -189,6 +214,8 @@ export const {
   useGetFavoriteCommandsQuery,
   useGetCommandsByGroupQuery,
   useGetCommandGroupsQuery,
+  useGetCommandGroupsWithCountQuery,
+  useGetCommandGroupByIdQuery,
   useCreateCommandGroupMutation,
   useUpdateCommandGroupMutation,
   useDeleteCommandGroupMutation,

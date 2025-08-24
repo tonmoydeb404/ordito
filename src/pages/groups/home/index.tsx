@@ -1,10 +1,14 @@
 import GroupCard from "@/components/cards/group";
-import { useGetCommandGroupsQuery } from "@/store/api/commands-api";
+import { useGetCommandGroupsWithCountQuery } from "@/store/api/commands-api";
 
 type Props = {};
 
 const GroupsPage = (_props: Props) => {
-  const { data: groups = [], isLoading, error } = useGetCommandGroupsQuery();
+  const {
+    data: groups = [],
+    isLoading,
+    error,
+  } = useGetCommandGroupsWithCountQuery();
 
   if (isLoading) {
     return (
@@ -37,7 +41,11 @@ const GroupsPage = (_props: Props) => {
 
       <div className="px-4 lg:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {groups.map((group) => (
-          <GroupCard data={group} key={group.id} />
+          <GroupCard
+            data={group}
+            key={group.id}
+            commandsCount={group.commands_count}
+          />
         ))}
       </div>
     </div>

@@ -1,16 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   useExecuteCommandGroupMutation,
   useExecuteCommandMutation,
-  useGetCommandGroupsQuery,
+  useGetCommandGroupByIdQuery,
   useGetCommandsByGroupQuery,
 } from "@/store/api/commands-api";
 import {
@@ -37,16 +31,23 @@ const GroupDetailsPage = (_props: Props) => {
 
   const {
     data: commands = [],
-    isLoading,
-    error,
+    isLoading: commandsLoading,
+    error: commandsError,
   } = useGetCommandsByGroupQuery(id);
 
-  const { data: groups = [] } = useGetCommandGroupsQuery();
+  const {
+    data: currentGroup,
+    isLoading: groupLoading,
+    error: groupError,
+  } = useGetCommandGroupByIdQuery(id || "", {
+    skip: !id,
+  });
+
   const [executeCommand] = useExecuteCommandMutation();
   const [executeCommandGroup] = useExecuteCommandGroupMutation();
 
-  // Find the current group details
-  const currentGroup = groups.find((group) => group.id === id);
+  const isLoading = commandsLoading || groupLoading;
+  const error = commandsError || groupError;
 
   const handleExecuteCommand = async (commandId: string) => {
     setExecutingCommands((prev) => new Set(prev).add(commandId));
@@ -124,11 +125,6 @@ const GroupDetailsPage = (_props: Props) => {
             <h1 className="text-2xl font-bold">
               {currentGroup?.name || "Group Commands"}
             </h1>
-            {currentGroup?.description && (
-              <p className="text-muted-foreground mb-2">
-                {currentGroup.description}
-              </p>
-            )}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <HashIcon className="h-4 w-4" />
@@ -191,11 +187,6 @@ const GroupDetailsPage = (_props: Props) => {
                           </Badge>
                         )}
                       </CardTitle>
-                      {command.description && (
-                        <CardDescription className="mt-1">
-                          {command.description}
-                        </CardDescription>
-                      )}
                     </div>
                     <Button
                       size="sm"

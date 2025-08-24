@@ -7,10 +7,11 @@ import { useNavigate } from "react-router";
 
 type Props = {
   data: CommandGroup;
+  commandsCount: number;
 };
 
 const GroupCard = (props: Props) => {
-  const { data } = props;
+  const { data, commandsCount } = props;
   const navigate = useNavigate();
   return (
     <Card
@@ -23,7 +24,7 @@ const GroupCard = (props: Props) => {
       <div>
         <CardTitle className="mb-1">{data.name}</CardTitle>
         <CardDescription className="text-xs">
-          {data.description}
+          Commands: {commandsCount ?? 0}
         </CardDescription>
       </div>
       <div className="ml-auto flex items-center justify-end gap-x-1">
