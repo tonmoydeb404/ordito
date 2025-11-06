@@ -1,3 +1,4 @@
+mod app;
 mod db;
 mod domain;
 mod io;

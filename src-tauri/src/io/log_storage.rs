@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 const LOG_DIR: &str = "/tmp/ordito/logs";
 
+#[derive(Clone)]
 pub struct LogStorage {
     base_path: PathBuf,
 }

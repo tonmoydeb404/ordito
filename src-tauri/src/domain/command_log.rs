@@ -11,7 +11,32 @@ pub enum CommandLogStatus {
     Running,
 }
 
-#[derive(Debug)]
+impl CommandLogStatus {
+    /// Converts the enum to its string representation (lowercase)
+    pub fn to_string(&self) -> String {
+        match self {
+            CommandLogStatus::Success => "success".to_string(),
+            CommandLogStatus::Failed => "failed".to_string(),
+            CommandLogStatus::Timeout => "timeout".to_string(),
+            CommandLogStatus::Cancelled => "cancelled".to_string(),
+            CommandLogStatus::Running => "running".to_string(),
+        }
+    }
+
+    /// Parses a string into CommandLogStatus
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "success" => Some(CommandLogStatus::Success),
+            "failed" => Some(CommandLogStatus::Failed),
+            "timeout" => Some(CommandLogStatus::Timeout),
+            "cancelled" => Some(CommandLogStatus::Cancelled),
+            "running" => Some(CommandLogStatus::Running),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct CommandLog {
     pub(crate) id: Uuid,
     pub(crate) command_id: Uuid,

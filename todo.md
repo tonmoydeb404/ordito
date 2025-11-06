@@ -10,7 +10,7 @@
 
 ## Phase 2: Core Services Implementation
 
-- [ ] **Task 2.1**: Create AppState structure (`src/app/state.rs`)
+- [x] **Task 2.1**: Create AppState structure (`src/app/state.rs`)
 
   - Define `AppState` struct to hold:
     - Database pool (SqlitePool)
@@ -19,7 +19,7 @@
   - Implement initialization method
   - Add to mod.rs exports
 
-- [ ] **Task 2.2**: Implement ExecutionService (`src/app/execution.rs`)
+- [x] **Task 2.2**: Implement ExecutionService (`src/app/execution.rs`)
 
   - Create `ExecutionService` struct with methods:
     - `execute_command()` - Main execution logic
@@ -33,7 +33,7 @@
   - Handle exit codes and execution duration
   - Return execution result with log ID
 
-- [ ] **Task 2.3**: Implement SchedulerService (`src/app/scheduler.rs`)
+- [x] **Task 2.3**: Implement SchedulerService (`src/app/scheduler.rs`)
 
   - Create `SchedulerService` struct
   - Implement cron expression parsing using `cron` crate
@@ -46,7 +46,7 @@
   - Handle scheduler errors gracefully (log and continue)
   - Trigger notifications after execution if enabled
 
-- [ ] **Task 2.4**: Implement NotificationService (`src/app/notifications.rs`)
+- [ ] **Task 2.4**: Implement NotificationService (`src/app/notifications.rs`) - SKIPPED FOR NOW
 
   - Create `NotificationService` struct
   - Implement `send_notification()` method using `notify-rust`
@@ -57,8 +57,8 @@
   - Handle notification errors gracefully (don't crash app)
   - Support different notification types (success vs error)
 
-- [ ] **Task 2.5**: Update app/mod.rs
-  - Export all service modules (state, execution, scheduler, notifications)
+- [x] **Task 2.5**: Update app/mod.rs
+  - Export all service modules (state, execution, scheduler)
   - Re-export key types for easier imports
 
 ## Phase 3: Tauri Commands Integration
