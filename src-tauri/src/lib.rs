@@ -59,17 +59,16 @@ pub fn run() {
 
                 tracing::info!("Database initialized at: {}", db_path);
 
+                // Start scheduler service within async runtime context
+                let scheduler = SchedulerService::new(Arc::new(pool.clone()), Arc::new(log_storage.clone()));
+                let _scheduler_handle = scheduler.start();
+                tracing::info!("Scheduler service started");
+
                 (pool, log_storage)
             });
 
             // Create app state
             let app_state = AppState::new(pool.clone(), log_storage.clone());
-
-            // Start scheduler service
-            let scheduler = SchedulerService::new(Arc::new(pool), Arc::new(log_storage));
-            let _scheduler_handle = scheduler.start();
-
-            tracing::info!("Scheduler service started");
 
             // Manage app state
             app.manage(app_state);
