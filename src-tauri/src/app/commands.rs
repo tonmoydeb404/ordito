@@ -1,16 +1,32 @@
-use anyhow::Result;
+//! Tauri command handlers for the Ordito application.
+//!
+//! This module provides all the Tauri commands that the frontend can invoke.
+//! Commands are organized into several categories:
+//!
+//! - **Command Management**: CRUD operations for commands
+//! - **Group Management**: CRUD operations for command groups
+//! - **Schedule Management**: CRUD operations for scheduled commands
+//! - **Execution**: Execute and cancel commands
+//! - **Logs**: Query and manage execution logs
+//!
+//! All commands include input validation using the validation helpers from the error module.
+
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use uuid::Uuid;
 
+use crate::app::error::{
+    validate_command, validate_cron_expression, validate_directory, validate_env_vars,
+    validate_timeout, validate_uuid,
+};
 use crate::app::execution::ExecutionService;
 use crate::app::state::AppState;
 use crate::db::command::CommandRepository;
 use crate::db::command_group::CommandGroupRepository;
 use crate::db::command_log::CommandLogRepository;
 use crate::db::command_schedule::CommandScheduleRepository;
-use crate::domain::{Command, CommandGroup, CommandLog, CommandSchedule};
+use crate::domain::{Command, CommandGroup, CommandSchedule};
 
 // ============================================================================
 // DTOs (Data Transfer Objects) for Tauri commands
@@ -127,8 +143,14 @@ pub async fn create_command(
     state: State<'_, AppState>,
     dto: CreateCommandDto,
 ) -> Result<String, String> {
-    let command_group_id = Uuid::parse_str(&dto.command_group_id)
-        .map_err(|e| format!("Invalid command_group_id: {}", e))?;
+    // Validate inputs
+    let command_group_id = validate_uuid(&dto.command_group_id, "command_group_id")
+        .map_err(|e| e.to_string())?;
+
+    validate_command(&dto.value).map_err(|e| e.to_string())?;
+    validate_directory(&dto.working_dir).map_err(|e| e.to_string())?;
+    validate_timeout(dto.timeout).map_err(|e| e.to_string())?;
+    validate_env_vars(&dto.env_vars).map_err(|e| e.to_string())?;
 
     let command = Command {
         id: Uuid::new_v4(),
@@ -183,9 +205,15 @@ pub async fn update_command(
     state: State<'_, AppState>,
     dto: UpdateCommandDto,
 ) -> Result<(), String> {
-    let id = Uuid::parse_str(&dto.id).map_err(|e| format!("Invalid id: {}", e))?;
-    let command_group_id = Uuid::parse_str(&dto.command_group_id)
-        .map_err(|e| format!("Invalid command_group_id: {}", e))?;
+    // Validate inputs
+    let id = validate_uuid(&dto.id, "id").map_err(|e| e.to_string())?;
+    let command_group_id = validate_uuid(&dto.command_group_id, "command_group_id")
+        .map_err(|e| e.to_string())?;
+
+    validate_command(&dto.value).map_err(|e| e.to_string())?;
+    validate_directory(&dto.working_dir).map_err(|e| e.to_string())?;
+    validate_timeout(dto.timeout).map_err(|e| e.to_string())?;
+    validate_env_vars(&dto.env_vars).map_err(|e| e.to_string())?;
 
     let repo = CommandRepository::new(&state.pool);
     let existing = repo
@@ -478,13 +506,9 @@ pub async fn create_schedule(
     state: State<'_, AppState>,
     dto: CreateScheduleDto,
 ) -> Result<String, String> {
-    // Validate cron expression
-    use crate::app::scheduler::SchedulerService;
-    SchedulerService::validate_cron_expression(&dto.cron_expression)
-        .map_err(|e| format!("Invalid cron expression: {}", e))?;
-
-    let command_id = Uuid::parse_str(&dto.command_id)
-        .map_err(|e| format!("Invalid command_id: {}", e))?;
+    // Validate inputs
+    validate_cron_expression(&dto.cron_expression).map_err(|e| e.to_string())?;
+    let command_id = validate_uuid(&dto.command_id, "command_id").map_err(|e| e.to_string())?;
 
     let schedule = CommandSchedule {
         id: Uuid::new_v4(),
@@ -529,14 +553,10 @@ pub async fn update_schedule(
     state: State<'_, AppState>,
     dto: UpdateScheduleDto,
 ) -> Result<(), String> {
-    // Validate cron expression
-    use crate::app::scheduler::SchedulerService;
-    SchedulerService::validate_cron_expression(&dto.cron_expression)
-        .map_err(|e| format!("Invalid cron expression: {}", e))?;
-
-    let id = Uuid::parse_str(&dto.id).map_err(|e| format!("Invalid id: {}", e))?;
-    let command_id = Uuid::parse_str(&dto.command_id)
-        .map_err(|e| format!("Invalid command_id: {}", e))?;
+    // Validate inputs
+    validate_cron_expression(&dto.cron_expression).map_err(|e| e.to_string())?;
+    let id = validate_uuid(&dto.id, "id").map_err(|e| e.to_string())?;
+    let command_id = validate_uuid(&dto.command_id, "command_id").map_err(|e| e.to_string())?;
 
     let repo = CommandScheduleRepository::new(&state.pool);
     let existing = repo

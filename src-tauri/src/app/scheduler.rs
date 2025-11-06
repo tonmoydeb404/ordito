@@ -1,3 +1,26 @@
+//! Scheduler service for executing commands on a cron schedule.
+//!
+//! This module provides the `SchedulerService` which runs as a background task
+//! and executes commands based on their cron schedules. The scheduler:
+//!
+//! - Checks every minute for schedules that are due to run
+//! - Executes commands via the `ExecutionService`
+//! - Handles errors gracefully and continues running
+//! - Links executions to their triggering schedule
+//!
+//! # Example
+//!
+//! ```no_run
+//! use std::sync::Arc;
+//! use ordito_lib::app::scheduler::SchedulerService;
+//!
+//! async fn start_scheduler(pool: Arc<sqlx::SqlitePool>, log_storage: Arc<LogStorage>) {
+//!     let scheduler = SchedulerService::new(pool, log_storage);
+//!     let handle = scheduler.start();
+//!     // Scheduler runs in background...
+//! }
+//! ```
+
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;

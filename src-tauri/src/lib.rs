@@ -1,7 +1,7 @@
-mod app;
-mod db;
-mod domain;
-mod io;
+pub mod app;
+pub mod db;
+pub mod domain;
+pub mod io;
 
 use std::env;
 use std::sync::Arc;
