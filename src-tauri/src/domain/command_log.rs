@@ -38,19 +38,19 @@ impl CommandLogStatus {
 
 #[derive(Debug, Clone)]
 pub struct CommandLog {
-    pub(crate) id: Uuid,
-    pub(crate) command_id: Uuid,
-    pub(crate) command_schedule_id: Option<Uuid>,
-    pub(crate) status: String,
-    pub(crate) exit_code: Option<u32>,
+    pub id: Uuid,
+    pub command_id: Uuid,
+    pub command_schedule_id: Option<Uuid>,
+    pub status: String,
+    pub exit_code: Option<u32>,
     // output is now stored in files, not in the database
-    pub(crate) output: Option<String>,
-    pub(crate) working_dir: String,
-    pub(crate) run_in_background: bool,
-    pub(crate) timeout: Option<u32>,
-    pub(crate) env_vars: String,  // JSON string
-    pub(crate) started_at: DateTime<Utc>,
-    pub(crate) finished_at: Option<DateTime<Utc>>,
+    pub output: Option<String>,
+    pub working_dir: String,
+    pub run_in_background: bool,
+    pub timeout: Option<u32>,
+    pub env_vars: String,  // JSON string
+    pub started_at: DateTime<Utc>,
+    pub finished_at: Option<DateTime<Utc>>,
 }
 
 // Internal struct for database operations (without output field)

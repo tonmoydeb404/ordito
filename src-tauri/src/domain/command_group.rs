@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CommandGroup {
-    pub(crate) id: Uuid,
-    pub(crate) title: String,
-    pub(crate) parent_id: Option<Uuid>,
-    pub(crate) created_at: DateTime<Utc>,
-    pub(crate) updated_at: DateTime<Utc>,
+    pub id: Uuid,
+    pub title: String,
+    pub parent_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

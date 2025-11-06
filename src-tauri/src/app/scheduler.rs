@@ -196,7 +196,7 @@ mod tests {
 
         let pool = Arc::new(
             // In a real test, use a test database
-            SqlitePool::connect_lazy("sqlite::memory:").unwrap()
+            SqlitePool::connect_lazy("sqlite::memory:").unwrap(),
         );
         let log_storage = Arc::new(LogStorage {
             base_path: std::path::PathBuf::from("/tmp/test"),

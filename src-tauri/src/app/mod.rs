@@ -1,3 +1,4 @@
+pub mod commands;
 pub mod execution;
 pub mod scheduler;
 pub mod state;

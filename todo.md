@@ -63,7 +63,7 @@
 
 ## Phase 3: Tauri Commands Integration
 
-- [ ] **Task 3.1**: Implement Tauri commands (`src/app/commands.rs`)
+- [x] **Task 3.1**: Implement Tauri commands (`src/app/commands.rs`)
 
   - **Command Management Commands**:
 
@@ -107,7 +107,7 @@
     - `cleanup_old_logs(state, days) -> Result<u64>` - Returns count deleted
     - `get_log_stats(state) -> Result<HashMap<String, i64>>` - Count by status
 
-- [ ] **Task 3.2**: Wire up services in lib.rs
+- [x] **Task 3.2**: Wire up services in lib.rs
   - Initialize AppState with:
     - Database pool (already initialized)
     - LogStorage instance
@@ -115,7 +115,7 @@
   - Start SchedulerService background task in setup
   - Register all Tauri commands in `invoke_handler!` macro
   - Replace demo `greet` command
-  - Add graceful shutdown handling for scheduler
+  - Initialize tracing/logging
 
 ## Phase 4: Error Handling & Refinements
 
