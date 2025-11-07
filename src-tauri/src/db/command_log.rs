@@ -33,9 +33,9 @@ impl<'a> CommandLogRepository<'a> {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
         )
-        .bind(&log.id)
-        .bind(&log.command_id)
-        .bind(&log.command_schedule_id)
+        .bind(log.id.to_string())
+        .bind(log.command_id.to_string())
+        .bind(log.command_schedule_id.map(|id| id.to_string()))
         .bind(&log.status)
         .bind(&log.exit_code)
         .bind(&log.working_dir)
@@ -204,7 +204,7 @@ impl<'a> CommandLogRepository<'a> {
         .bind(&log.status)
         .bind(&log.exit_code)
         .bind(&log.finished_at)
-        .bind(&log.id)
+        .bind(log.id.to_string())
         .execute(self.pool)
         .await?;
 

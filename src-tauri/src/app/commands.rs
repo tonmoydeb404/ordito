@@ -144,8 +144,8 @@ pub async fn create_command(
     dto: CreateCommandDto,
 ) -> Result<String, String> {
     // Validate inputs
-    let command_group_id = validate_uuid(&dto.command_group_id, "command_group_id")
-        .map_err(|e| e.to_string())?;
+    let command_group_id =
+        validate_uuid(&dto.command_group_id, "command_group_id").map_err(|e| e.to_string())?;
 
     validate_command(&dto.value).map_err(|e| e.to_string())?;
     validate_directory(&dto.working_dir).map_err(|e| e.to_string())?;
@@ -207,8 +207,8 @@ pub async fn update_command(
 ) -> Result<(), String> {
     // Validate inputs
     let id = validate_uuid(&dto.id, "id").map_err(|e| e.to_string())?;
-    let command_group_id = validate_uuid(&dto.command_group_id, "command_group_id")
-        .map_err(|e| e.to_string())?;
+    let command_group_id =
+        validate_uuid(&dto.command_group_id, "command_group_id").map_err(|e| e.to_string())?;
 
     validate_command(&dto.value).map_err(|e| e.to_string())?;
     validate_directory(&dto.working_dir).map_err(|e| e.to_string())?;
@@ -319,9 +319,7 @@ pub async fn toggle_favourite(state: State<'_, AppState>, id: String) -> Result<
 }
 
 #[tauri::command]
-pub async fn get_favourites(
-    state: State<'_, AppState>,
-) -> Result<Vec<CommandResponse>, String> {
+pub async fn get_favourites(state: State<'_, AppState>) -> Result<Vec<CommandResponse>, String> {
     let repo = CommandRepository::new(&state.pool);
     let commands = repo
         .get_favourites()

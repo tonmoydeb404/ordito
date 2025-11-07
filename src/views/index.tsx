@@ -26,7 +26,11 @@ function AppView() {
 
         <ResizableHandle />
 
-        <MainPanel />
+        <MainPanel
+          selectedCommandId={selectedCommandId}
+          selectedFolderId={selectedFolderId}
+          setSelectedCommandId={setSelectedCommandId}
+        />
       </ResizablePanelGroup>
     </div>
   );

@@ -1,6 +1,8 @@
 import { ResizablePanel } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, History, Terminal } from "lucide-react";
+import { Dispatch, SetStateAction } from "react";
+import CommandsView from "./commands-view";
 
 // ----------------------------------------------------------------------
 
@@ -24,9 +26,14 @@ const tabsList = [
 
 // ----------------------------------------------------------------------
 
-type Props = {};
+type Props = {
+  selectedFolderId: string | null;
+  selectedCommandId: string | null;
+  setSelectedCommandId: Dispatch<SetStateAction<string | null>>;
+};
 
 const MainPanel = (props: Props) => {
+  const { selectedFolderId, setSelectedCommandId, selectedCommandId } = props;
   return (
     <ResizablePanel defaultSize={80}>
       <div className="flex flex-col h-full">
@@ -49,13 +56,11 @@ const MainPanel = (props: Props) => {
 
           {/* Tab Content */}
           <TabsContent value="commands" className="flex-1 m-0">
-            {/* <CommandsView
-                  selectedCommandId={selectedCommandId}
-                  selectedFolderId={selectedFolderId}
-                  onSelectCommand={setSelectedCommandId}
-                  websocketMessage={lastMessage}
-                  sendWebsocketMessage={sendMessage}
-                /> */}
+            <CommandsView
+              commandId={selectedCommandId}
+              folderId={selectedFolderId}
+              onSelectCommand={setSelectedCommandId}
+            />
           </TabsContent>
 
           <TabsContent value="logs" className="flex-1 m-0">

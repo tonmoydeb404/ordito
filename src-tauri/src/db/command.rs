@@ -25,8 +25,8 @@ impl<'a> CommandRepository<'a> {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
         )
-        .bind(&command.id)
-        .bind(&command.command_group_id)
+        .bind(command.id.to_string())
+        .bind(command.command_group_id.to_string())
         .bind(&command.title)
         .bind(&command.value)
         .bind(&command.working_dir)
@@ -160,7 +160,7 @@ impl<'a> CommandRepository<'a> {
                 WHERE id = $10
             "#,
         )
-        .bind(&command.command_group_id)
+        .bind(command.command_group_id.to_string())
         .bind(&command.title)
         .bind(&command.value)
         .bind(&command.working_dir)
@@ -169,7 +169,7 @@ impl<'a> CommandRepository<'a> {
         .bind(&command.is_favourite)
         .bind(&command.env_vars)
         .bind(&command.updated_at)
-        .bind(&command.id)
+        .bind(command.id.to_string())
         .execute(self.pool)
         .await?;
 

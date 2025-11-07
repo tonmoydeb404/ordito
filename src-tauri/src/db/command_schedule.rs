@@ -24,8 +24,8 @@ impl<'a> CommandScheduleRepository<'a> {
                 VALUES ($1, $2, $3, $4, $5, $6)
             "#,
         )
-        .bind(&schedule.id)
-        .bind(&schedule.command_id)
+        .bind(schedule.id.to_string())
+        .bind(schedule.command_id.to_string())
         .bind(&schedule.cron_expression)
         .bind(&schedule.show_notification)
         .bind(&schedule.created_at)
@@ -113,7 +113,7 @@ impl<'a> CommandScheduleRepository<'a> {
         .bind(&schedule.cron_expression)
         .bind(&schedule.show_notification)
         .bind(&schedule.updated_at)
-        .bind(&schedule.id)
+        .bind(schedule.id.to_string())
         .execute(self.pool)
         .await?;
 

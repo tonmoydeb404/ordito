@@ -3,11 +3,11 @@
  * Main component for displaying and managing the hierarchical folder/command tree
  */
 
+import { CreateCommandDialog } from "@/components/dialogs/command/create-dialog";
+import { CreateGroupDialog } from "@/components/dialogs/group/create-dialog";
 import { useListCommandsQuery } from "@/store/api/commands-api";
 import { useListGroupsQuery } from "@/store/api/groups-api";
 import { useMemo, useState } from "react";
-import { CreateCommandDialog } from "./create-command-dialog";
-import { CreateGroupDialog } from "./create-group-dialog";
 import { TreeItemComponent } from "./tree-item";
 import type { FolderTreeProps } from "./types";
 import { buildTree, filterTree } from "./utils";
@@ -22,15 +22,22 @@ export default function FolderTree({
     new Set()
   );
 
-  const { data: groups = [] } = useListGroupsQuery();
+  const { data: groups = [], ...others } = useListGroupsQuery();
   const { data: commands = [] } = useListCommandsQuery();
+
+  console.log({ groups, ...others });
 
   const builtTree = useMemo(() => {
     return buildTree(groups, commands);
   }, [groups, commands]);
 
   const filteredTree = useMemo(() => {
-    return filterTree(builtTree, searchQuery, expandedFolders, setExpandedFolders);
+    return filterTree(
+      builtTree,
+      searchQuery,
+      expandedFolders,
+      setExpandedFolders
+    );
   }, [builtTree, searchQuery, expandedFolders]);
 
   const toggleFolder = (folderId: string) => {

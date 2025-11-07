@@ -38,7 +38,7 @@ export const commandsApi = baseApi.injectEndpoints({
       queryFn: async (params) =>
         tauriBaseQuery<CommandResponse[]>({
           command: "list_commands",
-          args: { groupId: params?.group_id },
+          args: { group_id: params?.group_id },
         }),
       providesTags: (result) =>
         result

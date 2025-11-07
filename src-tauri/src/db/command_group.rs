@@ -21,9 +21,9 @@ impl<'a> CommandGroupRepository<'a> {
                 VALUES ($1, $2, $3, $4, $5)
             "#,
         )
-        .bind(&group.id)
+        .bind(group.id.to_string())
         .bind(&group.title)
-        .bind(&group.parent_id)
+        .bind(group.parent_id.map(|id| id.to_string()))
         .bind(&group.created_at)
         .bind(&group.updated_at)
         .execute(self.pool)
@@ -39,7 +39,7 @@ impl<'a> CommandGroupRepository<'a> {
                 SELECT
                     id as "id: Uuid",
                     title,
-                    parent_id as "parent_id: Uuid",
+                    parent_id as "parent_id?: Uuid",
                     created_at as "created_at: DateTime<Utc>",
                     updated_at as "updated_at: DateTime<Utc>"
                 FROM command_groups
@@ -54,18 +54,17 @@ impl<'a> CommandGroupRepository<'a> {
     }
 
     pub async fn get_all(&self) -> Result<Vec<CommandGroup>> {
-        let groups = sqlx::query_as!(
-            CommandGroup,
+        let groups = sqlx::query_as::<_, CommandGroup>(
             r#"
                 SELECT
-                    id as "id: Uuid",
+                    id,
                     title,
-                    parent_id as "parent_id: Uuid",
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                    parent_id,
+                    created_at,
+                    updated_at
                 FROM command_groups
                 ORDER BY created_at DESC
-            "#
+            "#,
         )
         .fetch_all(self.pool)
         .await?;
@@ -82,9 +81,9 @@ impl<'a> CommandGroupRepository<'a> {
             "#,
         )
         .bind(&group.title)
-        .bind(&group.parent_id)
+        .bind(group.parent_id.map(|id| id.to_string()))
         .bind(&group.updated_at)
-        .bind(&group.id)
+        .bind(group.id.to_string())
         .execute(self.pool)
         .await?;
 
@@ -112,7 +111,7 @@ impl<'a> CommandGroupRepository<'a> {
                 SELECT
                     id as "id: Uuid",
                     title,
-                    parent_id as "parent_id: Uuid",
+                    parent_id as "parent_id?: Uuid",
                     created_at as "created_at: DateTime<Utc>",
                     updated_at as "updated_at: DateTime<Utc>"
                 FROM command_groups
@@ -134,7 +133,7 @@ impl<'a> CommandGroupRepository<'a> {
                 SELECT
                     id as "id: Uuid",
                     title,
-                    parent_id as "parent_id: Uuid",
+                    parent_id as "parent_id?: Uuid",
                     created_at as "created_at: DateTime<Utc>",
                     updated_at as "updated_at: DateTime<Utc>"
                 FROM command_groups
