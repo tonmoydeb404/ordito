@@ -1,8 +1,7 @@
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
-use uuid::Uuid;
 
+use crate::db::utils::*;
 use crate::domain::command_group::CommandGroup;
 
 pub struct CommandGroupRepository<'a> {
@@ -33,41 +32,55 @@ impl<'a> CommandGroupRepository<'a> {
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<Option<CommandGroup>> {
-        let group = sqlx::query_as!(
-            CommandGroup,
+        let row_opt = sqlx::query(
             r#"
-                SELECT
-                    id as "id: Uuid",
-                    title,
-                    parent_id as "parent_id?: Uuid",
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                SELECT id, title, parent_id, created_at, updated_at
                 FROM command_groups
                 WHERE id = ?
             "#,
-            id
         )
+        .bind(id)
         .fetch_optional(self.pool)
         .await?;
+
+        let group = row_opt
+            .map(|row| -> Result<CommandGroup> {
+                Ok(CommandGroup {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    title: get_string(&row, "title"),
+                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .transpose()?;
 
         return Ok(group);
     }
 
     pub async fn get_all(&self) -> Result<Vec<CommandGroup>> {
-        let groups = sqlx::query_as::<_, CommandGroup>(
+        let rows = sqlx::query(
             r#"
-                SELECT
-                    id,
-                    title,
-                    parent_id,
-                    created_at,
-                    updated_at
+                SELECT id, title, parent_id, created_at, updated_at
                 FROM command_groups
                 ORDER BY created_at DESC
             "#,
         )
         .fetch_all(self.pool)
         .await?;
+
+        let groups = rows
+            .into_iter()
+            .map(|row| -> Result<CommandGroup> {
+                Ok(CommandGroup {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    title: get_string(&row, "title"),
+                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         return Ok(groups);
     }
@@ -105,44 +118,58 @@ impl<'a> CommandGroupRepository<'a> {
     }
 
     pub async fn get_children(&self, parent_id: &str) -> Result<Vec<CommandGroup>> {
-        let groups = sqlx::query_as!(
-            CommandGroup,
+        let rows = sqlx::query(
             r#"
-                SELECT
-                    id as "id: Uuid",
-                    title,
-                    parent_id as "parent_id?: Uuid",
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                SELECT id, title, parent_id, created_at, updated_at
                 FROM command_groups
                 WHERE parent_id = ?
                 ORDER BY title ASC
             "#,
-            parent_id
         )
+        .bind(parent_id)
         .fetch_all(self.pool)
         .await?;
+
+        let groups = rows
+            .into_iter()
+            .map(|row| -> Result<CommandGroup> {
+                Ok(CommandGroup {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    title: get_string(&row, "title"),
+                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         return Ok(groups);
     }
 
     pub async fn get_root_groups(&self) -> Result<Vec<CommandGroup>> {
-        let groups = sqlx::query_as!(
-            CommandGroup,
+        let rows = sqlx::query(
             r#"
-                SELECT
-                    id as "id: Uuid",
-                    title,
-                    parent_id as "parent_id?: Uuid",
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                SELECT id, title, parent_id, created_at, updated_at
                 FROM command_groups
                 WHERE parent_id IS NULL
                 ORDER BY title ASC
-            "#
+            "#,
         )
         .fetch_all(self.pool)
         .await?;
+
+        let groups = rows
+            .into_iter()
+            .map(|row| -> Result<CommandGroup> {
+                Ok(CommandGroup {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    title: get_string(&row, "title"),
+                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         return Ok(groups);
     }

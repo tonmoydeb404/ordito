@@ -1,14 +1,18 @@
 use std::env;
 use std::str::FromStr;
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use dotenv::dotenv;
-use sqlx::{SqlitePool, sqlite::{SqlitePoolOptions, SqliteConnectOptions}};
+use sqlx::{
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    SqlitePool,
+};
 
 pub mod command;
 pub mod command_group;
 pub mod command_log;
 pub mod command_schedule;
+pub mod utils;
 
 pub async fn init_db_pool() -> Result<SqlitePool> {
     dotenv().ok();
@@ -16,8 +20,7 @@ pub async fn init_db_pool() -> Result<SqlitePool> {
     let db_url = env::var("DATABASE_URL").map_err(|_| anyhow!("DATABASE_URL missing in env"))?;
 
     // Configure SQLite to create database file if it doesn't exist
-    let options = SqliteConnectOptions::from_str(&db_url)?
-        .create_if_missing(true);
+    let options = SqliteConnectOptions::from_str(&db_url)?.create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
         .max_connections(5)

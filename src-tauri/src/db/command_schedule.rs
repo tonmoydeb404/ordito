@@ -1,8 +1,7 @@
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
-use uuid::Uuid;
 
+use crate::db::utils::*;
 use crate::domain::command_schedule::CommandSchedule;
 
 pub struct CommandScheduleRepository<'a> {
@@ -37,67 +36,93 @@ impl<'a> CommandScheduleRepository<'a> {
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<Option<CommandSchedule>> {
-        let schedule = sqlx::query_as!(
-            CommandSchedule,
+        let row_opt = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    cron_expression,
-                    show_notification,
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                    id, command_id, cron_expression, show_notification,
+                    created_at, updated_at
                 FROM command_schedules
                 WHERE id = ?
             "#,
-            id
         )
+        .bind(id)
         .fetch_optional(self.pool)
         .await?;
+
+        let schedule = row_opt
+            .map(|row| -> Result<CommandSchedule> {
+                Ok(CommandSchedule {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    cron_expression: get_string(&row, "cron_expression"),
+                    show_notification: row.get("show_notification"),
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .transpose()?;
 
         Ok(schedule)
     }
 
     pub async fn get_all(&self) -> Result<Vec<CommandSchedule>> {
-        let schedules = sqlx::query_as!(
-            CommandSchedule,
+        let rows = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    cron_expression,
-                    show_notification,
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                    id, command_id, cron_expression, show_notification,
+                    created_at, updated_at
                 FROM command_schedules
                 ORDER BY created_at DESC
-            "#
+            "#,
         )
         .fetch_all(self.pool)
         .await?;
+
+        let schedules = rows
+            .into_iter()
+            .map(|row| -> Result<CommandSchedule> {
+                Ok(CommandSchedule {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    cron_expression: get_string(&row, "cron_expression"),
+                    show_notification: row.get("show_notification"),
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(schedules)
     }
 
     pub async fn get_by_command_id(&self, command_id: &str) -> Result<Vec<CommandSchedule>> {
-        let schedules = sqlx::query_as!(
-            CommandSchedule,
+        let rows = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    cron_expression,
-                    show_notification,
-                    created_at as "created_at: DateTime<Utc>",
-                    updated_at as "updated_at: DateTime<Utc>"
+                    id, command_id, cron_expression, show_notification,
+                    created_at, updated_at
                 FROM command_schedules
                 WHERE command_id = ?
                 ORDER BY created_at DESC
             "#,
-            command_id
         )
+        .bind(command_id)
         .fetch_all(self.pool)
         .await?;
+
+        let schedules = rows
+            .into_iter()
+            .map(|row| -> Result<CommandSchedule> {
+                Ok(CommandSchedule {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    cron_expression: get_string(&row, "cron_expression"),
+                    show_notification: row.get("show_notification"),
+                    created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
+                    updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(schedules)
     }

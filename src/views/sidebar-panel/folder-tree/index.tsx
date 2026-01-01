@@ -12,20 +12,15 @@ import { TreeItemComponent } from "./tree-item";
 import type { FolderTreeProps } from "./types";
 import { buildTree, filterTree } from "./utils";
 
-export default function FolderTree({
-  searchQuery,
-  selectedFolderId,
-  onSelectFolder,
-  onSelectCommand,
-}: FolderTreeProps) {
+export default function FolderTree(props: FolderTreeProps) {
+  const { searchQuery, selectedFolderId, onSelectFolder, onSelectCommand } =
+    props;
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
   );
 
   const { data: groups = [], ...others } = useListGroupsQuery();
   const { data: commands = [] } = useListCommandsQuery();
-
-  console.log({ groups, ...others });
 
   const builtTree = useMemo(() => {
     return buildTree(groups, commands);

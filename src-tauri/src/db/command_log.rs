@@ -1,8 +1,8 @@
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
+use crate::db::utils::*;
 use crate::domain::command_log::{CommandLog, CommandLogRow};
 use crate::io::log_storage::LogStorage;
 
@@ -51,31 +51,46 @@ impl<'a> CommandLogRepository<'a> {
     }
 
     pub async fn get_by_id(&self, id: &str) -> Result<Option<CommandLog>> {
-        let row = sqlx::query_as!(
-            CommandLogRow,
+        let row_opt = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    command_schedule_id as "command_schedule_id: Uuid",
-                    status,
-                    exit_code as "exit_code: u32",
-                    working_dir,
-                    run_in_background,
-                    timeout as "timeout: u32",
-                    env_vars,
-                    started_at as "started_at: DateTime<Utc>",
-                    finished_at as "finished_at: DateTime<Utc>"
+                    id, command_id, command_schedule_id, status, exit_code,
+                    working_dir, run_in_background, timeout, env_vars,
+                    started_at, finished_at
                 FROM command_logs
                 WHERE id = ?
             "#,
-            id
         )
+        .bind(id)
         .fetch_optional(self.pool)
         .await?;
 
+        let log_row = row_opt
+            .map(|row| -> Result<CommandLogRow> {
+                Ok(CommandLogRow {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    command_schedule_id: parse_optional_uuid(
+                        get_optional_string(&row, "command_schedule_id"),
+                        "command_schedule_id",
+                    )?,
+                    status: get_string(&row, "status"),
+                    exit_code: row.get("exit_code"),
+                    working_dir: get_string(&row, "working_dir"),
+                    run_in_background: row.get("run_in_background"),
+                    timeout: row.get("timeout"),
+                    env_vars: get_string(&row, "env_vars"),
+                    started_at: parse_datetime(&get_string(&row, "started_at"), "started_at")?,
+                    finished_at: parse_optional_datetime(
+                        get_optional_string(&row, "finished_at"),
+                        "finished_at",
+                    )?,
+                })
+            })
+            .transpose()?;
+
         // Convert row to CommandLog and load output from file
-        let mut log = row.map(CommandLog::from);
+        let mut log = log_row.map(CommandLog::from);
         if let Some(ref mut log) = log {
             log.output = self.log_storage.read_log(&log.id).await.ok();
         }
@@ -84,30 +99,46 @@ impl<'a> CommandLogRepository<'a> {
     }
 
     pub async fn get_all(&self) -> Result<Vec<CommandLog>> {
-        let rows = sqlx::query_as!(
-            CommandLogRow,
+        let rows = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    command_schedule_id as "command_schedule_id: Uuid",
-                    status,
-                    exit_code as "exit_code: u32",
-                    working_dir,
-                    run_in_background,
-                    timeout as "timeout: u32",
-                    env_vars,
-                    started_at as "started_at: DateTime<Utc>",
-                    finished_at as "finished_at: DateTime<Utc>"
+                    id, command_id, command_schedule_id, status, exit_code,
+                    working_dir, run_in_background, timeout, env_vars,
+                    started_at, finished_at
                 FROM command_logs
                 ORDER BY started_at DESC
-            "#
+            "#,
         )
         .fetch_all(self.pool)
         .await?;
 
+        let log_rows = rows
+            .into_iter()
+            .map(|row| -> Result<CommandLogRow> {
+                Ok(CommandLogRow {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    command_schedule_id: parse_optional_uuid(
+                        get_optional_string(&row, "command_schedule_id"),
+                        "command_schedule_id",
+                    )?,
+                    status: get_string(&row, "status"),
+                    exit_code: row.get("exit_code"),
+                    working_dir: get_string(&row, "working_dir"),
+                    run_in_background: row.get("run_in_background"),
+                    timeout: row.get("timeout"),
+                    env_vars: get_string(&row, "env_vars"),
+                    started_at: parse_datetime(&get_string(&row, "started_at"), "started_at")?,
+                    finished_at: parse_optional_datetime(
+                        get_optional_string(&row, "finished_at"),
+                        "finished_at",
+                    )?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
         // Convert rows to CommandLog and load output from files
-        let mut logs: Vec<CommandLog> = rows.into_iter().map(CommandLog::from).collect();
+        let mut logs: Vec<CommandLog> = log_rows.into_iter().map(CommandLog::from).collect();
         for log in &mut logs {
             log.output = self.log_storage.read_log(&log.id).await.ok();
         }
@@ -116,32 +147,48 @@ impl<'a> CommandLogRepository<'a> {
     }
 
     pub async fn get_by_command_id(&self, command_id: &str) -> Result<Vec<CommandLog>> {
-        let rows = sqlx::query_as!(
-            CommandLogRow,
+        let rows = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    command_schedule_id as "command_schedule_id: Uuid",
-                    status,
-                    exit_code as "exit_code: u32",
-                    working_dir,
-                    run_in_background,
-                    timeout as "timeout: u32",
-                    env_vars,
-                    started_at as "started_at: DateTime<Utc>",
-                    finished_at as "finished_at: DateTime<Utc>"
+                    id, command_id, command_schedule_id, status, exit_code,
+                    working_dir, run_in_background, timeout, env_vars,
+                    started_at, finished_at
                 FROM command_logs
                 WHERE command_id = ?
                 ORDER BY started_at DESC
             "#,
-            command_id
         )
+        .bind(command_id)
         .fetch_all(self.pool)
         .await?;
 
+        let log_rows = rows
+            .into_iter()
+            .map(|row| -> Result<CommandLogRow> {
+                Ok(CommandLogRow {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    command_schedule_id: parse_optional_uuid(
+                        get_optional_string(&row, "command_schedule_id"),
+                        "command_schedule_id",
+                    )?,
+                    status: get_string(&row, "status"),
+                    exit_code: row.get("exit_code"),
+                    working_dir: get_string(&row, "working_dir"),
+                    run_in_background: row.get("run_in_background"),
+                    timeout: row.get("timeout"),
+                    env_vars: get_string(&row, "env_vars"),
+                    started_at: parse_datetime(&get_string(&row, "started_at"), "started_at")?,
+                    finished_at: parse_optional_datetime(
+                        get_optional_string(&row, "finished_at"),
+                        "finished_at",
+                    )?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
         // Convert rows to CommandLog and load output from files
-        let mut logs: Vec<CommandLog> = rows.into_iter().map(CommandLog::from).collect();
+        let mut logs: Vec<CommandLog> = log_rows.into_iter().map(CommandLog::from).collect();
         for log in &mut logs {
             log.output = self.log_storage.read_log(&log.id).await.ok();
         }
@@ -150,32 +197,48 @@ impl<'a> CommandLogRepository<'a> {
     }
 
     pub async fn get_by_status(&self, status: &str) -> Result<Vec<CommandLog>> {
-        let rows = sqlx::query_as!(
-            CommandLogRow,
+        let rows = sqlx::query(
             r#"
                 SELECT
-                    id as "id: Uuid",
-                    command_id as "command_id: Uuid",
-                    command_schedule_id as "command_schedule_id: Uuid",
-                    status,
-                    exit_code as "exit_code: u32",
-                    working_dir,
-                    run_in_background,
-                    timeout as "timeout: u32",
-                    env_vars,
-                    started_at as "started_at: DateTime<Utc>",
-                    finished_at as "finished_at: DateTime<Utc>"
+                    id, command_id, command_schedule_id, status, exit_code,
+                    working_dir, run_in_background, timeout, env_vars,
+                    started_at, finished_at
                 FROM command_logs
                 WHERE status = ?
                 ORDER BY started_at DESC
             "#,
-            status
         )
+        .bind(status)
         .fetch_all(self.pool)
         .await?;
 
+        let log_rows = rows
+            .into_iter()
+            .map(|row| -> Result<CommandLogRow> {
+                Ok(CommandLogRow {
+                    id: parse_uuid(&get_string(&row, "id"), "id")?,
+                    command_id: parse_uuid(&get_string(&row, "command_id"), "command_id")?,
+                    command_schedule_id: parse_optional_uuid(
+                        get_optional_string(&row, "command_schedule_id"),
+                        "command_schedule_id",
+                    )?,
+                    status: get_string(&row, "status"),
+                    exit_code: row.get("exit_code"),
+                    working_dir: get_string(&row, "working_dir"),
+                    run_in_background: row.get("run_in_background"),
+                    timeout: row.get("timeout"),
+                    env_vars: get_string(&row, "env_vars"),
+                    started_at: parse_datetime(&get_string(&row, "started_at"), "started_at")?,
+                    finished_at: parse_optional_datetime(
+                        get_optional_string(&row, "finished_at"),
+                        "finished_at",
+                    )?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
         // Convert rows to CommandLog and load output from files
-        let mut logs: Vec<CommandLog> = rows.into_iter().map(CommandLog::from).collect();
+        let mut logs: Vec<CommandLog> = log_rows.into_iter().map(CommandLog::from).collect();
         for log in &mut logs {
             log.output = self.log_storage.read_log(&log.id).await.ok();
         }
