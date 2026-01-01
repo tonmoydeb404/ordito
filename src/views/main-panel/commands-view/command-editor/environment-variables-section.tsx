@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
-import type { EnvVar } from "./types";
+import { EnvVar } from "../types";
 
 interface EnvironmentVariablesSectionProps {
   envVars: EnvVar[];
@@ -10,7 +10,11 @@ interface EnvironmentVariablesSectionProps {
   onNewEnvVarChange: (envVar: EnvVar) => void;
   onAddEnvVar: () => void;
   onRemoveEnvVar: (index: number) => void;
-  onUpdateEnvVar: (index: number, field: "name" | "value", value: string) => void;
+  onUpdateEnvVar: (
+    index: number,
+    field: "name" | "value",
+    value: string
+  ) => void;
 }
 
 export default function EnvironmentVariablesSection({

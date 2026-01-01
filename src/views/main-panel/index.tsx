@@ -5,6 +5,7 @@ import { Clock, History, Terminal } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import CommandsView from "./commands-view";
 import LogsView from "./log-view";
+import ScheduleView from "./schedule-view";
 
 // ----------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ const MainPanel = (props: Props) => {
           </TabsContent>
 
           <TabsContent value="schedules" className="flex-1 m-0">
-            {/* <ScheduleView /> */}
+            <ScheduleView selectedGroup={selectedGroup} />
           </TabsContent>
         </Tabs>
       </div>
