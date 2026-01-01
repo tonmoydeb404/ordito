@@ -4,6 +4,7 @@ import { CommandResponse, GroupResponse } from "@/store";
 import { Clock, History, Terminal } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import CommandsView from "./commands-view";
+import LogsView from "./log-view";
 
 // ----------------------------------------------------------------------
 
@@ -65,7 +66,7 @@ const MainPanel = (props: Props) => {
           </TabsContent>
 
           <TabsContent value="logs" className="flex-1 m-0">
-            {/* <ExecutionLog websocketMessage={lastMessage} /> */}
+            <LogsView selectedGroup={selectedGroup} />
           </TabsContent>
 
           <TabsContent value="schedules" className="flex-1 m-0">

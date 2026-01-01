@@ -33,9 +33,7 @@ export function CommandsHeader(props: Props) {
   return (
     <div className="p-4 border-b border-border">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium">
-          {group ? `${group.title} Commands` : "All Commands"}
-        </h2>
+        <h2 className="text-base font-bold">All Commands</h2>
         <div className="flex gap-2">
           <CreateCommandDialog groupId={group?.id ?? null} />
           <Button
