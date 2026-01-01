@@ -32,4 +32,5 @@ cron = "0.12"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
 
