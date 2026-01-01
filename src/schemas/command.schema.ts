@@ -7,7 +7,6 @@ import { z } from "zod";
 // Simplified form schema for initial command creation (camelCase)
 export const createCommandFormSchema = z.object({
   title: z.string().min(1, "Command name is required").trim(),
-  folderId: z.string(),
 });
 
 // Full DTO schema matching backend API

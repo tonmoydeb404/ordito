@@ -2,34 +2,35 @@ import {
   ResizableHandle,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { CommandResponse, GroupResponse } from "@/store";
 import { useState } from "react";
 import MainPanel from "./main-panel";
 import SidebarPanel from "./sidebar-panel";
 
 function AppView() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedCommandId, setSelectedCommandId] = useState<string | null>(
+  const [selectedCommand, setSelectedCommand] =
+    useState<CommandResponse | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<GroupResponse | null>(
     null
   );
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   return (
     <div className="flex h-screen bg-background text-foreground font-mono text-sm overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
         <SidebarPanel
           isCollapsed={sidebarCollapsed}
-          selectedFolderId={selectedFolderId}
-          setSelectedFolderId={setSelectedFolderId}
+          selectedGroup={selectedFolder}
+          setSelectedGroup={setSelectedFolder}
           setCollapsed={setSidebarCollapsed}
-          setSelectedCommandId={setSelectedCommandId}
         />
 
         <ResizableHandle />
 
         <MainPanel
-          selectedCommandId={selectedCommandId}
-          selectedFolderId={selectedFolderId}
-          setSelectedCommandId={setSelectedCommandId}
+          selectedCommand={selectedCommand}
+          selectedGroup={selectedFolder}
+          setSelectedCommand={setSelectedCommand}
         />
       </ResizablePanelGroup>
     </div>

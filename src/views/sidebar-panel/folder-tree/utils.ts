@@ -64,6 +64,41 @@ export function buildTree(
 }
 
 /**
+ * Builds a hierarchical folder-only tree structure from flat groups array
+ */
+export function buildFolderTree(groups: GroupResponse[]): TreeItem[] {
+  const tree: TreeItem[] = [];
+  const folderMap = new Map<string, TreeItem>();
+
+  // Create folder items
+  groups.forEach((group) => {
+    const item: TreeItem = {
+      type: "folder",
+      id: group.id,
+      name: group.title,
+      parentId: group.parent_id,
+      children: [],
+      data: group,
+    };
+    folderMap.set(group.id, item);
+  });
+
+  // Build folder hierarchy
+  folderMap.forEach((item) => {
+    if (item.parentId) {
+      const parent = folderMap.get(item.parentId);
+      if (parent) {
+        parent.children!.push(item);
+      }
+    } else {
+      tree.push(item);
+    }
+  });
+
+  return tree;
+}
+
+/**
  * Filters a tree based on a search query
  * Returns a new tree containing only items that match the search or have matching children
  */

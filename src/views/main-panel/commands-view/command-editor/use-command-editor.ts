@@ -10,7 +10,7 @@ import type { CommandResponse, UpdateCommandDto } from "@/store/types";
 import { useEffect, useState } from "react";
 import type { EnvVar } from "../types";
 
-export function useCommandEditor(commandId: string) {
+export function useCommandEditor(commandId: string, onDelete?: () => void) {
   const [editedCommand, setEditedCommand] = useState<CommandResponse | null>(
     null
   );
@@ -96,6 +96,12 @@ export function useCommandEditor(commandId: string) {
       try {
         await deleteCommand(commandId).unwrap();
         toast.success("Command deleted successfully");
+        // Clear the form after successful deletion
+        setEditedCommand(null);
+        setEnvVars([]);
+        setNewEnvVar({ name: "", value: "" });
+        // Notify parent to reset selected command
+        onDelete?.();
       } catch (error) {
         toast.error("Failed to delete command");
       }

@@ -1,16 +1,16 @@
 "use client";
 
-import React from "react";
 import {
   FormInputField,
   FormSwitchField,
   FormTextareaField,
 } from "@/lib/react-hook-form";
-import { updateCommandSchema } from "@/schemas/command.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, FormProvider } from "react-hook-form";
 import type { UpdateCommandFormData } from "@/schemas/command.schema";
+import { updateCommandSchema } from "@/schemas/command.schema";
 import type { CommandResponse } from "@/store/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 interface CommandFormProps {
   command: CommandResponse;
@@ -40,7 +40,7 @@ export default function CommandForm({ command, onChange }: CommandFormProps) {
       onChange({
         ...command,
         ...formData,
-      } as CommandResponse);
+      });
     });
     return () => subscription.unsubscribe();
   }, [command, onChange, methods]);

@@ -11,21 +11,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { FormInputField, FormSelectField } from "@/lib/react-hook-form";
+import { FormInputField } from "@/lib/react-hook-form";
 import { createCommandFormSchema, type CreateCommandFormData } from "@/schemas";
 import { useCreateCommandMutation } from "@/store/api/commands-api";
-import type { GroupResponse } from "@/store/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { homeDir } from "@tauri-apps/api/path";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
-interface CreateCommandDialogProps {
-  groups: GroupResponse[];
+interface Props {
+  groupId: string | null;
 }
 
-export function CreateCommandDialog({ groups }: CreateCommandDialogProps) {
+export function CreateCommandDialog(props: Props) {
+  const { groupId } = props;
   const [isOpen, setIsOpen] = useState(false);
   const [createCommand] = useCreateCommandMutation();
 
@@ -33,17 +33,21 @@ export function CreateCommandDialog({ groups }: CreateCommandDialogProps) {
     resolver: zodResolver(createCommandFormSchema),
     defaultValues: {
       title: "",
-      folderId: "none",
     },
   });
 
   const handleSubmit = async (data: CreateCommandFormData) => {
+    if (!groupId) {
+      toast.error("Please select a folder before creating a command");
+      return;
+    }
+
     try {
       const homePath = await homeDir();
       await createCommand({
         title: data.title,
         value: 'echo "Hello World"', // Default script
-        command_group_id: data.folderId === "none" ? "" : data.folderId,
+        command_group_id: groupId,
         working_dir: homePath,
         run_in_background: false,
         env_vars: "{}",
@@ -56,14 +60,6 @@ export function CreateCommandDialog({ groups }: CreateCommandDialogProps) {
       toast.error("Failed to create command");
     }
   };
-
-  const selectOptions = [
-    { label: "No folder", value: "none" },
-    ...groups.map((group) => ({
-      label: group.title,
-      value: group.id,
-    })),
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -92,12 +88,7 @@ export function CreateCommandDialog({ groups }: CreateCommandDialogProps) {
               placeholder="Enter command name"
               required
             />
-            <FormSelectField
-              name="folderId"
-              label="Folder"
-              options={selectOptions}
-              placeholder="Select folder (optional)"
-            />
+
             <div className="flex gap-2">
               <Button
                 type="submit"

@@ -6,9 +6,9 @@ interface CommandCardProps {
   command: CommandResponse;
   isSelected: boolean;
   isRunning: boolean;
-  onSelect: (commandId: string) => void;
-  onExecute: (commandId: string) => void;
-  onStop: (commandId: string) => void;
+  onSelect: (command: CommandResponse | null) => void;
+  onExecute: (command: CommandResponse) => void;
+  onStop: (command: CommandResponse) => void;
   getStatusBadge: (command: CommandResponse) => React.ReactNode;
 }
 
@@ -29,7 +29,7 @@ export function CommandCard({
           ? "bg-accent border-l-2 border-primary"
           : "bg-secondary hover:bg-accent border-border"
       }`}
-      onClick={() => onSelect(command.id)}
+      onClick={() => onSelect(command)}
       data-testid={`card-command-${command.title
         .toLowerCase()
         .replace(/\s+/g, "-")}`}
@@ -48,7 +48,7 @@ export function CommandCard({
               className="p-1 h-auto w-auto hover:bg-background"
               onClick={(e) => {
                 e.stopPropagation();
-                onStop(command.id);
+                onStop(command);
               }}
               data-testid={`button-stop-${command.title
                 .toLowerCase()
@@ -63,7 +63,7 @@ export function CommandCard({
               className="p-1 h-auto w-auto hover:bg-background"
               onClick={(e) => {
                 e.stopPropagation();
-                onExecute(command.id);
+                onExecute(command);
               }}
               data-testid={`button-play-${command.title
                 .toLowerCase()
@@ -76,7 +76,7 @@ export function CommandCard({
             size="icon"
             variant="ghost"
             className="p-1 h-auto w-auto hover:bg-background"
-            onClick={() => onSelect(command.id)}
+            onClick={() => onSelect(command)}
           >
             <Edit className="w-3 h-3 text-muted-foreground" />
           </Button>

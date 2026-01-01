@@ -4,9 +4,9 @@ import { EmptyCommandsState } from "./empty-commands-state";
 
 interface CommandsListProps {
   commands: CommandResponse[];
-  selectedCommandId: string | null;
+  selectedCommand: CommandResponse | null;
   runningCommands: Set<string>;
-  onSelectCommand: (commandId: string) => void;
+  onSelectCommand: (commandId: CommandResponse | null) => void;
   onExecuteCommand: (commandId: string) => void;
   onStopCommand: (commandId: string) => void;
   getStatusBadge: (command: CommandResponse) => React.ReactNode;
@@ -14,7 +14,7 @@ interface CommandsListProps {
 
 export function CommandsList({
   commands,
-  selectedCommandId,
+  selectedCommand,
   runningCommands,
   onSelectCommand,
   onExecuteCommand,
@@ -28,7 +28,7 @@ export function CommandsList({
   return (
     <div className="space-y-3">
       {commands.map((command) => {
-        const isSelected = selectedCommandId === command.id;
+        const isSelected = selectedCommand?.id === command.id;
         const isRunning = runningCommands.has(command.id);
 
         return (
@@ -37,9 +37,9 @@ export function CommandsList({
             command={command}
             isSelected={isSelected}
             isRunning={isRunning}
-            onSelect={onSelectCommand}
-            onExecute={onExecuteCommand}
-            onStop={onStopCommand}
+            onSelect={(command) => onSelectCommand(isSelected ? null : command)}
+            onExecute={(command) => onExecuteCommand(command.id)}
+            onStop={(command) => onStopCommand(command.id)}
             getStatusBadge={getStatusBadge}
           />
         );

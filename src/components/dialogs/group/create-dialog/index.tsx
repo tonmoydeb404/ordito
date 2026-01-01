@@ -12,10 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { FormInputField, FormSelectField } from "@/lib/react-hook-form";
-import {
-  createGroupFormSchema,
-  type CreateGroupFormData,
-} from "@/schemas";
+import { createGroupFormSchema, type CreateGroupFormData } from "@/schemas";
 import { useCreateGroupMutation } from "@/store/api/groups-api";
 import type { GroupResponse } from "@/store/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,12 +62,12 @@ export function CreateGroupDialog({ groups }: CreateGroupDialogProps) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
-          size="sm"
           variant="outline"
-          className="px-3 py-2 text-xs"
+          className="px-3 py-2 text-xs w-full"
           data-testid="button-new-folder"
         >
           <FolderPlus className="w-3 h-3" />
+          New Folder
         </Button>
       </DialogTrigger>
       <DialogContent>

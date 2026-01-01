@@ -2,6 +2,7 @@ import { ThemeToggle } from "@/components/theme-btn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResizablePanel } from "@/components/ui/resizable";
+import { GroupResponse } from "@/store/types";
 import FolderTree from "@/views/sidebar-panel/folder-tree";
 import { Grid3x3Icon, SearchIcon, TerminalIcon } from "lucide-react";
 import { Dispatch, SetStateAction, useState } from "react";
@@ -10,19 +11,12 @@ type Props = {
   isCollapsed: boolean;
   setCollapsed: Dispatch<SetStateAction<boolean>>;
 
-  selectedFolderId: string | null;
-  setSelectedFolderId: Dispatch<SetStateAction<string | null>>;
-  setSelectedCommandId: Dispatch<SetStateAction<string | null>>;
+  selectedGroup: GroupResponse | null;
+  setSelectedGroup: Dispatch<SetStateAction<GroupResponse | null>>;
 };
 
 const SidebarPanel = (props: Props) => {
-  const {
-    isCollapsed,
-    setCollapsed,
-    selectedFolderId,
-    setSelectedFolderId,
-    setSelectedCommandId,
-  } = props;
+  const { isCollapsed, setCollapsed, selectedGroup, setSelectedGroup } = props;
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
@@ -75,9 +69,8 @@ const SidebarPanel = (props: Props) => {
             <div className="flex-1 overflow-y-auto scrollbar-thin">
               <FolderTree
                 searchQuery={searchQuery}
-                selectedFolderId={selectedFolderId}
-                onSelectFolder={setSelectedFolderId}
-                onSelectCommand={setSelectedCommandId}
+                selectedGroup={selectedGroup}
+                onSelectGroup={setSelectedGroup}
               />
             </div>
 

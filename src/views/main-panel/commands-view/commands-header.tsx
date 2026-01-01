@@ -1,3 +1,4 @@
+import { CreateCommandDialog } from "@/components/dialogs/command/create-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -6,10 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GroupResponse } from "@/store";
 import { Play, RotateCcw } from "lucide-react";
 
-interface CommandsHeaderProps {
-  folderTitle: string | null;
+interface Props {
+  group: GroupResponse | null;
   sortBy: string;
   filterBy: string;
   onSortChange: (value: string) => void;
@@ -18,22 +20,24 @@ interface CommandsHeaderProps {
   onRefresh?: () => void;
 }
 
-export function CommandsHeader({
-  folderTitle,
-  sortBy,
-  filterBy,
-  onSortChange,
-  onFilterChange,
-  onRunAll,
-  onRefresh,
-}: CommandsHeaderProps) {
+export function CommandsHeader(props: Props) {
+  const {
+    sortBy,
+    filterBy,
+    onSortChange,
+    onFilterChange,
+    onRunAll,
+    onRefresh,
+    group,
+  } = props;
   return (
     <div className="p-4 border-b border-border">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-medium">
-          {folderTitle ? `${folderTitle} Commands` : "All Commands"}
+          {group ? `${group.title} Commands` : "All Commands"}
         </h2>
         <div className="flex gap-2">
+          <CreateCommandDialog groupId={group?.id ?? null} />
           <Button
             size="sm"
             className="px-2 py-1 bg-primary hover:bg-primary/80 text-primary-foreground text-xs"

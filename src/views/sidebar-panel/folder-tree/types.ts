@@ -6,9 +6,8 @@ import type { CommandResponse, GroupResponse } from "@/store/types";
 
 export interface FolderTreeProps {
   searchQuery: string;
-  selectedFolderId: string | null;
-  onSelectFolder: (folderId: string | null) => void;
-  onSelectCommand: (commandId: string) => void;
+  selectedGroup: GroupResponse | null;
+  onSelectGroup: (group: GroupResponse | null) => void;
 }
 
 export interface TreeItem {

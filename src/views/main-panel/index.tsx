@@ -1,5 +1,6 @@
 import { ResizablePanel } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CommandResponse, GroupResponse } from "@/store";
 import { Clock, History, Terminal } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import CommandsView from "./commands-view";
@@ -27,13 +28,13 @@ const tabsList = [
 // ----------------------------------------------------------------------
 
 type Props = {
-  selectedFolderId: string | null;
-  selectedCommandId: string | null;
-  setSelectedCommandId: Dispatch<SetStateAction<string | null>>;
+  selectedGroup: GroupResponse | null;
+  selectedCommand: CommandResponse | null;
+  setSelectedCommand: Dispatch<SetStateAction<CommandResponse | null>>;
 };
 
 const MainPanel = (props: Props) => {
-  const { selectedFolderId, setSelectedCommandId, selectedCommandId } = props;
+  const { selectedGroup, setSelectedCommand, selectedCommand } = props;
   return (
     <ResizablePanel defaultSize={80}>
       <div className="flex flex-col h-full">
@@ -57,9 +58,9 @@ const MainPanel = (props: Props) => {
           {/* Tab Content */}
           <TabsContent value="commands" className="flex-1 m-0">
             <CommandsView
-              commandId={selectedCommandId}
-              folderId={selectedFolderId}
-              onSelectCommand={setSelectedCommandId}
+              selectedCommand={selectedCommand}
+              selectedGroup={selectedGroup}
+              onSelectCommand={setSelectedCommand}
             />
           </TabsContent>
 

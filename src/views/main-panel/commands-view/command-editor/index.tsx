@@ -6,9 +6,13 @@ import { useCommandEditor } from "./use-command-editor";
 
 interface CommandEditorProps {
   commandId: string;
+  onDelete?: () => void;
 }
 
-export default function CommandEditor({ commandId }: CommandEditorProps) {
+export default function CommandEditor({
+  commandId,
+  onDelete,
+}: CommandEditorProps) {
   const {
     editedCommand,
     setEditedCommand,
@@ -27,7 +31,7 @@ export default function CommandEditor({ commandId }: CommandEditorProps) {
     updateEnvVar,
     clearOutput,
     copyOutput,
-  } = useCommandEditor(commandId);
+  } = useCommandEditor(commandId, onDelete);
 
   if (isLoading || !editedCommand) {
     return (
