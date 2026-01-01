@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   FormInputField,
   FormSwitchField,
@@ -9,6 +10,8 @@ import type { UpdateCommandFormData } from "@/schemas/command.schema";
 import { updateCommandSchema } from "@/schemas/command.schema";
 import type { CommandResponse } from "@/store/types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { open } from "@tauri-apps/plugin-dialog";
+import { FolderOpen } from "lucide-react";
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -62,35 +65,51 @@ export default function CommandForm({ command, onChange }: CommandFormProps) {
           data-testid="textarea-command-script"
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormInputField<UpdateCommandFormData>
-            name="working_dir"
-            label="Working Directory"
-            placeholder="~/projects/my-app"
-            data-testid="input-working-directory"
-          />
-          <FormInputField<UpdateCommandFormData>
-            name="timeout"
-            label="Timeout (seconds)"
-            type="number"
-            data-testid="input-timeout"
-            encode={(v) => (v ? parseInt(v, 10) : 30)}
-            decode={(v) => String(v)}
-          />
-        </div>
+        <FormInputField<UpdateCommandFormData>
+          name="working_dir"
+          label="Working Directory"
+          placeholder="~/projects/my-app"
+          data-testid="input-working-directory"
+          rightAction={
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={async () => {
+                const selected = await open({ directory: true });
+                if (selected && typeof selected === "string") {
+                  methods.setValue("working_dir", selected);
+                }
+              }}
+            >
+              <FolderOpen className="h-4 w-4" />
+            </Button>
+          }
+        />
 
-        <div className="flex items-center gap-4">
+        <FormInputField<UpdateCommandFormData>
+          name="timeout"
+          label="Timeout (seconds)"
+          type="number"
+          data-testid="input-timeout"
+          encode={(v) => (v ? parseInt(v, 10) : 30)}
+          decode={(v) => String(v)}
+        />
+
+        <div className="flex items-center gap-4 py-2">
           <FormSwitchField<UpdateCommandFormData>
             name="run_in_background"
             label="Run in Background"
             orientation="horizontal"
             data-testid="checkbox-run-background"
+            className="flex-row-reverse"
           />
           <FormSwitchField<UpdateCommandFormData>
             name="is_favourite"
             label="Add to Favorites"
             orientation="horizontal"
             data-testid="checkbox-favorite"
+            className="flex-row-reverse"
           />
         </div>
       </div>

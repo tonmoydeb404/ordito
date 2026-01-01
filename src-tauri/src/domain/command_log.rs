@@ -48,7 +48,7 @@ pub struct CommandLog {
     pub working_dir: String,
     pub run_in_background: bool,
     pub timeout: Option<u32>,
-    pub env_vars: String,  // JSON string
+    pub env_vars: String, // JSON string
     pub started_at: DateTime<Utc>,
     pub finished_at: Option<DateTime<Utc>>,
 }
@@ -77,7 +77,7 @@ impl From<CommandLogRow> for CommandLog {
             command_schedule_id: row.command_schedule_id,
             status: row.status,
             exit_code: row.exit_code,
-            output: None,  // Will be loaded from file
+            output: None, // Will be loaded from file
             working_dir: row.working_dir,
             run_in_background: row.run_in_background,
             timeout: row.timeout,

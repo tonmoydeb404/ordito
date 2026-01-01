@@ -60,7 +60,10 @@ impl<'a> CommandRepository<'a> {
             .map(|row| -> Result<Command> {
                 Ok(Command {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
-                    command_group_id: parse_uuid(&get_string(&row, "command_group_id"), "command_group_id")?,
+                    command_group_id: parse_uuid(
+                        &get_string(&row, "command_group_id"),
+                        "command_group_id",
+                    )?,
                     title: get_string(&row, "title"),
                     value: get_string(&row, "value"),
                     working_dir: get_string(&row, "working_dir"),
@@ -96,7 +99,10 @@ impl<'a> CommandRepository<'a> {
             .map(|row| -> Result<Command> {
                 Ok(Command {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
-                    command_group_id: parse_uuid(&get_string(&row, "command_group_id"), "command_group_id")?,
+                    command_group_id: parse_uuid(
+                        &get_string(&row, "command_group_id"),
+                        "command_group_id",
+                    )?,
                     title: get_string(&row, "title"),
                     value: get_string(&row, "value"),
                     working_dir: get_string(&row, "working_dir"),
@@ -134,7 +140,10 @@ impl<'a> CommandRepository<'a> {
             .map(|row| -> Result<Command> {
                 Ok(Command {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
-                    command_group_id: parse_uuid(&get_string(&row, "command_group_id"), "command_group_id")?,
+                    command_group_id: parse_uuid(
+                        &get_string(&row, "command_group_id"),
+                        "command_group_id",
+                    )?,
                     title: get_string(&row, "title"),
                     value: get_string(&row, "value"),
                     working_dir: get_string(&row, "working_dir"),
@@ -171,7 +180,10 @@ impl<'a> CommandRepository<'a> {
             .map(|row| -> Result<Command> {
                 Ok(Command {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
-                    command_group_id: parse_uuid(&get_string(&row, "command_group_id"), "command_group_id")?,
+                    command_group_id: parse_uuid(
+                        &get_string(&row, "command_group_id"),
+                        "command_group_id",
+                    )?,
                     title: get_string(&row, "title"),
                     value: get_string(&row, "value"),
                     working_dir: get_string(&row, "working_dir"),
@@ -250,7 +262,10 @@ impl<'a> CommandRepository<'a> {
             .map(|row| -> Result<Command> {
                 Ok(Command {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
-                    command_group_id: parse_uuid(&get_string(&row, "command_group_id"), "command_group_id")?,
+                    command_group_id: parse_uuid(
+                        &get_string(&row, "command_group_id"),
+                        "command_group_id",
+                    )?,
                     title: get_string(&row, "title"),
                     value: get_string(&row, "value"),
                     working_dir: get_string(&row, "working_dir"),

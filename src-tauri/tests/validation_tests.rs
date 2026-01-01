@@ -1,6 +1,5 @@
 /// Validation-focused tests that don't require database setup
 /// These tests focus on the error handling and validation logic
-
 use ordito_lib::app::error::{
     validate_command, validate_cron_expression, validate_directory, validate_env_vars,
     validate_timeout, validate_uuid, AppError,

@@ -262,8 +262,10 @@ pub fn validate_env_vars(env_vars: &str) -> AppResult<std::collections::HashMap<
         return Ok(std::collections::HashMap::new());
     }
 
-    let vars: std::collections::HashMap<String, String> = serde_json::from_str(env_vars)
-        .map_err(|e| AppError::ValidationError(format!("Invalid environment variables JSON: {}", e)))?;
+    let vars: std::collections::HashMap<String, String> =
+        serde_json::from_str(env_vars).map_err(|e| {
+            AppError::ValidationError(format!("Invalid environment variables JSON: {}", e))
+        })?;
 
     // Check for dangerous environment variables
     const DANGEROUS_VARS: &[&str] = &["LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES"];
@@ -344,7 +346,7 @@ pub fn validate_command(command: &str) -> AppResult<()> {
         "rm -rf /",
         "mkfs",
         "dd if=/dev/zero",
-        ":(){ :|:& };:",  // Fork bomb
+        ":(){ :|:& };:", // Fork bomb
     ];
 
     for pattern in SUSPICIOUS_PATTERNS {

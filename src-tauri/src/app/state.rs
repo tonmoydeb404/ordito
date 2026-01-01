@@ -1,7 +1,7 @@
+use sqlx::SqlitePool;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::io::log_storage::LogStorage;

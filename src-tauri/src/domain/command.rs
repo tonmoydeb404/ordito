@@ -11,7 +11,7 @@ pub struct Command {
     pub timeout: Option<u32>,
     pub run_in_background: bool,
     pub is_favourite: bool,
-    pub env_vars: String,  // JSON string
+    pub env_vars: String, // JSON string
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

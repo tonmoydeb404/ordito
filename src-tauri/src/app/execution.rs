@@ -64,10 +64,7 @@ impl<'a> ExecutionService<'a> {
             .await?
             .ok_or_else(|| anyhow!("Command not found: {}", command_id))?;
 
-        info!(
-            "Executing command: {} ({})",
-            command.title, command.id
-        );
+        info!("Executing command: {} ({})", command.title, command.id);
 
         // Create initial log entry with "running" status
         let log_id = Uuid::new_v4();
@@ -193,9 +190,7 @@ impl<'a> ExecutionService<'a> {
             .stdin(Stdio::null());
 
         // Spawn the process
-        let mut child = cmd
-            .spawn()
-            .context("Failed to spawn command process")?;
+        let mut child = cmd.spawn().context("Failed to spawn command process")?;
 
         // Capture stdout and stderr
         let stdout = child
@@ -217,7 +212,9 @@ impl<'a> ExecutionService<'a> {
 
             while let Ok(Some(line)) = lines.next_line().await {
                 // Stream output to log file
-                if let Err(e) = log_storage_clone.append_log(&log_id_clone, &format!("{}\n", line)).await
+                if let Err(e) = log_storage_clone
+                    .append_log(&log_id_clone, &format!("{}\n", line))
+                    .await
                 {
                     warn!("Failed to write stdout to log: {}", e);
                 }
@@ -266,9 +263,7 @@ impl<'a> ExecutionService<'a> {
 
                 Ok((exit_code, execution_status))
             }
-            Ok(Err(e)) => {
-                Err(anyhow!("Process execution error: {}", e))
-            }
+            Ok(Err(e)) => Err(anyhow!("Process execution error: {}", e)),
             Err(_) => {
                 // Timeout occurred - kill the process
                 let _ = child.kill().await;
@@ -312,7 +307,10 @@ impl<'a> ExecutionService<'a> {
         // Write cancellation message to log file
         let log_uuid = Uuid::parse_str(log_id)?;
         self.log_storage
-            .append_log(&log_uuid, "\n[CANCELLED] Command execution was cancelled by user\n")
+            .append_log(
+                &log_uuid,
+                "\n[CANCELLED] Command execution was cancelled by user\n",
+            )
             .await
             .ok();
 

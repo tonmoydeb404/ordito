@@ -12,10 +12,9 @@ pub fn parse_uuid(text: &str, field_name: &str) -> Result<Uuid> {
 /// Parse optional UUID from nullable TEXT column
 pub fn parse_optional_uuid(text: Option<String>, field_name: &str) -> Result<Option<Uuid>> {
     match text {
-        Some(s) => Ok(Some(
-            Uuid::parse_str(&s)
-                .with_context(|| format!("Failed to parse UUID from field '{}'", field_name))?,
-        )),
+        Some(s) => Ok(Some(Uuid::parse_str(&s).with_context(|| {
+            format!("Failed to parse UUID from field '{}'", field_name)
+        })?)),
         None => Ok(None),
     }
 }
@@ -32,11 +31,9 @@ pub fn parse_optional_datetime(
     field_name: &str,
 ) -> Result<Option<DateTime<Utc>>> {
     match text {
-        Some(s) => Ok(Some(
-            s.parse::<DateTime<Utc>>().with_context(|| {
-                format!("Failed to parse DateTime from field '{}'", field_name)
-            })?,
-        )),
+        Some(s) => Ok(Some(s.parse::<DateTime<Utc>>().with_context(|| {
+            format!("Failed to parse DateTime from field '{}'", field_name)
+        })?)),
         None => Ok(None),
     }
 }

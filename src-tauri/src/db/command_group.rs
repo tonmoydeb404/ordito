@@ -48,7 +48,10 @@ impl<'a> CommandGroupRepository<'a> {
                 Ok(CommandGroup {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
                     title: get_string(&row, "title"),
-                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    parent_id: parse_optional_uuid(
+                        get_optional_string(&row, "parent_id"),
+                        "parent_id",
+                    )?,
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
                 })
@@ -75,7 +78,10 @@ impl<'a> CommandGroupRepository<'a> {
                 Ok(CommandGroup {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
                     title: get_string(&row, "title"),
-                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    parent_id: parse_optional_uuid(
+                        get_optional_string(&row, "parent_id"),
+                        "parent_id",
+                    )?,
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
                 })
@@ -136,7 +142,10 @@ impl<'a> CommandGroupRepository<'a> {
                 Ok(CommandGroup {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
                     title: get_string(&row, "title"),
-                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    parent_id: parse_optional_uuid(
+                        get_optional_string(&row, "parent_id"),
+                        "parent_id",
+                    )?,
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
                 })
@@ -164,7 +173,10 @@ impl<'a> CommandGroupRepository<'a> {
                 Ok(CommandGroup {
                     id: parse_uuid(&get_string(&row, "id"), "id")?,
                     title: get_string(&row, "title"),
-                    parent_id: parse_optional_uuid(get_optional_string(&row, "parent_id"), "parent_id")?,
+                    parent_id: parse_optional_uuid(
+                        get_optional_string(&row, "parent_id"),
+                        "parent_id",
+                    )?,
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
                 })

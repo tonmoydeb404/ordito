@@ -24,6 +24,7 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             // Determine database path based on environment
@@ -32,7 +33,9 @@ pub fn run() {
                 env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:./ordito.db".to_string())
             } else {
                 // Production: use app data directory
-                let app_data_dir = app.path().app_data_dir()
+                let app_data_dir = app
+                    .path()
+                    .app_data_dir()
                     .expect("Failed to get app data directory");
 
                 // Create app data directory if it doesn't exist
@@ -48,19 +51,23 @@ pub fn run() {
 
             // Initialize database, log storage, and app state
             let (pool, log_storage) = tauri::async_runtime::block_on(async {
-                let pool = db::init_db_pool().await
+                let pool = db::init_db_pool()
+                    .await
                     .expect("Failed to initialize database pool");
 
-                db::create_tables(&pool).await
+                db::create_tables(&pool)
+                    .await
                     .expect("Failed to create database tables");
 
-                let log_storage = LogStorage::new().await
+                let log_storage = LogStorage::new()
+                    .await
                     .expect("Failed to initialize log storage");
 
                 tracing::info!("Database initialized at: {}", db_path);
 
                 // Start scheduler service within async runtime context
-                let scheduler = SchedulerService::new(Arc::new(pool.clone()), Arc::new(log_storage.clone()));
+                let scheduler =
+                    SchedulerService::new(Arc::new(pool.clone()), Arc::new(log_storage.clone()));
                 let _scheduler_handle = scheduler.start();
                 tracing::info!("Scheduler service started");
 
