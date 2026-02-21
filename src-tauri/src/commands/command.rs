@@ -1,4 +1,5 @@
 use crate::models::CommandItem;
+use chrono::Local;
 use crate::error::lock_state;
 use crate::state::{AppState, ScheduleState};
 use crate::core::storage::save_data;
@@ -16,11 +17,14 @@ pub async fn add_command_to_group(
     is_detached: Option<bool>,
 ) -> Result<String, String> {
     let command_id = Uuid::new_v4().to_string();
+    let now = Local::now();
     let command_item = CommandItem {
         id: command_id.clone(),
         label,
         cmd,
         is_detached,
+        created_at: now,
+        updated_at: now,
     };
 
     let mut groups = lock_state(&group_state)?;
@@ -69,6 +73,7 @@ pub async fn update_command(
     command.label = label;
     command.cmd = cmd;
     command.is_detached = is_detached;
+    command.updated_at = Local::now();
     save_data(&app_handle, &groups, &schedules)?;
     Ok(())
 }

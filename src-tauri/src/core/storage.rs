@@ -15,7 +15,12 @@ pub fn get_data_file_path(app_handle: &tauri::AppHandle) -> Result<PathBuf, Stri
             .map_err(|e| format!("Failed to create app data directory: {}", e))?;
     }
 
-    Ok(app_data_dir.join("command_groups.json"))
+    #[cfg(debug_assertions)]
+    let file_name = "command_groups_dev.json";
+    #[cfg(not(debug_assertions))]
+    let file_name = "command_groups.json";
+
+    Ok(app_data_dir.join(file_name))
 }
 
 pub fn load_data(

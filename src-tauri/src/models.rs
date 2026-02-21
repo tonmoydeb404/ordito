@@ -2,12 +2,21 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn default_timestamp() -> DateTime<Local> {
+    Local::now()
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommandItem {
     pub id: String,
     pub label: String,
     pub cmd: String,
     pub is_detached: Option<bool>,
+    
+    #[serde(default = "default_timestamp")]
+    pub created_at: DateTime<Local>,
+    #[serde(default = "default_timestamp")]
+    pub updated_at: DateTime<Local>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,6 +24,11 @@ pub struct CommandGroup {
     pub id: String,
     pub title: String,
     pub commands: Vec<CommandItem>,
+    
+    #[serde(default = "default_timestamp")]
+    pub created_at: DateTime<Local>,
+    #[serde(default = "default_timestamp")]
+    pub updated_at: DateTime<Local>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

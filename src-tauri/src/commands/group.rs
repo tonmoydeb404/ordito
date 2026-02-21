@@ -1,4 +1,5 @@
 use crate::error::lock_state;
+use chrono::Local;
 use crate::models::{AppData, CommandGroup};
 use crate::state::{AppState, ScheduleState};
 use crate::core::storage::{merge_data, save_data};
@@ -14,10 +15,13 @@ pub async fn create_group(
     title: String,
 ) -> Result<String, String> {
     let id = Uuid::new_v4().to_string();
+    let now = Local::now();
     let group = CommandGroup {
         id: id.clone(),
         title,
         commands: Vec::new(),
+        created_at: now,
+        updated_at: now,
     };
 
     let mut groups = lock_state(&group_state)?;
@@ -59,6 +63,7 @@ pub async fn update_group(
     let schedules = lock_state(&schedule_state)?;
     let group = groups.get_mut(&group_id).ok_or("Group not found")?;
     group.title = title;
+    group.updated_at = Local::now();
     save_data(&app_handle, &groups, &schedules)?;
     Ok(())
 }
