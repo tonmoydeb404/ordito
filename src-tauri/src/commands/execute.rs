@@ -1,3 +1,4 @@
+use crate::error::lock_state;
 use crate::state::AppState;
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -6,7 +7,6 @@ use tokio::time::timeout;
 
 #[tauri::command]
 pub async fn execute_command(cmd: String) -> Result<String, String> {
-    // Set a timeout for command execution (30 seconds)
     let execution_future = tokio::task::spawn_blocking(move || {
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd").args(["/C", &cmd]).output()
@@ -18,7 +18,6 @@ pub async fn execute_command(cmd: String) -> Result<String, String> {
             Ok(output) => {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 let stderr = String::from_utf8_lossy(&output.stderr);
-
                 if output.status.success() {
                     Ok(stdout.to_string())
                 } else {
@@ -56,10 +55,7 @@ pub async fn execute_command_detached(cmd: String) -> Result<String, String> {
     };
 
     match result {
-        Ok(_child) => {
-            // Process started successfully, we don't need to track the PID
-            Ok("Process started successfully in background".to_string())
-        }
+        Ok(_) => Ok("Process started successfully in background".to_string()),
         Err(e) => Err(format!("Failed to start command: {}", e)),
     }
 }
@@ -69,18 +65,16 @@ pub async fn execute_group_commands(
     state: State<'_, AppState>,
     group_id: String,
 ) -> Result<Vec<(String, String)>, String> {
-    // Clone the commands first, then release the lock
     let commands = {
-        let groups = state.lock().unwrap();
-        if let Some(group) = groups.get(&group_id) {
-            group.commands.clone()
-        } else {
-            return Err("Group not found".to_string());
-        }
-    }; // Lock is released here
+        let groups = lock_state(&state)?;
+        groups
+            .get(&group_id)
+            .ok_or("Group not found")?
+            .commands
+            .clone()
+    };
 
     let mut results = Vec::new();
-
     for cmd_item in commands {
         let result = if cmd_item.is_detached.unwrap_or(false) {
             execute_command_detached(cmd_item.cmd).await

@@ -1,6 +1,7 @@
 use crate::models::CommandItem;
+use crate::error::lock_state;
 use crate::state::{AppState, ScheduleState};
-use crate::storage::save_data;
+use crate::core::storage::save_data;
 use tauri::State;
 use uuid::Uuid;
 
@@ -22,17 +23,12 @@ pub async fn add_command_to_group(
         is_detached,
     };
 
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        if let Some(group) = groups.get_mut(&group_id) {
-            group.commands.push(command_item);
-            save_data(&app_handle, &groups, &schedules)?;
-            Ok(command_id)
-        } else {
-            Err("Group not found".to_string())
-        }
-    }
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    let group = groups.get_mut(&group_id).ok_or("Group not found")?;
+    group.commands.push(command_item);
+    save_data(&app_handle, &groups, &schedules)?;
+    Ok(command_id)
 }
 
 #[tauri::command]
@@ -43,17 +39,12 @@ pub async fn delete_command_from_group(
     group_id: String,
     command_id: String,
 ) -> Result<(), String> {
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        if let Some(group) = groups.get_mut(&group_id) {
-            group.commands.retain(|cmd| cmd.id != command_id);
-            save_data(&app_handle, &groups, &schedules)?;
-            Ok(())
-        } else {
-            Err("Group not found".to_string())
-        }
-    }
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    let group = groups.get_mut(&group_id).ok_or("Group not found")?;
+    group.commands.retain(|cmd| cmd.id != command_id);
+    save_data(&app_handle, &groups, &schedules)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -67,21 +58,17 @@ pub async fn update_command(
     cmd: String,
     is_detached: Option<bool>,
 ) -> Result<(), String> {
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        if let Some(group) = groups.get_mut(&group_id) {
-            if let Some(command) = group.commands.iter_mut().find(|c| c.id == command_id) {
-                command.label = label;
-                command.cmd = cmd;
-                command.is_detached = is_detached;
-                save_data(&app_handle, &groups, &schedules)?;
-                Ok(())
-            } else {
-                Err("Command not found".to_string())
-            }
-        } else {
-            Err("Group not found".to_string())
-        }
-    }
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    let group = groups.get_mut(&group_id).ok_or("Group not found")?;
+    let command = group
+        .commands
+        .iter_mut()
+        .find(|c| c.id == command_id)
+        .ok_or("Command not found")?;
+    command.label = label;
+    command.cmd = cmd;
+    command.is_detached = is_detached;
+    save_data(&app_handle, &groups, &schedules)?;
+    Ok(())
 }

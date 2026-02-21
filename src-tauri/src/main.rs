@@ -1,34 +1,35 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod core;
+mod error;
 mod models;
-mod notification;
-mod scheduler;
-mod startup;
 mod state;
-mod storage;
-mod tray;
-mod window;
+mod system;
 
-use notification::NotificationManager;
-use scheduler::SchedulerManager;
-use startup::StartupManager;
+use crate::core::scheduler::SchedulerManager;
+use crate::core::storage::load_data;
+use crate::system::notification::NotificationManager;
+use crate::system::tray::TrayManager;
+use crate::system::window::WindowManager;
 use state::{AppState, ScheduleState};
-use storage::load_data;
-use tauri::{Manager, State};
-use tray::TrayManager;
-use window::WindowManager;
 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use tauri::Manager;
 use tauri_plugin_autostart::MacosLauncher;
 
 fn main() {
     #[cfg(debug_assertions)]
     env_logger::init();
 
-    log::info!("🚀 Setting up application...");
+    log::info!("Setting up application...");
 
     let args: Vec<String> = std::env::args().collect();
     let started_from_autostart = args.contains(&"--autostart".to_string());
+
+    let schedule_state: ScheduleState = Arc::new(Mutex::new(HashMap::new()));
+    let schedule_state_for_scheduler = Arc::clone(&schedule_state);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -38,87 +39,71 @@ fn main() {
             MacosLauncher::LaunchAgent,
             Some(vec!["--autostart"]),
         ))
+        .manage(AppState::default())
+        .manage(schedule_state)
         .setup(move |app| {
             let app_handle = app.handle();
-            let group_state: State<AppState> = app.state();
-            let schedule_state: State<ScheduleState> = app.state();
 
-            let (groups, schedules) = match load_data(&app_handle) {
-                Ok((groups, schedules)) => {
-                    {
-                        let mut app_groups = group_state.lock().unwrap();
-                        *app_groups = groups.clone();
-                    }
-                    {
-                        let mut app_schedules = schedule_state.lock().unwrap();
-                        *app_schedules = schedules.clone();
-                    }
-                    log::info!(
-                        "✅ Data loaded: {} groups, {} schedules",
-                        groups.len(),
-                        schedules.len()
-                    );
-                    (groups, schedules)
-                }
-                Err(e) => {
-                    log::warn!("⚠️ Failed to load data: {}", e);
-                    (
-                        std::collections::HashMap::new(),
-                        std::collections::HashMap::new(),
-                    )
-                }
-            };
+            let (groups, schedules) = load_data(&app_handle).unwrap_or_else(|e| {
+                log::warn!("Failed to load data: {}", e);
+                (HashMap::new(), HashMap::new())
+            });
 
-            let scheduler = SchedulerManager::new(app_handle.clone());
-            scheduler.load_schedules(schedules);
+            // Populate states
+            if let Ok(mut g) = app.state::<AppState>().lock() {
+                *g = groups.clone();
+            }
+            if let Ok(mut s) = schedule_state_for_scheduler.lock() {
+                *s = schedules;
+            }
+
+            log::info!("Data loaded: {} groups", groups.len());
+
+            // Start scheduler with shared schedule state
+            let scheduler = SchedulerManager::new(
+                app_handle.clone(),
+                Arc::clone(&schedule_state_for_scheduler),
+            );
 
             let scheduler_clone = scheduler.clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = scheduler_clone.start().await {
-                    log::error!("❌ Failed to start scheduler: {}", e);
+                    log::error!("Failed to start scheduler: {}", e);
                 }
             });
 
-            log::info!("🎯 Creating system tray...");
             if let Err(e) = TrayManager::setup_system_tray(app, &groups) {
-                log::error!("❌ Failed to create system tray: {}", e);
+                log::error!("Failed to create system tray: {}", e);
             }
 
-            log::info!("🔧 Setting up window background behavior...");
             if let Err(e) = WindowManager::setup_background_behavior(app) {
-                log::error!("❌ Failed to setup window behavior: {}", e);
+                log::error!("Failed to setup window behavior: {}", e);
             }
 
             if started_from_autostart {
-                log::info!("🫥 Started from autostart - hiding to tray");
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.hide();
                 }
-
-                NotificationManager::show_success(
+                NotificationManager::show(
                     &app_handle,
                     "Ordito",
                     "Running in background. Right-click tray icon to access commands.",
                 );
             }
 
-            app.manage(scheduler);
+            app.manage(scheduler.clone());
 
-            // Setup app shutdown handler to stop scheduler gracefully
             if let Some(window) = app.get_webview_window("main") {
-                let scheduler_for_shutdown = app.state::<SchedulerManager>().inner().clone();
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::Destroyed = event {
-                        scheduler_for_shutdown.stop();
+                        scheduler.stop();
                     }
                 });
             }
 
-            log::info!("✅ Application setup complete");
+            log::info!("Application setup complete");
             Ok(())
         })
-        .manage(AppState::default())
-        .manage(ScheduleState::default())
         .invoke_handler(tauri::generate_handler![
             commands::group::create_group,
             commands::group::get_groups,
@@ -140,25 +125,10 @@ fn main() {
             commands::schedule::get_schedule_info,
             commands::schedule::get_schedules_with_info,
             commands::schedule::validate_cron_expression_command,
-            refresh_tray_menu,
-            is_startup_enabled,
-            toggle_startup,
+            commands::tray::refresh_tray_menu,
+            commands::startup::is_startup_enabled,
+            commands::startup::toggle_startup,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running orbito");
-}
-
-#[tauri::command]
-async fn refresh_tray_menu(app_handle: tauri::AppHandle) -> Result<(), String> {
-    TrayManager::refresh_tray_menu(app_handle)
-}
-
-#[tauri::command]
-async fn is_startup_enabled(app_handle: tauri::AppHandle) -> Result<bool, String> {
-    StartupManager::is_startup_enabled(&app_handle)
-}
-
-#[tauri::command]
-async fn toggle_startup(app_handle: tauri::AppHandle) -> Result<bool, String> {
-    StartupManager::toggle_startup(&app_handle)
+        .expect("error while running ordito");
 }
