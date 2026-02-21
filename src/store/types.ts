@@ -41,6 +41,7 @@ export interface CommandResponse {
   env_vars: string; // JSON string
   created_at: string; // RFC3339 timestamp
   updated_at: string; // RFC3339 timestamp
+  last_executed_at?: string; // RFC3339 timestamp - when command was last executed
 }
 
 // ============================================================================

@@ -14,4 +14,5 @@ pub struct Command {
     pub env_vars: String, // JSON string
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub last_executed_at: Option<DateTime<Utc>>,
 }

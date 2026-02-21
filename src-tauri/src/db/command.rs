@@ -19,9 +19,9 @@ impl<'a> CommandRepository<'a> {
                 INSERT INTO commands (
                     id, command_group_id, title, value, working_dir,
                     timeout, run_in_background, is_favourite, env_vars,
-                    created_at, updated_at
+                    created_at, updated_at, last_executed_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
         )
         .bind(command.id.to_string())
@@ -35,6 +35,7 @@ impl<'a> CommandRepository<'a> {
         .bind(&command.env_vars)
         .bind(&command.created_at)
         .bind(&command.updated_at)
+        .bind(&command.last_executed_at)
         .execute(self.pool)
         .await?;
 
@@ -47,7 +48,7 @@ impl<'a> CommandRepository<'a> {
                 SELECT
                     id, command_group_id, title, value, working_dir,
                     timeout, run_in_background, is_favourite, env_vars,
-                    created_at, updated_at
+                    created_at, updated_at, last_executed_at
                 FROM commands
                 WHERE id = ?
             "#,
@@ -73,6 +74,10 @@ impl<'a> CommandRepository<'a> {
                     env_vars: get_string(&row, "env_vars"),
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                    last_executed_at: row
+                        .try_get::<String, _>("last_executed_at")
+                        .ok()
+                        .and_then(|s| parse_datetime(&s, "last_executed_at").ok()),
                 })
             })
             .transpose()?;
@@ -112,6 +117,7 @@ impl<'a> CommandRepository<'a> {
                     env_vars: get_string(&row, "env_vars"),
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                    last_executed_at: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -125,7 +131,7 @@ impl<'a> CommandRepository<'a> {
                 SELECT
                     id, command_group_id, title, value, working_dir,
                     timeout, run_in_background, is_favourite, env_vars,
-                    created_at, updated_at
+                    created_at, updated_at, last_executed_at
                 FROM commands
                 WHERE command_group_id = ?
                 ORDER BY title ASC
@@ -153,6 +159,10 @@ impl<'a> CommandRepository<'a> {
                     env_vars: get_string(&row, "env_vars"),
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                    last_executed_at: row
+                        .try_get::<String, _>("last_executed_at")
+                        .ok()
+                        .and_then(|s| parse_datetime(&s, "last_executed_at").ok()),
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -193,6 +203,7 @@ impl<'a> CommandRepository<'a> {
                     env_vars: get_string(&row, "env_vars"),
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                    last_executed_at: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -275,6 +286,7 @@ impl<'a> CommandRepository<'a> {
                     env_vars: get_string(&row, "env_vars"),
                     created_at: parse_datetime(&get_string(&row, "created_at"), "created_at")?,
                     updated_at: parse_datetime(&get_string(&row, "updated_at"), "updated_at")?,
+                    last_executed_at: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -323,5 +335,23 @@ impl<'a> CommandRepository<'a> {
         .await?;
 
         Ok(count)
+    }
+
+    /// Update the last_executed_at timestamp for a command
+    pub async fn update_last_executed(&self, id: &str) -> Result<()> {
+        let now = chrono::Utc::now();
+        sqlx::query(
+            r#"
+                UPDATE commands
+                SET last_executed_at = $1
+                WHERE id = $2
+            "#,
+        )
+        .bind(&now)
+        .bind(id)
+        .execute(self.pool)
+        .await?;
+
+        Ok(())
     }
 }

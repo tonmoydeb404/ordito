@@ -97,6 +97,7 @@ pub struct CommandResponse {
     pub env_vars: String,
     pub created_at: String,
     pub updated_at: String,
+    pub last_executed_at: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -164,6 +165,7 @@ pub async fn create_command(
         env_vars: dto.env_vars,
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        last_executed_at: None,
     };
 
     let repo = CommandRepository::new(&state.pool);
@@ -180,6 +182,7 @@ pub async fn get_command(
     id: String,
 ) -> Result<Option<CommandResponse>, String> {
     let repo = CommandRepository::new(&state.pool);
+
     let command = repo
         .get_by_id(&id)
         .await
@@ -197,6 +200,7 @@ pub async fn get_command(
         env_vars: c.env_vars,
         created_at: c.created_at.to_rfc3339(),
         updated_at: c.updated_at.to_rfc3339(),
+        last_executed_at: c.last_executed_at.map(|dt| dt.to_rfc3339()),
     }))
 }
 
@@ -234,6 +238,7 @@ pub async fn update_command(
         env_vars: dto.env_vars,
         created_at: existing.created_at,
         updated_at: Utc::now(),
+        last_executed_at: existing.last_executed_at,
     };
 
     repo.update(command)
@@ -263,7 +268,7 @@ pub async fn list_commands(
     }
     .map_err(|e| format!("Failed to list commands: {}", e))?;
 
-    Ok(commands
+    let responses: Vec<CommandResponse> = commands
         .into_iter()
         .map(|c| CommandResponse {
             id: c.id.to_string(),
@@ -277,8 +282,11 @@ pub async fn list_commands(
             env_vars: c.env_vars,
             created_at: c.created_at.to_rfc3339(),
             updated_at: c.updated_at.to_rfc3339(),
+            last_executed_at: c.last_executed_at.map(|dt| dt.to_rfc3339()),
         })
-        .collect())
+        .collect();
+
+    Ok(responses)
 }
 
 #[tauri::command]
@@ -306,6 +314,7 @@ pub async fn search_commands(
             env_vars: c.env_vars,
             created_at: c.created_at.to_rfc3339(),
             updated_at: c.updated_at.to_rfc3339(),
+            last_executed_at: c.last_executed_at.map(|dt| dt.to_rfc3339()),
         })
         .collect())
 }
@@ -340,6 +349,7 @@ pub async fn get_favourites(state: State<'_, AppState>) -> Result<Vec<CommandRes
             env_vars: c.env_vars,
             created_at: c.created_at.to_rfc3339(),
             updated_at: c.updated_at.to_rfc3339(),
+            last_executed_at: c.last_executed_at.map(|dt| dt.to_rfc3339()),
         })
         .collect())
 }
@@ -626,36 +636,36 @@ pub async fn toggle_notification(state: State<'_, AppState>, id: String) -> Resu
 
 #[tauri::command]
 pub async fn execute_command(
+    app: tauri::AppHandle,
     state: State<'_, AppState>,
     command_id: String,
 ) -> Result<String, String> {
     let execution_service = ExecutionService::new(&state.pool, &state.log_storage);
 
+    // Update last_executed_at timestamp
+    let command_repo = CommandRepository::new(&state.pool);
+    command_repo.update_last_executed(&command_id).await.ok();
+
     let result = execution_service
-        .execute_command(&command_id, None)
+        .execute_command(&app, &state, &command_id, None)
         .await
         .map_err(|e| format!("Failed to execute command: {}", e))?;
-
-    // Register execution in state
-    state
-        .register_execution(result.log_id, Uuid::parse_str(&command_id).unwrap())
-        .await;
 
     Ok(result.log_id.to_string())
 }
 
 #[tauri::command]
-pub async fn cancel_execution(state: State<'_, AppState>, log_id: String) -> Result<(), String> {
+pub async fn cancel_execution(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    log_id: String,
+) -> Result<(), String> {
     let execution_service = ExecutionService::new(&state.pool, &state.log_storage);
 
     execution_service
-        .cancel_execution(&log_id)
+        .cancel_execution(&app, &state, &log_id)
         .await
         .map_err(|e| format!("Failed to cancel execution: {}", e))?;
-
-    // Unregister execution from state
-    let log_uuid = Uuid::parse_str(&log_id).map_err(|e| format!("Invalid log_id: {}", e))?;
-    state.unregister_execution(&log_uuid).await;
 
     Ok(())
 }

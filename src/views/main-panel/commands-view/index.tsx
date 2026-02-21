@@ -8,7 +8,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useListCommandsQuery } from "@/store";
+import { useExecutionEvents } from "@/hooks/use-execution-events";
+import {
+  useCancelExecutionMutation,
+  useExecuteCommandMutation,
+  useListCommandsQuery,
+  useListLogsQuery,
+} from "@/store";
 import type { CommandResponse, GroupResponse } from "@/store/types";
 import CommandEditor from "@/views/main-panel/commands-view/command-editor";
 import { FolderIcon, TerminalSquareIcon } from "lucide-react";
@@ -24,8 +30,9 @@ export default function CommandsView(props: CommandsViewProps) {
   const { selectedCommand, selectedGroup, onSelectCommand } = props;
   const [sortBy, setSortBy] = useState("name");
   const [filterBy, setFilterBy] = useState("all");
-  // TODO: Track running commands via RTK Query or WebSocket
-  const runningCommands = new Set<string>();
+
+  // Track running commands via Tauri events
+  const { runningCommands } = useExecutionEvents();
 
   const {
     data: commands = [],
@@ -38,6 +45,9 @@ export default function CommandsView(props: CommandsViewProps) {
     { skip: !selectedGroup }
   );
 
+  // Get logs to determine last execution status
+  const { data: logs = [] } = useListLogsQuery({});
+
   // Filter and sort commands using custom hook
   const filteredCommands = useCommandsFilter({
     commands,
@@ -45,15 +55,31 @@ export default function CommandsView(props: CommandsViewProps) {
     filterBy,
   });
 
-  // TODO: Implement command execution via RTK Query mutations
-  const executeCommand = (commandId: string) => {
-    // Will use useExecuteCommandMutation hook
-    console.log("Execute command:", commandId);
+  // Command execution mutations
+  const [executeCommandMutation] = useExecuteCommandMutation();
+  const [cancelExecutionMutation] = useCancelExecutionMutation();
+
+  const executeCommand = async (commandId: string) => {
+    try {
+      await executeCommandMutation(commandId).unwrap();
+      // Event listener will update runningCommands state
+    } catch (error) {
+      console.error("Failed to execute command:", error);
+    }
   };
 
-  const stopCommand = (commandId: string) => {
-    // Will use useCancelExecutionMutation hook
-    console.log("Stop command:", commandId);
+  const stopCommand = async (commandId: string) => {
+    try {
+      // Find the log_id for this command from logs
+      const runningLog = logs.find(
+        (log) => log.command_id === commandId && log.status === "running"
+      );
+      if (runningLog) {
+        await cancelExecutionMutation(runningLog.id).unwrap();
+      }
+    } catch (error) {
+      console.error("Failed to cancel execution:", error);
+    }
   };
 
   const getStatusBadge = (command: CommandResponse) => {
@@ -66,12 +92,44 @@ export default function CommandsView(props: CommandsViewProps) {
       );
     }
 
-    // TODO: Get actual status from last execution log
-    return (
-      <span className="bg-success text-black px-1.5 py-0.5 rounded text-xs">
-        ✓ Success
-      </span>
-    );
+    // Get actual status from last execution log
+    const lastLog = logs
+      .filter((log) => log.command_id === command.id)
+      .sort(
+        (a, b) =>
+          new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+      )[0];
+
+    if (!lastLog) return null;
+
+    switch (lastLog.status) {
+      case "success":
+        return (
+          <span className="bg-success text-black px-1.5 py-0.5 rounded text-xs">
+            ✓ Success
+          </span>
+        );
+      case "failed":
+        return (
+          <span className="bg-destructive text-white px-1.5 py-0.5 rounded text-xs">
+            ✗ Failed
+          </span>
+        );
+      case "timeout":
+        return (
+          <span className="bg-orange-500 text-white px-1.5 py-0.5 rounded text-xs">
+            ⏱ Timeout
+          </span>
+        );
+      case "cancelled":
+        return (
+          <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">
+            ⊘ Cancelled
+          </span>
+        );
+      default:
+        return null;
+    }
   };
 
   return (

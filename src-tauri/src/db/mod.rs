@@ -67,6 +67,7 @@ pub async fn create_tables(pool: &SqlitePool) -> Result<()> {
             env_vars TEXT NOT NULL DEFAULT '{}',  -- JSON formatted string
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
+            last_executed_at TEXT,  -- Timestamp of last execution
             FOREIGN KEY (command_group_id) REFERENCES command_groups(id) ON DELETE CASCADE
         );
         "#,

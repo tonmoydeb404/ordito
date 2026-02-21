@@ -1,8 +1,10 @@
+import { useExecutionEvents } from "@/hooks/use-execution-events";
 import { toast } from "@/hooks/use-toast";
 import {
   useDeleteCommandMutation,
   useExecuteCommandMutation,
   useGetCommandQuery,
+  useListLogsQuery,
   useToggleFavouriteMutation,
   useUpdateCommandMutation,
 } from "@/store";
@@ -16,12 +18,17 @@ export function useCommandEditor(commandId: string, onDelete?: () => void) {
   );
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
   const [newEnvVar, setNewEnvVar] = useState<EnvVar>({ name: "", value: "" });
-  // TODO: Implement output handling via RTK Query or logs API
-  const [output] = useState("");
+  const [currentLogId, setCurrentLogId] = useState<string | null>(null);
+
+  // Get real-time output from execution events
+  const { outputs, clearOutput: clearOutputFromHook } = useExecutionEvents();
 
   const { data: command, isLoading } = useGetCommandQuery(commandId, {
     skip: !commandId,
   });
+
+  // Get logs for this command to find the latest log_id
+  const { data: logs = [] } = useListLogsQuery({ command_id: commandId });
 
   console.log({ command, commandId });
 
@@ -50,6 +57,21 @@ export function useCommandEditor(commandId: string, onDelete?: () => void) {
       }
     }
   }, [command]);
+
+  // Update current log ID when logs change
+  useEffect(() => {
+    if (logs.length > 0) {
+      // Get the most recent log for this command
+      const latestLog = logs.sort(
+        (a, b) =>
+          new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+      )[0];
+      setCurrentLogId(latestLog.id);
+    }
+  }, [logs]);
+
+  // Get output for current log
+  const output = currentLogId ? outputs[currentLogId] || "" : "";
 
   const handleSave = async () => {
     if (!editedCommand) return;
@@ -130,8 +152,9 @@ export function useCommandEditor(commandId: string, onDelete?: () => void) {
   };
 
   const clearOutput = () => {
-    // TODO: Implement when output is available
-    console.log("Clear output");
+    if (currentLogId) {
+      clearOutputFromHook(currentLogId);
+    }
   };
 
   const copyOutput = () => {

@@ -29,15 +29,19 @@ use anyhow::{anyhow, Result};
 use chrono::Utc;
 use cron::Schedule;
 use sqlx::SqlitePool;
+use tauri_plugin_notification::NotificationExt;
 use tokio::time::sleep;
 use tracing::{error, info, warn};
 
 use crate::app::execution::ExecutionService;
+use crate::app::state::AppState;
 use crate::db::command_schedule::CommandScheduleRepository;
 use crate::io::log_storage::LogStorage;
 
 /// Service responsible for managing scheduled command executions
 pub struct SchedulerService {
+    app: tauri::AppHandle,
+    state: Arc<AppState>,
     pool: Arc<SqlitePool>,
     log_storage: Arc<LogStorage>,
     check_interval: Duration,
@@ -47,10 +51,19 @@ impl SchedulerService {
     /// Creates a new SchedulerService
     ///
     /// # Arguments
+    /// * `app` - Tauri AppHandle for event emission
+    /// * `state` - AppState for process management
     /// * `pool` - Database connection pool (wrapped in Arc for sharing)
     /// * `log_storage` - LogStorage instance (wrapped in Arc for sharing)
-    pub fn new(pool: Arc<SqlitePool>, log_storage: Arc<LogStorage>) -> Self {
+    pub fn new(
+        app: tauri::AppHandle,
+        state: Arc<AppState>,
+        pool: Arc<SqlitePool>,
+        log_storage: Arc<LogStorage>,
+    ) -> Self {
         Self {
+            app,
+            state,
             pool,
             log_storage,
             check_interval: Duration::from_secs(60), // Check every minute
@@ -120,6 +133,8 @@ impl SchedulerService {
                 // Execute the command
                 let pool = self.pool.clone();
                 let log_storage = self.log_storage.clone();
+                let app = self.app.clone();
+                let state = self.state.clone();
                 let command_id = schedule.command_id.to_string();
                 let schedule_id = schedule.id.to_string();
                 let show_notification = schedule.show_notification;
@@ -129,7 +144,7 @@ impl SchedulerService {
                     let execution_service = ExecutionService::new(&pool, &log_storage);
 
                     match execution_service
-                        .execute_command(&command_id, Some(&schedule_id))
+                        .execute_command(&app, &state, &command_id, Some(&schedule_id))
                         .await
                     {
                         Ok(result) => {
@@ -138,10 +153,24 @@ impl SchedulerService {
                                 command_id, result.status
                             );
 
-                            // TODO: Send notification if enabled
+                            // Send OS notification if enabled
                             if show_notification {
-                                // Notification will be implemented in Task 2.4
-                                info!("Notification requested for command: {}", command_id);
+                                let notification_body = match result.status {
+                                    crate::domain::command_log::CommandLogStatus::Success => {
+                                        format!("✓ Command completed successfully")
+                                    }
+                                    crate::domain::command_log::CommandLogStatus::Failed => {
+                                        format!("✗ Command failed")
+                                    }
+                                    _ => format!("Command finished with status: {:?}", result.status),
+                                };
+
+                                app.notification()
+                                    .builder()
+                                    .title("Scheduled Command Completed")
+                                    .body(&notification_body)
+                                    .show()
+                                    .ok();
                             }
                         }
                         Err(e) => {

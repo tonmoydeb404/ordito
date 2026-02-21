@@ -1,9 +1,11 @@
 use std::process::Stdio;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use sqlx::SqlitePool;
+use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::time::timeout;
@@ -43,6 +45,8 @@ impl<'a> ExecutionService<'a> {
     /// Executes a command by its ID
     ///
     /// # Arguments
+    /// * `app` - Tauri AppHandle for event emission
+    /// * `state` - AppState for process management
     /// * `command_id` - UUID of the command to execute
     /// * `schedule_id` - Optional UUID of the schedule that triggered this execution
     ///
@@ -53,6 +57,8 @@ impl<'a> ExecutionService<'a> {
     /// Returns error if command not found, execution fails, or database operations fail
     pub async fn execute_command(
         &self,
+        app: &tauri::AppHandle,
+        state: &crate::app::state::AppState,
         command_id: &str,
         schedule_id: Option<&str>,
     ) -> Result<ExecutionResult> {
@@ -88,6 +94,16 @@ impl<'a> ExecutionService<'a> {
         let log_repo = CommandLogRepository::new(self.pool, self.log_storage);
         log_repo.create(log.clone()).await?;
 
+        // Emit execution:started event
+        app.emit(
+            "execution:started",
+            serde_json::json!({
+                "log_id": log_id.to_string(),
+                "command_id": command_id,
+            }),
+        )
+        .ok();
+
         // Parse environment variables from JSON
         let env_vars: std::collections::HashMap<String, String> =
             serde_json::from_str(&command.env_vars).unwrap_or_default();
@@ -96,7 +112,10 @@ impl<'a> ExecutionService<'a> {
         let start_time = std::time::Instant::now();
         let execution_result = self
             .run_command(
+                app,
+                state,
                 &log_id,
+                command.id,
                 &command.value,
                 &command.working_dir,
                 env_vars,
@@ -121,6 +140,20 @@ impl<'a> ExecutionService<'a> {
                     command.title, status, exit_code
                 );
 
+                // Emit execution:completed event
+                app.emit(
+                    "execution:completed",
+                    serde_json::json!({
+                        "log_id": log_id.to_string(),
+                        "status": status.to_string(),
+                        "exit_code": exit_code,
+                    }),
+                )
+                .ok();
+
+                // Unregister from state
+                state.unregister_execution(&log_id).await;
+
                 Ok(ExecutionResult {
                     log_id,
                     status,
@@ -143,6 +176,20 @@ impl<'a> ExecutionService<'a> {
 
                 log_repo.update(log).await?;
 
+                // Emit execution:completed event
+                app.emit(
+                    "execution:completed",
+                    serde_json::json!({
+                        "log_id": log_id.to_string(),
+                        "status": "failed",
+                        "exit_code": null,
+                    }),
+                )
+                .ok();
+
+                // Unregister from state
+                state.unregister_execution(&log_id).await;
+
                 Ok(ExecutionResult {
                     log_id,
                     status: CommandLogStatus::Failed,
@@ -156,7 +203,10 @@ impl<'a> ExecutionService<'a> {
     /// Runs a shell command with output capture
     ///
     /// # Arguments
+    /// * `app` - Tauri AppHandle for event emission
+    /// * `state` - AppState for process management
     /// * `log_id` - UUID of the log entry for output streaming
+    /// * `command_id` - UUID of the command being executed
     /// * `command_str` - Shell command to execute
     /// * `working_dir` - Working directory for command execution
     /// * `env_vars` - Environment variables to set
@@ -166,7 +216,10 @@ impl<'a> ExecutionService<'a> {
     /// Tuple of (exit_code, status)
     async fn run_command(
         &self,
+        app: &tauri::AppHandle,
+        state: &crate::app::state::AppState,
         log_id: &Uuid,
+        command_id: Uuid,
         command_str: &str,
         working_dir: &str,
         env_vars: std::collections::HashMap<String, String>,
@@ -202,8 +255,12 @@ impl<'a> ExecutionService<'a> {
             .take()
             .ok_or_else(|| anyhow!("Failed to capture stderr"))?;
 
+        // Register process with state (we'll move child into state after reading streams)
+        // For now, register execution without process handle - we'll update it
+
         let log_id_clone = *log_id;
         let log_storage_clone = self.log_storage.clone();
+        let app_clone = app.clone();
 
         // Spawn task to read stdout
         let stdout_task = tokio::spawn(async move {
@@ -218,11 +275,23 @@ impl<'a> ExecutionService<'a> {
                 {
                     warn!("Failed to write stdout to log: {}", e);
                 }
+
+                // Emit output event
+                app_clone
+                    .emit(
+                        "execution:output",
+                        serde_json::json!({
+                            "log_id": log_id_clone.to_string(),
+                            "chunk": line,
+                        }),
+                    )
+                    .ok();
             }
         });
 
         let log_id_clone2 = *log_id;
         let log_storage_clone2 = self.log_storage.clone();
+        let app_clone2 = app.clone();
 
         // Spawn task to read stderr
         let stderr_task = tokio::spawn(async move {
@@ -230,22 +299,59 @@ impl<'a> ExecutionService<'a> {
             let mut lines = reader.lines();
 
             while let Ok(Some(line)) = lines.next_line().await {
+                let stderr_line = format!("[STDERR] {}", line);
                 // Stream stderr to log file with [STDERR] prefix
                 if let Err(e) = log_storage_clone2
-                    .append_log(&log_id_clone2, &format!("[STDERR] {}\n", line))
+                    .append_log(&log_id_clone2, &format!("{}\n", stderr_line))
                     .await
                 {
                     warn!("Failed to write stderr to log: {}", e);
                 }
+
+                // Emit output event
+                app_clone2
+                    .emit(
+                        "execution:output",
+                        serde_json::json!({
+                            "log_id": log_id_clone2.to_string(),
+                            "chunk": stderr_line,
+                        }),
+                    )
+                    .ok();
             }
         });
 
-        // Wait for process with timeout
+        // Register process with state
+        state
+            .register_execution_with_process(*log_id, command_id, child)
+            .await;
+
+        // Get process handle from state to wait on it
+        // Clone the Arc<Mutex<>> first, then drop the lock before waiting
+        let process_arc = {
+            let executions = state.running_executions.lock().await;
+            if let Some(exec) = executions.get(log_id) {
+                Arc::clone(&exec.process)
+            } else {
+                return Err(anyhow!("Execution not found in state"));
+            }
+        }; // executions lock is dropped here
+
         let wait_result = if let Some(timeout_sec) = timeout_secs {
             let duration = Duration::from_secs(timeout_sec as u64);
-            timeout(duration, child.wait()).await
+            let mut proc = process_arc.lock().await;
+            if let Some(child_ref) = proc.as_mut() {
+                timeout(duration, child_ref.wait()).await
+            } else {
+                return Err(anyhow!("Process handle not found in state"));
+            }
         } else {
-            Ok(child.wait().await)
+            let mut proc = process_arc.lock().await;
+            if let Some(child_ref) = proc.as_mut() {
+                Ok(child_ref.wait().await)
+            } else {
+                return Err(anyhow!("Process handle not found in state"));
+            }
         };
 
         // Wait for output tasks to complete
@@ -265,8 +371,8 @@ impl<'a> ExecutionService<'a> {
             }
             Ok(Err(e)) => Err(anyhow!("Process execution error: {}", e)),
             Err(_) => {
-                // Timeout occurred - kill the process
-                let _ = child.kill().await;
+                // Timeout occurred - kill the process via state
+                state.kill_execution(log_id).await.ok();
 
                 self.log_storage
                     .append_log(log_id, "\n[TIMEOUT] Command execution timed out\n")
@@ -281,15 +387,25 @@ impl<'a> ExecutionService<'a> {
     /// Cancels a running command execution
     ///
     /// # Arguments
+    /// * `app` - Tauri AppHandle for event emission
+    /// * `state` - AppState for process management
     /// * `log_id` - UUID of the command log entry
     ///
     /// # Returns
     /// Ok(()) if cancellation was initiated successfully
-    ///
-    /// # Note
-    /// This function attempts to mark the log as cancelled in the database.
-    /// Actual process termination is handled by the caller who maintains process handles.
-    pub async fn cancel_execution(&self, log_id: &str) -> Result<()> {
+    pub async fn cancel_execution(
+        &self,
+        app: &tauri::AppHandle,
+        state: &crate::app::state::AppState,
+        log_id: &str,
+    ) -> Result<()> {
+        let log_uuid = Uuid::parse_str(log_id)?;
+
+        // Kill the actual process
+        if !state.kill_execution(&log_uuid).await? {
+            warn!("No running process found for log_id: {}", log_id);
+        }
+
         let log_repo = CommandLogRepository::new(self.pool, self.log_storage);
 
         // Get the log entry
@@ -305,7 +421,6 @@ impl<'a> ExecutionService<'a> {
         log_repo.update(log).await?;
 
         // Write cancellation message to log file
-        let log_uuid = Uuid::parse_str(log_id)?;
         self.log_storage
             .append_log(
                 &log_uuid,
@@ -313,6 +428,20 @@ impl<'a> ExecutionService<'a> {
             )
             .await
             .ok();
+
+        // Emit execution:completed event with cancelled status
+        app.emit(
+            "execution:completed",
+            serde_json::json!({
+                "log_id": log_id,
+                "status": "cancelled",
+                "exit_code": null,
+            }),
+        )
+        .ok();
+
+        // Unregister from state
+        state.unregister_execution(&log_uuid).await;
 
         info!("Command execution cancelled: {}", log_id);
 

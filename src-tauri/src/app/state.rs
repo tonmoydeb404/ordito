@@ -1,17 +1,20 @@
+use anyhow::Result;
 use sqlx::SqlitePool;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::process::Child;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::io::log_storage::LogStorage;
 
 /// Holds information about a running command execution
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct RunningExecution {
     pub log_id: Uuid,
     pub command_id: Uuid,
     pub started_at: chrono::DateTime<chrono::Utc>,
+    pub process: Arc<Mutex<Option<Child>>>,
 }
 
 /// Application state shared across all Tauri commands
@@ -55,10 +58,53 @@ impl AppState {
             log_id,
             command_id,
             started_at: chrono::Utc::now(),
+            process: Arc::new(Mutex::new(None)),
         };
 
         let mut executions = self.running_executions.lock().await;
         executions.insert(log_id, execution);
+    }
+
+    /// Registers a new running execution with process handle
+    ///
+    /// # Arguments
+    /// * `log_id` - UUID of the command log entry
+    /// * `command_id` - UUID of the command being executed
+    /// * `process` - The tokio Child process handle
+    pub async fn register_execution_with_process(
+        &self,
+        log_id: Uuid,
+        command_id: Uuid,
+        process: Child,
+    ) {
+        let execution = RunningExecution {
+            log_id,
+            command_id,
+            started_at: chrono::Utc::now(),
+            process: Arc::new(Mutex::new(Some(process))),
+        };
+
+        let mut executions = self.running_executions.lock().await;
+        executions.insert(log_id, execution);
+    }
+
+    /// Kills a running execution process
+    ///
+    /// # Arguments
+    /// * `log_id` - UUID of the command log entry
+    ///
+    /// # Returns
+    /// Ok(true) if process was killed, Ok(false) if no running process found
+    pub async fn kill_execution(&self, log_id: &Uuid) -> Result<bool> {
+        let mut executions = self.running_executions.lock().await;
+        if let Some(exec) = executions.get_mut(log_id) {
+            let mut proc = exec.process.lock().await;
+            if let Some(child) = proc.as_mut() {
+                child.kill().await?;
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     /// Unregisters a completed execution
@@ -82,25 +128,37 @@ impl AppState {
         executions.contains_key(log_id)
     }
 
-    /// Gets information about a running execution
+    /// Checks if a specific execution is running
     ///
     /// # Arguments
     /// * `log_id` - UUID of the command log entry
     ///
     /// # Returns
-    /// Some(RunningExecution) if found, None otherwise
-    pub async fn get_execution(&self, log_id: &Uuid) -> Option<RunningExecution> {
+    /// true if execution is running
+    pub async fn has_execution(&self, log_id: &Uuid) -> bool {
         let executions = self.running_executions.lock().await;
-        executions.get(log_id).cloned()
+        executions.contains_key(log_id)
     }
 
-    /// Gets all currently running executions
+    /// Gets the command_id for a running execution
+    ///
+    /// # Arguments
+    /// * `log_id` - UUID of the command log entry
     ///
     /// # Returns
-    /// Vector of all running executions
-    pub async fn get_all_running_executions(&self) -> Vec<RunningExecution> {
+    /// Some(command_id) if found, None otherwise
+    pub async fn get_command_id_for_execution(&self, log_id: &Uuid) -> Option<Uuid> {
         let executions = self.running_executions.lock().await;
-        executions.values().cloned().collect()
+        executions.get(log_id).map(|exec| exec.command_id)
+    }
+
+    /// Gets all currently running execution log IDs
+    ///
+    /// # Returns
+    /// Vector of all running execution log IDs
+    pub async fn get_all_running_log_ids(&self) -> Vec<Uuid> {
+        let executions = self.running_executions.lock().await;
+        executions.keys().copied().collect()
     }
 }
 
@@ -123,10 +181,10 @@ mod tests {
         state.register_execution(log_id, command_id).await;
         assert!(state.is_execution_running(&log_id).await);
 
-        // Check we can get it
-        let execution = state.get_execution(&log_id).await;
-        assert!(execution.is_some());
-        assert_eq!(execution.unwrap().command_id, command_id);
+        // Check we can get command_id
+        let cmd_id = state.get_command_id_for_execution(&log_id).await;
+        assert!(cmd_id.is_some());
+        assert_eq!(cmd_id.unwrap(), command_id);
 
         // Unregister execution
         state.unregister_execution(&log_id).await;
@@ -147,7 +205,7 @@ mod tests {
         state.register_execution(log_id1, command_id).await;
         state.register_execution(log_id2, command_id).await;
 
-        let running = state.get_all_running_executions().await;
+        let running = state.get_all_running_log_ids().await;
         assert_eq!(running.len(), 2);
     }
 }

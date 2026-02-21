@@ -19,7 +19,11 @@ export function useCommandsFilter({
           case "favorite":
             return command.is_favourite;
           case "recent":
-            return true; // TODO: Implement recent logic
+            // Show commands executed in last 7 days
+            if (!command.last_executed_at) return false;
+            const executed = new Date(command.last_executed_at);
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            return executed > sevenDaysAgo;
           default:
             return true;
         }
@@ -33,7 +37,14 @@ export function useCommandsFilter({
             const bTime = new Date(b.updated_at).getTime();
             return bTime - aTime;
           case "lastExecuted":
-            return 0; // TODO: Implement last executed logic
+            // Sort by last execution time (most recent first)
+            const aExec = a.last_executed_at
+              ? new Date(a.last_executed_at).getTime()
+              : 0;
+            const bExec = b.last_executed_at
+              ? new Date(b.last_executed_at).getTime()
+              : 0;
+            return bExec - aExec;
           default:
             return 0;
         }
