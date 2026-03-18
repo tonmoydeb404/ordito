@@ -16,21 +16,7 @@ const HeaderSection = (props: Props) => {
 
   return (
     <>
-      <div className="bg-card hidden lg:block">
-        <div className="container mx-auto px-6 pt-6 pb-2 flex items-center gap-4">
-          <img src="/logo.svg" alt="Logo" width={50} />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Ordito
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Organize and execute your commands efficiently
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="sticky top-0 z-10 bg-card border-b">
+      <div className="sticky top-0 z-10 border-b bg-background">
         <div className="container mx-auto px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="max-w-md w-full">
             <SearchInput

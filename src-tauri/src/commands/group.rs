@@ -1,6 +1,8 @@
+use crate::error::lock_state;
+use chrono::Local;
 use crate::models::{AppData, CommandGroup};
 use crate::state::{AppState, ScheduleState};
-use crate::storage::{merge_data, save_data};
+use crate::core::storage::{merge_data, save_data};
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use uuid::Uuid;
@@ -13,25 +15,25 @@ pub async fn create_group(
     title: String,
 ) -> Result<String, String> {
     let id = Uuid::new_v4().to_string();
+    let now = Local::now();
     let group = CommandGroup {
         id: id.clone(),
         title,
         commands: Vec::new(),
+        created_at: now,
+        updated_at: now,
     };
 
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        groups.insert(id.clone(), group);
-        save_data(&app_handle, &groups, &schedules)?;
-    }
-
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    groups.insert(id.clone(), group);
+    save_data(&app_handle, &groups, &schedules)?;
     Ok(id)
 }
 
 #[tauri::command]
 pub async fn get_groups(state: State<'_, AppState>) -> Result<Vec<CommandGroup>, String> {
-    let groups = state.lock().unwrap();
+    let groups = lock_state(&state)?;
     Ok(groups.values().cloned().collect())
 }
 
@@ -42,12 +44,10 @@ pub async fn delete_group(
     app_handle: tauri::AppHandle,
     group_id: String,
 ) -> Result<(), String> {
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        groups.remove(&group_id);
-        save_data(&app_handle, &groups, &schedules)?;
-    }
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    groups.remove(&group_id);
+    save_data(&app_handle, &groups, &schedules)?;
     Ok(())
 }
 
@@ -59,17 +59,13 @@ pub async fn update_group(
     group_id: String,
     title: String,
 ) -> Result<(), String> {
-    {
-        let mut groups = group_state.lock().unwrap();
-        let schedules = schedule_state.lock().unwrap();
-        if let Some(group) = groups.get_mut(&group_id) {
-            group.title = title;
-            save_data(&app_handle, &groups, &schedules)?;
-            Ok(())
-        } else {
-            Err("Group not found".to_string())
-        }
-    }
+    let mut groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
+    let group = groups.get_mut(&group_id).ok_or("Group not found")?;
+    group.title = title;
+    group.updated_at = Local::now();
+    save_data(&app_handle, &groups, &schedules)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -78,8 +74,8 @@ pub async fn export_data(
     schedule_state: State<'_, ScheduleState>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    let groups = group_state.lock().unwrap();
-    let schedules = schedule_state.lock().unwrap();
+    let groups = lock_state(&group_state)?;
+    let schedules = lock_state(&schedule_state)?;
     let app_data = AppData {
         groups: groups.clone(),
         schedules: Some(schedules.clone()),
@@ -128,29 +124,27 @@ pub async fn import_data(
             let app_data: AppData = serde_json::from_str(&content)
                 .map_err(|e| format!("Failed to parse import data: {}", e))?;
 
-            {
-                let mut groups = group_state.lock().unwrap();
-                let mut schedules = schedule_state.lock().unwrap();
-                let (merged_groups, added_count, skipped_count) =
-                    merge_data(&groups, app_data.groups);
+            let mut groups = lock_state(&group_state)?;
+            let mut schedules = lock_state(&schedule_state)?;
+            let (merged_groups, added_count, skipped_count) =
+                merge_data(&groups, app_data.groups);
 
-                *groups = merged_groups;
-                if let Some(imported_schedules) = app_data.schedules {
-                    schedules.extend(imported_schedules);
-                }
-                save_data(&app_handle, &groups, &schedules)?;
+            *groups = merged_groups;
+            if let Some(imported_schedules) = app_data.schedules {
+                schedules.extend(imported_schedules);
+            }
+            save_data(&app_handle, &groups, &schedules)?;
 
-                if skipped_count > 0 {
-                    Ok(format!(
-                        "Import completed: {} new groups added, {} existing groups skipped",
-                        added_count, skipped_count
-                    ))
-                } else {
-                    Ok(format!(
-                        "Import completed: {} new groups added successfully",
-                        added_count
-                    ))
-                }
+            if skipped_count > 0 {
+                Ok(format!(
+                    "Import completed: {} new groups added, {} existing groups skipped",
+                    added_count, skipped_count
+                ))
+            } else {
+                Ok(format!(
+                    "Import completed: {} new groups added successfully",
+                    added_count
+                ))
             }
         }
         Some(FilePath::Url(_)) => Err("URL paths not supported for import".to_string()),
