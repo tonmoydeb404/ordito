@@ -16,7 +16,7 @@ const HeaderSection = (props: Props) => {
 
   return (
     <>
-      <div className="sticky top-0 z-10 border-b">
+      <div className="sticky top-0 z-10 border-b bg-background">
         <div className="container mx-auto px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="max-w-md w-full">
             <SearchInput
