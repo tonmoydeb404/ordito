@@ -4,6 +4,6 @@
  */
 
 export const scriptUrls = {
-  "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh",
-  "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.ps1"
+  "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh",
+  "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1"
 } as const;

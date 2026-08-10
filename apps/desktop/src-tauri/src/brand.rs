@@ -11,7 +11,7 @@ pub const DOWNLOAD_URL: &str = "https://github.com/tonmoydeb404/ordito/releases/
 pub const LICENSE_URL: &str = "https://github.com/tonmoydeb404/ordito/blob/main/LICENSE";
 pub const COPYRIGHT: &str = "Copyright (c) 2026 Tonmoy Deb";
 pub const HOMEBREW_TAP: &str = "tonmoydeb404/ordito";
-pub const SETUP_SCRIPT_URL: &str = "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh";
+pub const SETUP_SCRIPT_URL: &str = "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh";
 
 /// App version, read from Cargo.toml at compile time.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

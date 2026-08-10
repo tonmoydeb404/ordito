@@ -2,8 +2,8 @@
 # Ordito installer for macOS (via Homebrew) and Ubuntu/Debian (via .deb).
 # Usage:
 # @brand:start usage
-#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh | sh -s -- v2.0.0
+#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh -s -- v2.0.0
 # @brand:end usage
 set -e
 

@@ -1,7 +1,7 @@
 # Ordito installer for Windows.
 # Usage:
 # @brand:start usage
-#   irm https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.ps1 | iex
+#   irm https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1 | iex
 # @brand:end usage
 $ErrorActionPreference = "Stop"
 

@@ -13,16 +13,18 @@
  *   pnpm sync-brand          rewrite all consumers from brand.json
  *   pnpm sync-brand --check  exit 1 if any consumer is out of sync (CI guard)
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(__filename), "..");
 const CHECK = process.argv.includes("--check");
 
 /** @type {Record<string, string>} */
-const raw = JSON.parse(readFileSync(path.join(REPO_ROOT, "brand.json"), "utf8"));
+const raw = JSON.parse(
+  readFileSync(path.join(REPO_ROOT, "brand.json"), "utf8"),
+);
 const brand = raw;
 
 const repoSlug = brand.repository.replace(/^https:\/\/github\.com\//, "");
@@ -194,10 +196,30 @@ tauriConf.bundle.longDescription = brand.description.long;
 
 let cargo = read("apps/desktop/src-tauri/Cargo.toml");
 cargo = upsertTomlField(cargo, "version", `"${brand.version}"`, "name");
-cargo = upsertTomlField(cargo, "description", `"${brand.description.short}"`, "version");
-cargo = upsertTomlField(cargo, "authors", `["${brand.developer.name}"]`, "edition");
-cargo = upsertTomlField(cargo, "homepage", `"${brand.developer.website}"`, "authors");
-cargo = upsertTomlField(cargo, "repository", `"${brand.repository}"`, "homepage");
+cargo = upsertTomlField(
+  cargo,
+  "description",
+  `"${brand.description.short}"`,
+  "version",
+);
+cargo = upsertTomlField(
+  cargo,
+  "authors",
+  `["${brand.developer.name}"]`,
+  "edition",
+);
+cargo = upsertTomlField(
+  cargo,
+  "homepage",
+  `"${brand.developer.website}"`,
+  "authors",
+);
+cargo = upsertTomlField(
+  cargo,
+  "repository",
+  `"${brand.repository}"`,
+  "homepage",
+);
 
 const dmgUrl = `"https://github.com/${repoSlug}/releases/download/v#{version}/Ordito_#{version}_#{arch}.dmg"`;
 let cask = read("Casks/ordito.rb");
@@ -207,7 +229,7 @@ cask = setLine(cask, `  homepage `, `  homepage "${brand.repository}"`);
 const shUsageBlock = `#   curl -fsSL ${brand.scripts.setupSh} | sh
 #   curl -fsSL ${brand.scripts.setupSh} | sh -s -- v${brand.version}
 `;
-let setupSh = read("setup.sh");
+let setupSh = read("setup/unix.sh");
 setupSh = applyShellBlock(setupSh, "usage", shUsageBlock);
 setupSh = setLine(setupSh, `TAP=`, `TAP="${brand.homebrewTap}"`);
 setupSh = setLine(setupSh, `TAP_URL=`, `TAP_URL="${repoGit}"`);
@@ -215,7 +237,7 @@ setupSh = setLine(setupSh, `REPO=`, `REPO="${repoSlug}"`);
 
 const ps1UsageBlock = `#   irm ${brand.scripts.setupPs1} | iex
 `;
-let setupPs1 = read("setup.ps1");
+let setupPs1 = read("setup/windows.ps1");
 setupPs1 = applyShellBlock(setupPs1, "usage", ps1UsageBlock);
 setupPs1 = setLine(setupPs1, `$Repo = `, `$Repo = "${repoSlug}"`);
 
@@ -261,8 +283,8 @@ const targets = {
   "apps/desktop/src-tauri/tauri.conf.json": `${JSON.stringify(tauriConf, null, 2)}\n`,
   "apps/desktop/src-tauri/Cargo.toml": cargo,
   "Casks/ordito.rb": cask,
-  "setup.sh": setupSh,
-  "setup.ps1": setupPs1,
+  "setup/unix.sh": setupSh,
+  "setup/windows.ps1": setupPs1,
   "apps/web/src/config/paths-config.ts": pathsConfig,
   "README.md": readme,
   "apps/desktop/README.md": desktopReadme,
@@ -288,5 +310,7 @@ if (CHECK) {
   console.log("brand: in sync ✓");
 } else {
   const wrote = drift.length;
-  console.log(`brand: ${wrote === 0 ? "already in sync ✓" : `synced ${wrote} file${wrote === 1 ? "" : "s"} ✓`}`);
+  console.log(
+    `brand: ${wrote === 0 ? "already in sync ✓" : `synced ${wrote} file${wrote === 1 ? "" : "s"} ✓`}`,
+  );
 }

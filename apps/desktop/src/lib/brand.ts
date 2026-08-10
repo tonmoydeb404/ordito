@@ -16,8 +16,8 @@ export const brand = {
   "licenseUrl": "https://github.com/tonmoydeb404/ordito/blob/main/LICENSE",
   "updaterEndpoint": "https://github.com/tonmoydeb404/ordito/releases/latest/download/latest.json",
   "scripts": {
-    "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh",
-    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.ps1"
+    "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh",
+    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1"
   },
   "description": {
     "short": "Run saved shell commands from the system tray.",
