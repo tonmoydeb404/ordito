@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ordito",
+  "version": "2.0.0",
+  "identifier": "com.tonmoydeb.ordito",
+  "build": {
+    "beforeDevCommand": "pnpm dev:vite",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Ordito",
+        "hiddenTitle": true,
+        "width": 1100,
+        "height": 700,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "visible": true,
+        "skipTaskbar": false,
+        "alwaysOnTop": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/tonmoydeb404/ordito-new/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc0NzUzMkMwREUxREY3NjcKUldSbjl4M2V3REoxZEROWEx4QUVhUTloWm51YmtpNEw3QlZQOWZiK2kwMGFOUUpWb2dpVTlqTU4K"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "publisher": "Tonmoy Deb",
+    "category": "public.app-category.developer-tools",
+    "shortDescription": "Run saved shell commands from the system tray.",
+    "longDescription": "Ordito organizes your shell commands into named groups and runs them with a single click — from the panel or directly from the system tray. No terminal, no command recall, no friction. It schedules recurring (cron) and one-time runs, tracks every execution with full output history and exit codes, and lives in the tray until you need it.",
+    "copyright": "Copyright (c) 2026 Tonmoy Deb",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

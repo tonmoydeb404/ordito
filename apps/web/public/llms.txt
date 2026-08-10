@@ -1,0 +1,62 @@
+# Ordito
+
+> Ordito is a free, open-source desktop app for macOS and Windows that saves your repeatable shell commands into named groups and runs them with one click from the system tray — no terminal window, no command recall, no friction. It schedules recurring (cron) and one-time runs, tracks every execution with full output and exit codes, and lives in the tray until you need it. Local-first: no accounts, no cloud sync, no telemetry. Licensed under MIT.
+
+## What Ordito does
+
+Ordito is for technical people who run the same shell commands over and over — builds, deploys, syncs, diagnostics, cleanups — and are tired of switching to a terminal and retyping or recalling syntax. You save a command once (name, exact shell instruction, working directory, environment), file it under a named group, and from then on run it with one click from the panel or the system tray menu. The terminal is still there when you need it; Ordito removes it from the repetitive commands you already know and trust.
+
+## Core concepts
+
+- **Commands.** A saved shell instruction with a name, working directory, and optional environment. Persisted locally in SQLite so it survives reboots.
+- **Groups.** Named collections that organize commands by project, environment, or task — so the one you need is never more than a glance away.
+- **Tray execution.** Commands run directly from the macOS menu bar or Windows tray menu without opening the panel at all. No terminal window is spawned; commands run as background processes.
+- **Scheduling.** Any command can become a recurring cron schedule or a one-time run. Schedules can be paused and resumed, and the next run time is always visible. The scheduler runs in-process inside the desktop app, not the system crontab.
+- **Run history.** Every execution is recorded with status, start time, duration, exit code, and captured output. Filter by status, group by time, and expand any run to inspect what happened — so scheduled jobs can be verified instead of assumed.
+
+## Key facts
+
+- **Platforms:** macOS and Windows. Pre-built binaries on GitHub Releases.
+- **License:** MIT. Full source on GitHub.
+- **Privacy:** 100% local-first. All data stays in a local SQLite database. No accounts, no cloud sync, no telemetry, no automatic update checks. The app itself never transmits command data anywhere; only the commands you save can make network requests, just as they would in a terminal.
+- **Tech stack:** Tauri 2 (Rust backend + React 19 + TypeScript + Tailwind v4 frontend). The web marketing site is Next.js.
+- **Panel size:** 420×640px default, resizable down to 360×560. Three views — Commands, Schedule, History.
+- **Pricing:** Free. No paid tiers, no accounts, no cloud.
+- **Tagline:** Your commands, one tray-click away.
+
+## Documentation
+
+- [Getting started](https://ordito.tonmoydeb.com/docs/getting-started): install, save your first command, run it, schedule recurring work, review history
+- [Commands & groups](https://ordito.tonmoydeb.com/docs/commands): what a command stores, named groups, Command/Control K keyboard search
+- [Scheduling](https://ordito.tonmoydeb.com/docs/scheduling): cron schedules, one-time runs, pause/resume, next-run visibility
+- [Run history](https://ordito.tonmoydeb.com/docs/history): status, exit codes, captured output, filtering
+- [Troubleshooting](https://ordito.tonmoydeb.com/docs/troubleshooting): commands that don't run, working directory and environment, where data is stored, reading exit codes
+
+## Features
+
+- [Tray execution](https://ordito.tonmoydeb.com/features/tray-execution): run saved commands from the macOS menu bar or Windows tray without a terminal
+- [Groups & search](https://ordito.tonmoydeb.com/features/command-groups): named groups, Command/Control K instant search, arrow-key navigation, Enter to run
+- [Scheduling](https://ordito.tonmoydeb.com/features/scheduling): recurring cron schedules and one-time runs with pause/resume
+- [Run history](https://ordito.tonmoydeb.com/features/history): status, timing, duration, exit code, and output for every run
+
+## Comparisons
+
+- [Ordito vs cron](https://ordito.tonmoydeb.com/alternatives/cron): a cron alternative with a UI, tray access, and run history
+- [Ordito vs Raycast](https://ordito.tonmoydeb.com/alternatives/raycast): a tray-resident command runner versus a general launcher
+- [Ordito vs Alfred](https://ordito.tonmoydeb.com/alternatives/alfred): a free, cross-platform Alfred alternative for commands
+- [Ordito vs shell aliases](https://ordito.tonmoydeb.com/alternatives/shell-aliases): organized, scheduled, tracked commands beyond a flat alias list
+
+## Other pages
+
+- [Homepage](https://ordito.tonmoydeb.com/): positioning, feature overview, and download
+- [Download](https://ordito.tonmoydeb.com/download): macOS and Windows builds plus build-from-source instructions
+- [Changelog](https://ordito.tonmoydeb.com/changelog): release history
+- [Support](https://ordito.tonmoydeb.com/support): how to get help and report issues
+- [Privacy](https://ordito.tonmoydeb.com/privacy): local-first data handling, no accounts, no telemetry
+- [Terms](https://ordito.tonmoydeb.com/terms): MIT license terms and usage conditions in plain language
+
+## Project
+
+- [GitHub repository](<!-- @brand:repository -->https://github.com/tonmoydeb404/ordito-new<!-- /@brand:repository -->): source code, issues, and releases
+- [Latest release](<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito-new/releases/latest<!-- /@brand:downloadUrl -->): pre-built binaries for macOS and Windows
+- [MIT License](<!-- @brand:licenseUrl -->https://github.com/tonmoydeb404/ordito-new/blob/main/LICENSE<!-- /@brand:licenseUrl -->): open-source license
