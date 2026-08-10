@@ -78,26 +78,14 @@ jobs:
           archive: false
           if-no-files-found: error
 
-  release-others:
+  release-linux:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: "ubuntu-22.04"
-            os_name: "linux"
-            args: "--bundles deb"
-          - platform: "windows-latest"
-            os_name: "windows"
-            args: ""
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf build-essential
@@ -142,7 +130,7 @@ jobs:
           releaseName: "Ordito v__VERSION__"
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          args: --bundles deb
 
       - name: Build only
         if: github.event_name == 'workflow_dispatch'
@@ -153,32 +141,90 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
-          args: ${{ matrix.args }}
+          args: --bundles deb
 
-      - name: Upload .msi (Windows)
-        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+      - name: Upload .deb (Linux)
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7
         with:
-          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.msi
+          name: ordito-linux-v${{ steps.version.outputs.version }}.deb
+          path: apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+          archive: false
+          if-no-files-found: error
+
+  release-windows:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and release
+        if: github.event_name == 'push'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: v__VERSION__
+          releaseName: "Ordito v__VERSION__"
+          releaseDraft: false
+          prerelease: false
+
+      - name: Build only
+        if: github.event_name == 'workflow_dispatch'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+
+      - name: Upload .msi (Windows)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ordito-windows-v${{ steps.version.outputs.version }}.msi
           path: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
           archive: false
           if-no-files-found: error
 
       - name: Upload .exe (Windows)
-        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7
         with:
-          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.exe
+          name: ordito-windows-v${{ steps.version.outputs.version }}.exe
           path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
-          archive: false
-          if-no-files-found: error
-
-      - name: Upload .deb (Linux)
-        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v7
-        with:
-          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.deb
-          path: apps/desktop/src-tauri/target/release/bundle/deb/*.deb
           archive: false
           if-no-files-found: error
 
