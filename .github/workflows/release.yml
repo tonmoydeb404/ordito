@@ -1,105 +1,229 @@
-# .github/workflows/release.yml
-name: "Complete Release Pipeline"
+name: Release
 
 on:
   push:
     tags:
       - "v*"
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to build and release"
-        required: true
-        default: "v1.1.1"
-      skip_build:
-        description: "Skip build and only generate updater JSON"
-        type: boolean
-        default: false
-      release_notes:
-        description: "Custom release notes"
-        required: false
-        default: ""
 
 jobs:
-  get-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+  release-macos:
+    permissions:
+      contents: write
+    runs-on: macos-14
     steps:
-      - name: Get tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${{ github.ref_name }}"
-          fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Using tag: $TAG"
+      - uses: actions/checkout@v7
 
-  build:
-    if: ${{ !inputs.skip_build }}
-    needs: get-tag
-    runs-on: ubuntu-22.04
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and release
+        if: github.event_name == 'push'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: v__VERSION__
+          releaseName: "Ordito v__VERSION__"
+          releaseDraft: false
+          prerelease: false
+          args: --target aarch64-apple-darwin
+
+      - name: Build only
+        if: github.event_name == 'workflow_dispatch'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          args: --target aarch64-apple-darwin
+
+      - name: Upload .dmg (macOS)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ordito-macos-v${{ steps.version.outputs.version }}.dmg
+          path: apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          archive: false
+          if-no-files-found: error
+
+  release-others:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "ubuntu-22.04"
+            os_name: "linux"
+            args: "--bundles deb"
+          - platform: "windows-latest"
+            os_name: "windows"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf build-essential
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and release
+        if: github.event_name == 'push'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: v__VERSION__
+          releaseName: "Ordito v__VERSION__"
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Build only
+        if: github.event_name == 'workflow_dispatch'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          args: ${{ matrix.args }}
+
+      - name: Upload .msi (Windows)
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.msi
+          path: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload .exe (Windows)
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.exe
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload .deb (Linux)
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ordito-${{ matrix.os_name }}-v${{ steps.version.outputs.version }}.deb
+          path: apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+          archive: false
+          if-no-files-found: error
+
+  update-homebrew-cask:
+    needs: release-macos
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Build Tauri release
-        uses: ./.github/actions/build-release
-        with:
-          tag: ${{ needs.get-tag.outputs.tag }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          signing_private_key: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          signing_private_key_password: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          platform: ubuntu-22.04
-
-  generate-updater:
-    needs: [get-tag, build]
-    if: always() && (needs.build.result == 'success' || (inputs.skip_build == true))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      updater_url: ${{ steps.updater.outputs.updater_url }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Generate updater JSON
-        id: updater
-        uses: ./.github/actions/generate-updater
-        with:
-          tag: ${{ needs.get-tag.outputs.tag }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_notes: ${{ inputs.release_notes }}
-          repository: ${{ github.repository }}
-
-  summary:
-    needs: [get-tag, build, generate-updater]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pipeline Summary
+      - name: Read app version
+        id: version
+        shell: bash
         run: |
-          echo "🎉 Release Pipeline Summary"
-          echo "=========================="
-          echo "Tag: ${{ needs.get-tag.outputs.tag }}"
-          echo "Build: ${{ inputs.skip_build && 'Skipped' || needs.build.result }}"
-          echo "Updater: ${{ needs.generate-updater.result }}"
-          echo ""
-          if [ "${{ needs.generate-updater.result }}" = "success" ]; then
-            echo "✅ Release completed successfully!"
-            echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.get-tag.outputs.tag }}"
-            echo "🔗 Updater: ${{ needs.generate-updater.outputs.updater_url }}"
-            echo ""
-            echo "📋 Next steps:"
-            echo "1. Update your tauri.conf.json with the updater endpoint"
-            echo "2. Test the auto-updater in your application"
-            echo "3. Monitor download metrics in GitHub releases"
-          else
-            echo "❌ Pipeline failed. Check the logs above."
-            exit 1
-          fi
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Compute DMG sha256
+        id: sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # release is still a draft, so download via authenticated gh cli instead of the public URL
+          gh release download "v${{ steps.version.outputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "Ordito_${{ steps.version.outputs.version }}_aarch64.dmg" \
+            --output ordito.dmg
+          sha256=$(shasum -a 256 ordito.dmg | cut -d' ' -f1)
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Update cask
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          sha256="${{ steps.sha.outputs.sha256 }}"
+          sed -i "s/version \".*\"/version \"$version\"/" Casks/ordito.rb
+          sed -i "s/sha256 .*/sha256 \"$sha256\"/" Casks/ordito.rb
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet -- Casks/ordito.rb && exit 0
+          git add Casks/ordito.rb
+          git commit -m "chore: update homebrew cask to v${{ steps.version.outputs.version }}"
+          git push origin HEAD:main
+
