@@ -1,7 +1,6 @@
 import { externalUrls } from "@/config/paths-config";
 
 export const SITE_URL = externalUrls.site;
-export const DOWNLOAD_URL = externalUrls.download;
 export const REPOSITORY_URL = externalUrls.repository;
 
 // Primary site navigation. Route-based so every page is reachable from the
@@ -154,7 +153,7 @@ export const footerGroups = [
       { label: "GitHub", href: REPOSITORY_URL, external: true },
       {
         label: "Releases",
-        href: DOWNLOAD_URL,
+        href: externalUrls.download,
         external: true,
       },
       {

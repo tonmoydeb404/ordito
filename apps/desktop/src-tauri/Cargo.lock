@@ -2559,7 +2559,7 @@ dependencies = [
 name = "ordito"
 version = "2.0.0"
 dependencies = [
-  "chrono",
+ "chrono",
  "cron",
  "dirs 5.0.1",
  "rusqlite",

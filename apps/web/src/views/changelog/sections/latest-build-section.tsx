@@ -1,6 +1,6 @@
-import { buttonVariants } from "@packages/ui/components/button";
-import { DOWNLOAD_URL } from "@/content/homepage";
+import { sitePaths } from "@/config/paths-config";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@packages/ui/components/button";
 
 export function LatestBuildSection() {
   return (
@@ -10,7 +10,7 @@ export function LatestBuildSection() {
         Pre-built binaries for macOS and Windows are on GitHub Releases.
       </p>
       <a
-        href={DOWNLOAD_URL}
+        href={sitePaths.download}
         target="_blank"
         rel="noreferrer"
         className={cn(buttonVariants(), "mt-4")}

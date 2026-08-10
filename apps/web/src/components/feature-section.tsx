@@ -85,7 +85,11 @@ export function FeatureSection({
             span === "full" && "lg:w-88",
           )}
         >
-          <AppScreenshot view={visualView} className="shadow-2xl" />
+          <AppScreenshot
+            view={visualView}
+            className="shadow-2xl"
+            hideTitleBar
+          />
         </div>
       )}
 

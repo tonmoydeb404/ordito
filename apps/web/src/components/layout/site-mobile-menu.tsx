@@ -4,7 +4,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { DOWNLOAD_URL } from "@/content/homepage";
+import { sitePaths } from "@/config/paths-config";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@packages/ui/components/button";
 import {
@@ -62,7 +62,7 @@ export function SiteMobileMenu() {
           </nav>
           <DrawerFooter>
             <a
-              href={DOWNLOAD_URL}
+              href={sitePaths.download}
               target="_blank"
               rel="noreferrer"
               className={cn(buttonVariants(), "w-full")}

@@ -1,7 +1,8 @@
 import { ArrowDown, ExternalLink } from "lucide-react";
 
 import { AppScreenshot } from "@/components/app-screenshot";
-import { DOWNLOAD_URL, heroScreenshot } from "@/content/homepage";
+import { sitePaths } from "@/config/paths-config";
+import { heroScreenshot } from "@/content/homepage";
 import { Badge } from "@packages/ui/components/badge";
 import { Button } from "@packages/ui/components/button";
 import Link from "next/link";
@@ -24,8 +25,8 @@ export function HeroSection() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             render={
-              <Link href={DOWNLOAD_URL} target="_blank" rel="noreferrer">
-                Download latest release
+              <Link href={sitePaths.download} target="_blank" rel="noreferrer">
+                Download Now
                 <ExternalLink data-icon="inline-end" aria-hidden="true" />
               </Link>
             }
@@ -50,13 +51,16 @@ export function HeroSection() {
         >
           <Badge variant="secondary">macOS</Badge>
           <Badge variant="secondary">Windows</Badge>
+          <Badge variant="secondary">Linux</Badge>
           <Badge variant="outline">Free and open source</Badge>
         </div>
       </div>
 
-      <div className="relative mt-16 overflow-hidden rounded-3xl bg-gradient-to-b from-muted/70 to-background px-6 py-10 md:mt-20 md:px-10">
-        <AppScreenshot view={heroScreenshot} priority className="shadow-2xl" />
-      </div>
+      <AppScreenshot
+        view={heroScreenshot}
+        priority
+        className="relative mt-16 overflow-hidden rounded-2xl bg-gradient-to-b from-muted/70 to-background md:mt-20"
+      />
     </section>
   );
 }

@@ -1,9 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-import { buttonVariants } from "@packages/ui/components/button";
-import { DOWNLOAD_URL } from "@/content/homepage";
+import { sitePaths } from "@/config/paths-config";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@packages/ui/components/button";
 
 export default function NotFound() {
   return (
@@ -22,7 +22,7 @@ export default function NotFound() {
           <ArrowRight data-icon="inline-end" aria-hidden="true" />
         </Link>
         <a
-          href={DOWNLOAD_URL}
+          href={sitePaths.download}
           target="_blank"
           rel="noreferrer"
           className={cn(buttonVariants({ variant: "outline" }))}

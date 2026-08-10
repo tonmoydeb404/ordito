@@ -20,6 +20,7 @@ type AppScreenshotProps = {
   view: AppScreenshotView;
   priority?: boolean;
   className?: string;
+  hideTitleBar?: boolean;
 };
 
 /** A real screenshot of the full-window Ordito desktop app, framed like a window. */
@@ -27,16 +28,19 @@ export function AppScreenshot({
   view,
   priority,
   className,
+  hideTitleBar = false,
 }: AppScreenshotProps) {
   return (
     <div
       className={cn("overflow-hidden rounded-lg border shadow-xl", className)}
     >
-      <div className="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-2">
-        <span className="size-2.5 rounded-full bg-red-500/70" />
-        <span className="size-2.5 rounded-full bg-yellow-500/70" />
-        <span className="size-2.5 rounded-full bg-green-500/70" />
-      </div>
+      {!hideTitleBar && (
+        <div className="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-1.5">
+          <span className="size-2.5 rounded-full bg-red-500/70" />
+          <span className="size-2.5 rounded-full bg-yellow-500/70" />
+          <span className="size-2.5 rounded-full bg-green-500/70" />
+        </div>
+      )}
       <Image
         src={SCREENSHOT_SRC[view]}
         alt={`Ordito ${view} view`}

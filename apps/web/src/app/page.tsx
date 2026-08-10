@@ -1,5 +1,6 @@
+import { sitePaths } from "@/config/paths-config";
+import { SITE_URL, faqItems } from "@/content/homepage";
 import { HomeView } from "@/views/home";
-import { DOWNLOAD_URL, SITE_URL, faqItems } from "@/content/homepage";
 
 export default function Home() {
   const softwareApplicationSchema = {
@@ -9,7 +10,7 @@ export default function Home() {
     description:
       "Save, run, schedule, and review repeatable shell commands from a focused desktop app for macOS and Windows.",
     url: SITE_URL,
-    downloadUrl: DOWNLOAD_URL,
+    downloadUrl: sitePaths.download,
     applicationCategory: "DeveloperApplication",
     operatingSystem: "macOS, Windows",
     offers: {

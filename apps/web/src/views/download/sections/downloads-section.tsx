@@ -3,7 +3,7 @@
 import { Laptop, Monitor, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { DOWNLOAD_URL } from "@/content/homepage";
+import { sitePaths } from "@/config/paths-config";
 import { scriptUrls } from "@/config/scripts-config";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@packages/ui/components/button";
@@ -94,7 +94,7 @@ export function DownloadsSection() {
           </code>
           {platform.id === "windows" ? (
             <a
-              href={DOWNLOAD_URL}
+              href={sitePaths.download}
               target="_blank"
               rel="noreferrer"
               className={cn(
