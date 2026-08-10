@@ -4,3 +4,6 @@ node_modules
 .agents/skills
 .impeccable
 .playwright-mcp
+
+# Tauri updater signing keypair — never commit
+.keys
