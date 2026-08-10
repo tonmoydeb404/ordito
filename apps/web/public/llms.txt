@@ -57,6 +57,6 @@ Ordito is for technical people who run the same shell commands over and over —
 
 ## Project
 
-- [GitHub repository](<!-- @brand:repository -->https://github.com/tonmoydeb404/ordito-new<!-- /@brand:repository -->): source code, issues, and releases
-- [Latest release](<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito-new/releases/latest<!-- /@brand:downloadUrl -->): pre-built binaries for macOS and Windows
-- [MIT License](<!-- @brand:licenseUrl -->https://github.com/tonmoydeb404/ordito-new/blob/main/LICENSE<!-- /@brand:licenseUrl -->): open-source license
+- [GitHub repository](<!-- @brand:repository -->https://github.com/tonmoydeb404/ordito<!-- /@brand:repository -->): source code, issues, and releases
+- [Latest release](<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito/releases/latest<!-- /@brand:downloadUrl -->): pre-built binaries for macOS and Windows
+- [MIT License](<!-- @brand:licenseUrl -->https://github.com/tonmoydeb404/ordito/blob/main/LICENSE<!-- /@brand:licenseUrl -->): open-source license

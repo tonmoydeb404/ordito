@@ -13,9 +13,9 @@
 // @brand:generated-start
 export const externalUrls = {
   site: "https://ordito.tonmoydeb.com",
-  download: "https://github.com/tonmoydeb404/ordito-new/releases/latest",
-  repository: "https://github.com/tonmoydeb404/ordito-new",
-  license: "https://github.com/tonmoydeb404/ordito-new/blob/main/LICENSE",
+  download: "https://github.com/tonmoydeb404/ordito/releases/latest",
+  repository: "https://github.com/tonmoydeb404/ordito",
+  license: "https://github.com/tonmoydeb404/ordito/blob/main/LICENSE",
 } as const;
 // @brand:generated-end
 

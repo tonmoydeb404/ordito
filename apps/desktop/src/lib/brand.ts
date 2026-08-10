@@ -11,20 +11,20 @@ export const brand = {
     "name": "Tonmoy Deb",
     "website": "https://ordito.tonmoydeb.com"
   },
-  "repository": "https://github.com/tonmoydeb404/ordito-new",
-  "downloadUrl": "https://github.com/tonmoydeb404/ordito-new/releases/latest",
-  "licenseUrl": "https://github.com/tonmoydeb404/ordito-new/blob/main/LICENSE",
-  "updaterEndpoint": "https://github.com/tonmoydeb404/ordito-new/releases/latest/download/latest.json",
+  "repository": "https://github.com/tonmoydeb404/ordito",
+  "downloadUrl": "https://github.com/tonmoydeb404/ordito/releases/latest",
+  "licenseUrl": "https://github.com/tonmoydeb404/ordito/blob/main/LICENSE",
+  "updaterEndpoint": "https://github.com/tonmoydeb404/ordito/releases/latest/download/latest.json",
   "scripts": {
-    "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito-new/main/setup.sh",
-    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito-new/main/setup.ps1"
+    "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh",
+    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.ps1"
   },
   "description": {
     "short": "Run saved shell commands from the system tray.",
     "long": "Ordito organizes your shell commands into named groups and runs them with a single click — from the panel or directly from the system tray. No terminal, no command recall, no friction. It schedules recurring (cron) and one-time runs, tracks every execution with full output history and exit codes, and lives in the tray until you need it."
   },
   "copyright": "Copyright (c) 2026 Tonmoy Deb",
-  "homebrewTap": "tonmoydeb404/ordito-new"
+  "homebrewTap": "tonmoydeb404/ordito"
 } as const;
 
 export type Brand = typeof brand;

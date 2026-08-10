@@ -4,7 +4,7 @@ version = "2.0.0"
 description = "Run saved shell commands from the system tray."
 authors = ["Tonmoy Deb"]
 homepage = "https://ordito.tonmoydeb.com"
-repository = "https://github.com/tonmoydeb404/ordito-new"
+repository = "https://github.com/tonmoydeb404/ordito"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

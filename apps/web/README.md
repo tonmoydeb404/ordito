@@ -38,7 +38,7 @@ pnpm lint             # eslint --max-warnings 0
 ## Links
 
 - Live site: <!-- @brand:website -->https://ordito.tonmoydeb.com<!-- /@brand:website -->
-- Repository: <!-- @brand:repository -->https://github.com/tonmoydeb404/ordito-new<!-- /@brand:repository -->
+- Repository: <!-- @brand:repository -->https://github.com/tonmoydeb404/ordito<!-- /@brand:repository -->
 
 ## License
 

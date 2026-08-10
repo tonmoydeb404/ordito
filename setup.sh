@@ -2,14 +2,14 @@
 # Ordito installer for macOS (via Homebrew) and Ubuntu/Debian (via .deb).
 # Usage:
 # @brand:start usage
-#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito-new/main/setup.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito-new/main/setup.sh | sh -s -- v2.0.0
+#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh | sh -s -- v2.0.0
 # @brand:end usage
 set -e
 
-TAP="tonmoydeb404/ordito-new"
-TAP_URL="https://github.com/tonmoydeb404/ordito-new.git"
-REPO="tonmoydeb404/ordito-new"
+TAP="tonmoydeb404/ordito"
+TAP_URL="https://github.com/tonmoydeb404/ordito.git"
+REPO="tonmoydeb404/ordito"
 # Optional version tag (e.g. "v0.1.3"); defaults to the latest release.
 VERSION="${1:-latest}"
 

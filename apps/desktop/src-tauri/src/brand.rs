@@ -6,12 +6,12 @@ pub const APP_NAME: &str = "Ordito";
 pub const IDENTIFIER: &str = "com.tonmoydeb.ordito";
 pub const DEVELOPER_NAME: &str = "Tonmoy Deb";
 pub const WEBSITE: &str = "https://ordito.tonmoydeb.com";
-pub const REPOSITORY: &str = "https://github.com/tonmoydeb404/ordito-new";
-pub const DOWNLOAD_URL: &str = "https://github.com/tonmoydeb404/ordito-new/releases/latest";
-pub const LICENSE_URL: &str = "https://github.com/tonmoydeb404/ordito-new/blob/main/LICENSE";
+pub const REPOSITORY: &str = "https://github.com/tonmoydeb404/ordito";
+pub const DOWNLOAD_URL: &str = "https://github.com/tonmoydeb404/ordito/releases/latest";
+pub const LICENSE_URL: &str = "https://github.com/tonmoydeb404/ordito/blob/main/LICENSE";
 pub const COPYRIGHT: &str = "Copyright (c) 2026 Tonmoy Deb";
-pub const HOMEBREW_TAP: &str = "tonmoydeb404/ordito-new";
-pub const SETUP_SCRIPT_URL: &str = "https://raw.githubusercontent.com/tonmoydeb404/ordito-new/main/setup.sh";
+pub const HOMEBREW_TAP: &str = "tonmoydeb404/ordito";
+pub const SETUP_SCRIPT_URL: &str = "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup.sh";
 
 /// App version, read from Cargo.toml at compile time.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

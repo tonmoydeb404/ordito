@@ -1,15 +1,15 @@
 <div align="center">
   <img src="apps/web/public/logo.svg" alt="Ordito" width="120" height="120">
 
-  # Ordito
+# Ordito
 
-  **Your commands, one tray-click away.**
+**Your commands, one tray-click away.**
 
-  Available for macOS, Windows & Linux. Free and open source (MIT).
+Available for macOS, Windows & Linux. Free and open source (MIT).
 
 <!-- @brand:start badges -->
 
-[![Release](https://img.shields.io/github/v/release/tonmoydeb404/ordito-new)](https://github.com/tonmoydeb404/ordito-new/releases/latest)
+[![Release](https://img.shields.io/github/v/release/tonmoydeb404/ordito)](https://github.com/tonmoydeb404/ordito/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)](#download)
 
@@ -22,7 +22,7 @@ Ordito is a desktop app that organizes your shell commands into named groups and
 
 <!-- @brand:start downloadLink -->
 
-[Download the latest release &raquo;](https://github.com/tonmoydeb404/ordito-new/releases/latest)
+[Download the latest release &raquo;](https://github.com/tonmoydeb404/ordito/releases/latest)
 
 <!-- @brand:end downloadLink -->
 
@@ -134,13 +134,13 @@ bash ~/scripts/backup-routine.sh
 
 Pre-built binaries are published on GitHub Releases:
 
-**<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito-new/releases/latest<!-- /@brand:downloadUrl -->**
+**<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito/releases/latest<!-- /@brand:downloadUrl -->**
 
-| Platform | Installer |
-| --- | --- |
-| macOS | `.dmg` |
-| Windows | `.exe` / `.msi` |
-| Linux | `.deb` / `.AppImage` / `.rpm` |
+| Platform | Installer                     |
+| -------- | ----------------------------- |
+| macOS    | `.dmg`                        |
+| Windows  | `.exe` / `.msi`               |
+| Linux    | `.deb` / `.AppImage` / `.rpm` |
 
 ## Project structure
 
@@ -159,8 +159,8 @@ packages/
 ## Links
 
 - Website: <!-- @brand:website -->https://ordito.tonmoydeb.com<!-- /@brand:website -->
-- Repository: <!-- @brand:repository -->https://github.com/tonmoydeb404/ordito-new<!-- /@brand:repository -->
-- Releases: <!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito-new/releases/latest<!-- /@brand:downloadUrl -->
+- Repository: <!-- @brand:repository -->https://github.com/tonmoydeb404/ordito<!-- /@brand:repository -->
+- Releases: <!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito/releases/latest<!-- /@brand:downloadUrl -->
 
 ## License
 
