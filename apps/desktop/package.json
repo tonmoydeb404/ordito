@@ -1,7 +1,7 @@
 {
   "name": "@apps/desktop",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "module",
   "description": "Ordito desktop app — runs saved shell commands from the system tray. Built with Tauri 2.",
   "license": "MIT",
