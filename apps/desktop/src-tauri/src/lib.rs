@@ -1,7 +1,7 @@
 use tauri::{
     image::Image,
     menu::MenuEvent,
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::TrayIconBuilder,
     Manager,
 };
 use tauri_plugin_updater::UpdaterExt;
@@ -100,17 +100,7 @@ pub fn run() {
                 .icon(Image::from_bytes(include_bytes!("../icons/32x32.png"))?)
                 .icon_as_template(false)
                 .tooltip(brand::APP_NAME)
-                .show_menu_on_left_click(false)
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        show_window(tray.app_handle());
-                    }
-                })
+                .show_menu_on_left_click(true)
                 .on_menu_event(|tray, event: MenuEvent| {
                     tray::handle_menu_event(tray.app_handle(), event.id().as_ref());
                 })
