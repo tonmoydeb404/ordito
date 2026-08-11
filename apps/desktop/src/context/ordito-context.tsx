@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { api, onRunCompleted, onStatusChanged } from "../lib/api";
+import { api, onRunCompleted, onStatusChanged, onUpdateAvailable } from "../lib/api";
 import type {
   BackendCommand,
   BackendCommandInput,
@@ -22,6 +22,7 @@ import type {
   HistoryFilter,
   RunItem,
   ScheduleItem,
+  UpdateInfo,
 } from "../types";
 
 export type GroupedCommands = Record<string, CommandItem[]>;
@@ -86,6 +87,11 @@ type OrditoContextValue = {
 
   settings: Record<string, string>;
   updateSetting: (key: string, value: string) => Promise<void>;
+
+  updateInfo: UpdateInfo | null;
+  isInstallingUpdate: boolean;
+  dismissUpdate: () => void;
+  installUpdate: () => Promise<void>;
 };
 
 const OrditoContext = createContext<OrditoContextValue | null>(null);
@@ -154,6 +160,9 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
 
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
+
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isInstallingUpdate, setIsInstallingUpdate] = useState(false);
 
   const groupNameById = useCallback(
     (id: string) => groups.find((g) => g.id === id)?.name ?? "Other",
@@ -247,9 +256,14 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
       );
     });
 
+    const unlistenUpdatePromise = onUpdateAvailable((payload) => {
+      setUpdateInfo(payload);
+    });
+
     return () => {
       unlistenStatusPromise.then((fn) => fn());
       unlistenRunPromise.then((fn) => fn());
+      unlistenUpdatePromise.then((fn) => fn());
     };
   }, []);
 
@@ -584,6 +598,20 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
     setCommandsList(commands.map(mapCommand));
   }, []);
 
+  const dismissUpdate = useCallback(() => setUpdateInfo(null), []);
+
+  const installUpdate = useCallback(async () => {
+    setIsInstallingUpdate(true);
+    try {
+      await api.installUpdate();
+    } catch (err) {
+      toast.error("Failed to install update", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+      setIsInstallingUpdate(false);
+    }
+  }, []);
+
   const value: OrditoContextValue = {
     loading,
     error,
@@ -628,6 +656,10 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
     runs: runsList,
     settings,
     updateSetting,
+    updateInfo,
+    isInstallingUpdate,
+    dismissUpdate,
+    installUpdate,
   };
 
   return (

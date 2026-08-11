@@ -2,7 +2,7 @@ use tauri::{
     image::Image,
     menu::MenuEvent,
     tray::TrayIconBuilder,
-    Manager,
+    Emitter, Manager,
 };
 use tauri_plugin_updater::UpdaterExt;
 
@@ -33,7 +33,8 @@ pub fn show_window(app: &tauri::AppHandle) {
     }
 }
 
-// downloads and installs a newer build in the background; applied on next relaunch
+// checks for a newer build and notifies the frontend; the user decides whether
+// to install via the "Install & restart" button in the sidebar.
 async fn check_for_update(app: tauri::AppHandle) {
     let updater = match app.updater() {
         Ok(updater) => updater,
@@ -45,9 +46,14 @@ async fn check_for_update(app: tauri::AppHandle) {
 
     match updater.check().await {
         Ok(Some(update)) => {
-            if let Err(err) = update.download_and_install(|_, _| {}, || {}).await {
-                eprintln!("failed to download/install update: {err}");
-            }
+            let _ = app.emit(
+                "update://available",
+                serde_json::json!({
+                    "version": update.version,
+                    "body": update.body,
+                    "date": update.date.map(|d| d.to_string()),
+                }),
+            );
         }
         Ok(None) => {}
         Err(err) => eprintln!("update check failed: {err}"),
@@ -136,6 +142,7 @@ pub fn run() {
             commands::enable_autostart,
             commands::disable_autostart,
             commands::is_autostart_enabled,
+            commands::install_update,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

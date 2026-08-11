@@ -140,3 +140,9 @@ export type GroupItem = {
   name: string;
   icon: string | null;
 };
+
+export type UpdateInfo = {
+  version: string;
+  body: string | null;
+  date: string | null;
+};

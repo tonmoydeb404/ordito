@@ -9,6 +9,7 @@ import type {
   BackendSchedule,
   BackendScheduleInput,
   CommandStatus,
+  UpdateInfo,
 } from "../types";
 
 export type StatusChangedPayload = {
@@ -63,6 +64,8 @@ export const api = {
   enableAutostart: () => invoke<void>("enable_autostart"),
   disableAutostart: () => invoke<void>("disable_autostart"),
   isAutostartEnabled: () => invoke<boolean>("is_autostart_enabled"),
+
+  installUpdate: () => invoke<void>("install_update"),
 };
 
 export function onStatusChanged(
@@ -77,6 +80,14 @@ export function onRunCompleted(
   callback: (payload: RunCompletedPayload) => void,
 ): Promise<UnlistenFn> {
   return listen<RunCompletedPayload>("run://completed", (event) =>
+    callback(event.payload),
+  );
+}
+
+export function onUpdateAvailable(
+  callback: (payload: UpdateInfo) => void,
+): Promise<UnlistenFn> {
+  return listen<UpdateInfo>("update://available", (event) =>
     callback(event.payload),
   );
 }
