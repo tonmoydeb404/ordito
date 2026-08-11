@@ -34,16 +34,33 @@ install_macos() {
     exit 1
   fi
 
+  # Homebrew refuses to run as root; this installer must run as your normal user.
+  if [ "$(id -u)" = "0" ]; then
+    echo "This installer must run as your normal user, not root."
+    echo "Homebrew cannot operate under sudo. Re-run without sudo:"
+    echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/setup/unix.sh | sh"
+    exit 1
+  fi
+
   if [ "$VERSION" != "latest" ]; then
     echo "Note: Homebrew always installs the tap's current cask version; a"
     echo "pinned version argument is only honored for Linux installs."
   fi
 
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  export HOMEBREW_NO_INSTALL_CLEANUP=1
+  export HOMEBREW_NO_ENV_HINTS=1
+
   echo "==> Tapping ${TAP}..."
   brew tap "$TAP" "$TAP_URL"
 
-  echo "==> Installing Ordito..."
-  brew install --cask ordito
+  echo "==> Trusting ${TAP}..."
+  brew trust "$TAP" 2>/dev/null || true
+
+  echo "==> Installing Ordito into /Applications..."
+  echo "    Your login password is required to complete the install."
+  sudo -v
+  brew install --cask --no-quarantine ordito
 
   echo "==> Done! Launch Ordito from /Applications/Ordito.app"
 }
@@ -77,7 +94,11 @@ install_linux() {
   echo "==> Downloading Ordito..."
   curl -fsSL "$DEB_URL" -o "$TMP_DEB"
 
-  echo "==> Installing (requires sudo)..."
+  echo "==> Installing Ordito..."
+  if [ "$(id -u)" != "0" ]; then
+    echo "    Your password is required (sudo) to install system-wide."
+    sudo -v
+  fi
   sudo dpkg -i "$TMP_DEB" || sudo apt-get install -f -y
 
   echo "==> Done! Launch Ordito from your applications menu."

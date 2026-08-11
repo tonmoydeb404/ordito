@@ -20,13 +20,39 @@ Available for macOS, Windows & Linux. Free and open source (MIT).
 
 Ordito is a desktop app that organizes your shell commands into named groups and runs them with a single click — from the panel or directly from the system tray. No terminal window, no command recall, no friction. It schedules recurring (cron) and one-time runs, tracks every execution with full output history and exit codes, and lives in the tray until you need it.
 
-<!-- @brand:start downloadLink -->
-
-[Download the latest release &raquo;](https://github.com/tonmoydeb404/ordito/releases/latest)
-
-<!-- @brand:end downloadLink -->
-
 ---
+
+## Install
+
+### macOS & Linux (Debian/Ubuntu)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh
+```
+
+### Windows
+
+```powershell
+irm https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1 | iex
+```
+
+Install a specific version by passing the tag:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh -s -- v2.0.0
+```
+
+### Manual download
+
+Pre-built binaries are also published on GitHub Releases:
+
+**<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito/releases/latest<!-- /@brand:downloadUrl -->**
+
+| Platform | Installer                     |
+| -------- | ----------------------------- |
+| macOS    | `.dmg`                        |
+| Windows  | `.exe` / `.msi`               |
+| Linux    | `.deb` / `.AppImage` / `.rpm` |
 
 ## Why Ordito
 
@@ -129,18 +155,6 @@ htop
 python scripts/cleanup.py
 bash ~/scripts/backup-routine.sh
 ```
-
-## Download
-
-Pre-built binaries are published on GitHub Releases:
-
-**<!-- @brand:downloadUrl -->https://github.com/tonmoydeb404/ordito/releases/latest<!-- /@brand:downloadUrl -->**
-
-| Platform | Installer                     |
-| -------- | ----------------------------- |
-| macOS    | `.dmg`                        |
-| Windows  | `.exe` / `.msi`               |
-| Linux    | `.deb` / `.AppImage` / `.rpm` |
 
 ## Project structure
 
