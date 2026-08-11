@@ -221,8 +221,20 @@ pub async fn export_config(app: AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn import_config(app: AppHandle, json: String) -> Result<(), String> {
-    let config: ConfigExport =
-        serde_json::from_str(&json).map_err(map_err)?;
+    let value: serde_json::Value = serde_json::from_str(&json).map_err(map_err)?;
+    let is_legacy = value
+        .get("groups")
+        .map(|g| g.is_object())
+        .unwrap_or(false)
+        && value.get("commands").is_none();
+
+    let config: ConfigExport = if is_legacy {
+        let legacy: LegacyConfig = serde_json::from_value(value).map_err(map_err)?;
+        legacy.into_config()
+    } else {
+        serde_json::from_value(value).map_err(map_err)?
+    };
+
     let state = app.state::<AppState>();
     let conn = state.db.lock().map_err(map_err)?;
     let result = db::import_config(&conn, &config).map_err(map_err);
