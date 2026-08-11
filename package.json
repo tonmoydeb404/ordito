@@ -29,6 +29,7 @@
     "check-types": "turbo run check-types",
     "sync-brand": "node scripts/sync-brand.mjs",
     "sync-brand:check": "node scripts/sync-brand.mjs --check",
+    "release:tag": "node scripts/release-tag-sync.mjs",
     "prepare": "git config core.hooksPath .husky"
   },
   "devDependencies": {
