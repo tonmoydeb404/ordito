@@ -45,6 +45,8 @@ const markers = {
   updaterEndpoint: brand.updaterEndpoint,
   setupSh: brand.scripts.setupSh,
   setupPs1: brand.scripts.setupPs1,
+  uninstallSh: brand.scripts.uninstallSh,
+  uninstallPs1: brand.scripts.uninstallPs1,
   descriptionShort: brand.description.short,
   descriptionLong: brand.description.long,
   copyright: brand.copyright,
@@ -241,6 +243,19 @@ let setupPs1 = read("setup/windows.ps1");
 setupPs1 = applyShellBlock(setupPs1, "usage", ps1UsageBlock);
 setupPs1 = setLine(setupPs1, `$Repo = `, `$Repo = "${repoSlug}"`);
 
+const uninstallShUsageBlock = `#   curl -fsSL ${brand.scripts.uninstallSh} | sh
+`;
+let uninstallSh = read("setup/unix-uninstall.sh");
+uninstallSh = applyShellBlock(uninstallSh, "usage", uninstallShUsageBlock);
+uninstallSh = setLine(uninstallSh, `TAP=`, `TAP="${brand.homebrewTap}"`);
+uninstallSh = setLine(uninstallSh, `REPO=`, `REPO="${repoSlug}"`);
+
+const uninstallPs1UsageBlock = `#   irm ${brand.scripts.uninstallPs1} | iex
+`;
+let uninstallPs1 = read("setup/windows-uninstall.ps1");
+uninstallPs1 = applyShellBlock(uninstallPs1, "usage", uninstallPs1UsageBlock);
+uninstallPs1 = setLine(uninstallPs1, `$Repo = `, `$Repo = "${repoSlug}"`);
+
 const externalUrlsBlock = `export const externalUrls = {
   site: "${brand.developer.website}",
   download: "${brand.downloadUrl}",
@@ -285,6 +300,8 @@ const targets = {
   "Casks/ordito.rb": cask,
   "setup/unix.sh": setupSh,
   "setup/windows.ps1": setupPs1,
+  "setup/unix-uninstall.sh": uninstallSh,
+  "setup/windows-uninstall.ps1": uninstallPs1,
   "apps/web/src/config/paths-config.ts": pathsConfig,
   "README.md": readme,
   "apps/desktop/README.md": desktopReadme,

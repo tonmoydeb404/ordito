@@ -12,7 +12,9 @@
   "updaterEndpoint": "https://github.com/tonmoydeb404/ordito/releases/latest/download/latest.json",
   "scripts": {
     "setupSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh",
-    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1"
+    "setupPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows.ps1",
+    "uninstallSh": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix-uninstall.sh",
+    "uninstallPs1": "https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows-uninstall.ps1"
   },
   "description": {
     "short": "Run saved shell commands from the system tray.",

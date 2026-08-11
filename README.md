@@ -54,6 +54,20 @@ Pre-built binaries are also published on GitHub Releases:
 | Windows  | `.exe` / `.msi`               |
 | Linux    | `.deb` / `.AppImage` / `.rpm` |
 
+### Uninstall
+
+Removes the app, the Homebrew tap / package, the launch-at-login entry, and all user data.
+
+```sh
+# macOS & Linux
+curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix-uninstall.sh | sh
+```
+
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/windows-uninstall.ps1 | iex
+```
+
 ## Why Ordito
 
 Power users run the same commands every day — builds, deploys, syncs, dev servers. They live in a terminal because that's where commands live, even when the command is already known and never changes. Ordito removes that round trip: save a command once, then run it from the menu bar without opening a terminal, recalling syntax, or context-switching.

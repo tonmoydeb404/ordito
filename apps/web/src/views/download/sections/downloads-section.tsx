@@ -22,6 +22,7 @@ const platforms: {
   icon: typeof Monitor;
   description: string;
   command: string;
+  uninstallCommand: string;
 }[] = [
   {
     id: "macos",
@@ -30,6 +31,7 @@ const platforms: {
     description:
       "Apple Silicon only. Installs via Homebrew — the .dmg is unsigned and macOS will flag it as damaged if opened directly.",
     command: `curl -fsSL ${scriptUrls.setupSh} | sh`,
+    uninstallCommand: `curl -fsSL ${scriptUrls.uninstallSh} | sh`,
   },
   {
     id: "windows",
@@ -37,6 +39,7 @@ const platforms: {
     icon: Laptop,
     description: "x64 only. Downloads and silently runs the latest installer.",
     command: `irm ${scriptUrls.setupPs1} | iex`,
+    uninstallCommand: `irm ${scriptUrls.uninstallPs1} | iex`,
   },
   {
     id: "linux",
@@ -44,6 +47,7 @@ const platforms: {
     icon: Terminal,
     description: "x86_64 only. Downloads the .deb and installs it via dpkg.",
     command: `curl -fsSL ${scriptUrls.setupSh} | sh`,
+    uninstallCommand: `curl -fsSL ${scriptUrls.uninstallSh} | sh`,
   },
 ];
 
@@ -92,6 +96,14 @@ export function DownloadsSection() {
           <code className="mt-3 block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
             {platform.command}
           </code>
+          <div className="mt-3">
+            <span className="text-xs font-medium text-muted-foreground">
+              Uninstall
+            </span>
+            <code className="mt-1 block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+              {platform.uninstallCommand}
+            </code>
+          </div>
           {platform.id === "windows" ? (
             <a
               href={sitePaths.download}

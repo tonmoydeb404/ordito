@@ -60,7 +60,21 @@ install_macos() {
   echo "==> Installing Ordito into /Applications..."
   echo "    Your login password is required to complete the install."
   sudo -v
-  brew install --cask --no-quarantine ordito
+  # Keep sudo credentials fresh so a slow install never re-prompts.
+  ( while true; do sudo -n true 2>/dev/null || exit; sleep 60; done ) &
+  SUDO_KEEPALIVE_PID=$!
+  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null' EXIT
+
+  brew install --cask ordito
+
+  # The app is unsigned; clear macOS quarantine so it isn't flagged as damaged.
+  if [ -d "/Applications/Ordito.app" ]; then
+    xattr -dr com.apple.quarantine "/Applications/Ordito.app" 2>/dev/null \
+      || sudo xattr -dr com.apple.quarantine "/Applications/Ordito.app" 2>/dev/null \
+      || true
+  fi
+
+  kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
 
   echo "==> Done! Launch Ordito from /Applications/Ordito.app"
 }
