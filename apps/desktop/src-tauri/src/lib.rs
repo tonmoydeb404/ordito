@@ -136,6 +136,7 @@ pub fn run() {
             commands::delete_schedule,
             commands::get_settings,
             commands::set_setting,
+            commands::seed_starter_data,
             commands::export_config,
             commands::import_config,
             commands::run_group,

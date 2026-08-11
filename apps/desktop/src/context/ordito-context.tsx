@@ -87,6 +87,7 @@ type OrditoContextValue = {
 
   settings: Record<string, string>;
   updateSetting: (key: string, value: string) => Promise<void>;
+  seedStarterData: () => Promise<void>;
 
   updateInfo: UpdateInfo | null;
   isInstallingUpdate: boolean;
@@ -560,6 +561,21 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const seedStarterData = useCallback(async () => {
+    await api.seedStarterData();
+    const [backendGroups, backendCommands, backendSchedules] =
+      await Promise.all([
+        api.listGroups(),
+        api.listCommands(),
+        api.listSchedules(),
+      ]);
+    setGroups(
+      backendGroups.map((g) => ({ id: g.id, name: g.name, icon: g.icon })),
+    );
+    setCommandsList(backendCommands.map(mapCommand));
+    setSchedulesList(backendSchedules.map(mapSchedule));
+  }, []);
+
   // ---- Group management ----
 
   const createGroup = useCallback(
@@ -656,6 +672,7 @@ export function OrditoProvider({ children }: { children: ReactNode }) {
     runs: runsList,
     settings,
     updateSetting,
+    seedStarterData,
     updateInfo,
     isInstallingUpdate,
     dismissUpdate,

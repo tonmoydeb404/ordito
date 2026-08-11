@@ -209,6 +209,16 @@ pub async fn set_setting(
     db::set_setting(&conn, &key, &value).map_err(map_err)
 }
 
+#[tauri::command]
+pub async fn seed_starter_data(app: AppHandle) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    let conn = state.db.lock().map_err(map_err)?;
+    let result = db::seed_starter_data(&conn).map_err(map_err);
+    drop(conn);
+    tray::rebuild_menu(&app);
+    result
+}
+
 // ---- Export / Import ----
 
 #[tauri::command]

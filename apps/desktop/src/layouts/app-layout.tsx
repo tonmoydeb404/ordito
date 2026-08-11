@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { ErrorAlertDialog } from "@/components/error-alert-dialog";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { StartupModals } from "@/components/startup-modals";
 import { GroupEditorDialog } from "@/sheets/group-editor-dialog";
 import { SidebarInset, SidebarProvider } from "@packages/ui/components/sidebar";
 import { Outlet } from "react-router-dom";
@@ -21,6 +22,7 @@ export function AppLayout() {
       <ErrorAlertDialog />
       <SettingsDialog />
       <CommandPalette />
+      <StartupModals />
     </SidebarProvider>
   );
 }
