@@ -35,6 +35,10 @@ fn seed_defaults(conn: &Connection) -> DbResult<()> {
     crate::seed::seed_defaults(conn)
 }
 
+pub fn seed_starter_data(conn: &Connection) -> DbResult<()> {
+    crate::seed::seed_starter_data(conn)
+}
+
 pub fn get_setting(conn: &Connection, key: &str) -> Option<String> {
     conn.query_row(
         "SELECT value FROM settings WHERE key = ?1",

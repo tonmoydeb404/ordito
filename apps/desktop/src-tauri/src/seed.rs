@@ -186,6 +186,19 @@ fn platform_command(cmd: &StarterCommand) -> &'static str {
 }
 
 pub fn seed_defaults(conn: &Connection) -> DbResult<()> {
+    let has_settings: i64 = conn.query_row("SELECT COUNT(*) FROM settings", [], |r| r.get(0))?;
+
+    if has_settings == 0 {
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('max_history_runs', '500'), ('log_retention_days', '30')",
+            [],
+        )?;
+    }
+
+    Ok(())
+}
+
+pub fn seed_starter_data(conn: &Connection) -> DbResult<()> {
     let has_groups: i64 = conn.query_row("SELECT COUNT(*) FROM command_groups", [], |r| r.get(0))?;
 
     if has_groups == 0 {
@@ -215,15 +228,6 @@ pub fn seed_defaults(conn: &Connection) -> DbResult<()> {
                 )?;
             }
         }
-    }
-
-    let has_settings: i64 = conn.query_row("SELECT COUNT(*) FROM settings", [], |r| r.get(0))?;
-
-    if has_settings == 0 {
-        conn.execute(
-            "INSERT INTO settings (key, value) VALUES ('max_history_runs', '500'), ('log_retention_days', '30')",
-            [],
-        )?;
     }
 
     Ok(())

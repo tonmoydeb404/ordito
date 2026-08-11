@@ -55,6 +55,7 @@ export const api = {
   getSettings: () => invoke<Record<string, string>>("get_settings"),
   setSetting: (key: string, value: string) =>
     invoke<void>("set_setting", { key, value }),
+  seedStarterData: () => invoke<void>("seed_starter_data"),
 
   exportConfig: () => invoke<string>("export_config"),
   importConfig: (json: string) => invoke<void>("import_config", { json }),
