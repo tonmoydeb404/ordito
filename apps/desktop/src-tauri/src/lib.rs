@@ -94,9 +94,11 @@ pub fn run() {
                 check_for_update(updater_handle).await;
             });
 
+            // not a template: renders full color with the app icon's own background,
+            // rather than a floating transparent glyph
             let _tray = TrayIconBuilder::with_id("main_tray")
                 .icon(Image::from_bytes(include_bytes!("../icons/32x32.png"))?)
-                .icon_as_template(true)
+                .icon_as_template(false)
                 .tooltip(brand::APP_NAME)
                 .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
