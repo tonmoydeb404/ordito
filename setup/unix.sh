@@ -3,7 +3,7 @@
 # Usage:
 # @brand:start usage
 #   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh -s -- v2.0.2
+#   curl -fsSL https://raw.githubusercontent.com/tonmoydeb404/ordito/main/setup/unix.sh | sh -s -- v2.0.3
 # @brand:end usage
 set -e
 
