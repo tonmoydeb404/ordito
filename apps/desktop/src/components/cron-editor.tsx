@@ -12,7 +12,12 @@ import {
   ComboboxValue,
 } from "@packages/ui/components/combobox";
 import { Input } from "@packages/ui/components/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@packages/ui/components/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@packages/ui/components/tabs";
 
 import {
   buildCronExpression,
@@ -183,7 +188,7 @@ export function CronEditor({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="font-mono"
-            placeholder="0 9 * * 1-5"
+            placeholder="0 0 9 * * 1-5"
           />
         </TabsContent>
       </Tabs>

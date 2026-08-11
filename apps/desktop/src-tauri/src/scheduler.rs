@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use cron::Schedule;
 use tauri::{AppHandle, Manager};
 
@@ -51,7 +51,8 @@ fn tick(app: &AppHandle) {
                         .map(|dt| dt.with_timezone(&Utc) <= now)
                         .unwrap_or(false)
                 } else {
-                    true
+                    // missing/unparseable next_run_at should never trigger a run
+                    false
                 }
             }
         };
@@ -87,7 +88,7 @@ fn tick(app: &AppHandle) {
                         .and_then(|expr| {
                             Schedule::from_str(expr)
                                 .ok()
-                                .and_then(|s| s.upcoming(Utc).next())
+                                .and_then(|s| s.upcoming(Local).next())
                                 .map(|dt| dt.to_rfc3339())
                         });
                     let _ = db::update_schedule_next_run(&conn, &schedule.id, next.as_deref());
