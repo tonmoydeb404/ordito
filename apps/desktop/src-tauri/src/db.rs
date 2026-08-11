@@ -434,7 +434,7 @@ fn row_to_schedule(r: &rusqlite::Row) -> rusqlite::Result<Schedule> {
 pub fn create_schedule(conn: &Connection, input: &ScheduleInput) -> DbResult<Schedule> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = now_rfc3339();
-    let next_run_at = compute_next_run_at(input);
+    let next_run_at = compute_next_run_at(input)?;
 
     conn.execute(
         "INSERT INTO schedules (id, command_id, enabled, mode, cron_expr, run_at,
@@ -463,7 +463,7 @@ pub fn create_schedule(conn: &Connection, input: &ScheduleInput) -> DbResult<Sch
 
 pub fn update_schedule(conn: &Connection, id: &str, input: &ScheduleInput) -> DbResult<Schedule> {
     let now = now_rfc3339();
-    let next_run_at = compute_next_run_at(input);
+    let next_run_at = compute_next_run_at(input)?;
 
     conn.execute(
         "UPDATE schedules SET command_id = ?1, mode = ?2, cron_expr = ?3, run_at = ?4,
@@ -534,26 +534,35 @@ pub fn disable_schedule(conn: &Connection, id: &str) -> DbResult<()> {
     Ok(())
 }
 
-fn compute_next_run_at(input: &ScheduleInput) -> Option<String> {
+fn compute_next_run_at(input: &ScheduleInput) -> DbResult<Option<String>> {
     match input.mode {
-        ScheduleMode::Once => input.run_at.clone(),
+        ScheduleMode::Once => Ok(input.run_at.clone()),
         ScheduleMode::Recurring => {
-            if let Some(ref expr) = input.cron_expr {
-                parse_next_cron(expr).map(|dt| dt.to_rfc3339())
-            } else {
-                None
-            }
+            let expr = input
+                .cron_expr
+                .as_deref()
+                .ok_or_else(|| invalid_input_err("recurring schedule requires a cron expression"))?;
+            let next = parse_next_cron(expr)
+                .map_err(|e| invalid_input_err(&format!("invalid cron expression '{expr}': {e}")))?;
+            Ok(next.map(|dt| dt.to_rfc3339()))
         }
     }
 }
 
-fn parse_next_cron(expr: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+/// Expects the 6-field format used by the `cron` crate: `sec min hour day month dow`.
+/// Fields are matched against the machine's local wall clock, not UTC.
+fn parse_next_cron(expr: &str) -> Result<Option<chrono::DateTime<chrono::Local>>, String> {
     use cron::Schedule;
     use std::str::FromStr;
-    Schedule::from_str(expr)
-        .ok()?
-        .upcoming(chrono::Utc)
-        .next()
+    let schedule = Schedule::from_str(expr).map_err(|e| e.to_string())?;
+    Ok(schedule.upcoming(chrono::Local).next())
+}
+
+fn invalid_input_err(msg: &str) -> rusqlite::Error {
+    rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        msg.to_string(),
+    )))
 }
 
 pub fn truncate_output(s: &str) -> String {

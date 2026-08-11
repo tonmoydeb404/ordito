@@ -116,6 +116,19 @@ const setTomlField = (text, key, value) => {
   return text.replace(re, `$1${value}`);
 };
 
+/** Set the `version` of a specific `[[package]]` entry in a Cargo.lock file. */
+const setCargoLockPackageVersion = (text, packageName, version) => {
+  const re = new RegExp(
+    `(\\[\\[package\\]\\]\\nname = "${escRe(packageName)}"\\nversion = ").*?(")`,
+  );
+  if (!re.test(text)) {
+    throw new Error(
+      `sync-brand: package "${packageName}" not found in Cargo.lock`,
+    );
+  }
+  return text.replace(re, `$1${version}$2`);
+};
+
 /** Set a TOML field, inserting after `afterKey` when it does not yet exist. */
 const upsertTomlField = (text, key, value, afterKey) => {
   const replaced = setTomlField(text, key, value);
@@ -223,6 +236,9 @@ cargo = upsertTomlField(
   "homepage",
 );
 
+let cargoLock = read("apps/desktop/src-tauri/Cargo.lock");
+cargoLock = setCargoLockPackageVersion(cargoLock, "ordito", brand.version);
+
 const dmgUrl = `"https://github.com/${repoSlug}/releases/download/v#{version}/Ordito_#{version}_#{arch}.dmg"`;
 let cask = read("Casks/ordito.rb");
 cask = setLine(cask, `  url `, `  url ${dmgUrl}`);
@@ -297,6 +313,7 @@ const targets = {
   "apps/web/package.json": `${JSON.stringify(webPkg, null, 2)}\n`,
   "apps/desktop/src-tauri/tauri.conf.json": `${JSON.stringify(tauriConf, null, 2)}\n`,
   "apps/desktop/src-tauri/Cargo.toml": cargo,
+  "apps/desktop/src-tauri/Cargo.lock": cargoLock,
   "Casks/ordito.rb": cask,
   "setup/unix.sh": setupSh,
   "setup/windows.ps1": setupPs1,

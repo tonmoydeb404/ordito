@@ -1,6 +1,7 @@
 import cronstrue from "cronstrue";
 
 export type CronFieldKey =
+  | "second"
   | "minute"
   | "hour"
   | "dayOfMonth"
@@ -16,7 +17,9 @@ export type CronFieldConfig = {
   names?: string[];
 };
 
+// 6-field format matching the Rust `cron` crate: sec min hour day month dow.
 export const CRON_FIELD_CONFIGS: CronFieldConfig[] = [
+  { key: "second", label: "Second", min: 0, max: 59 },
   { key: "minute", label: "Minute", min: 0, max: 59 },
   { key: "hour", label: "Hour", min: 0, max: 23 },
   { key: "dayOfMonth", label: "Day of month", min: 1, max: 31 },
@@ -87,10 +90,10 @@ export function serializeField(state: CronFieldState): string {
   }
 }
 
-/** Returns null when `expr` doesn't split into exactly 5 fields (caller should fall back to raw editing). */
+/** Returns null when `expr` doesn't split into exactly 6 fields (caller should fall back to raw editing). */
 export function parseCronExpression(expr: string): CronFieldState[] | null {
   const tokens = expr.trim().split(/\s+/).filter(Boolean);
-  if (tokens.length !== 5) return null;
+  if (tokens.length !== 6) return null;
   return tokens.map((token, i) => parseField(token, CRON_FIELD_CONFIGS[i]));
 }
 
