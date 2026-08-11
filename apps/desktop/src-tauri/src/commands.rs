@@ -253,6 +253,7 @@ pub async fn run_group(app: AppHandle, group_id: String) -> Result<Vec<Run>, Str
 
 // ---- Auto-start ----
 
+
 #[tauri::command]
 pub async fn enable_autostart(app: AppHandle) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
@@ -275,4 +276,26 @@ pub async fn is_autostart_enabled(app: AppHandle) -> Result<bool, String> {
     app.autolaunch()
         .is_enabled()
         .map_err(|e| e.to_string())
+}
+
+// ---- Updater ----
+
+#[tauri::command]
+pub async fn install_update(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    let updater = app.updater().map_err(map_err)?;
+    match updater.check().await.map_err(map_err)? {
+        Some(update) => {
+            update
+                .download_and_install(|_, _| {}, || {})
+                .await
+                .map_err(map_err)?;
+            // On macOS/Linux: restart to apply the update.
+            // On Windows: the process exits during install, so this is unreachable.
+            app.request_restart();
+        }
+        None => return Err("No update available".into()),
+    }
+    Ok(())
 }

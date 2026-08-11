@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { IconPreview } from "@/components/icon-picker";
+import { UpdateNotification } from "@/components/update-notification";
 import { useModal } from "@/context/modal-context";
 import { useOrdito } from "@/context/ordito-context";
 import { brand } from "@/lib/brand";
@@ -205,6 +206,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <UpdateNotification />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
