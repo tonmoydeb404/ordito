@@ -2,7 +2,7 @@ use tauri::{
     image::Image,
     menu::MenuEvent,
     tray::TrayIconBuilder,
-    Manager,
+    Emitter, Manager,
 };
 use tauri_plugin_updater::UpdaterExt;
 
