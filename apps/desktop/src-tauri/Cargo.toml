@@ -1,6 +1,6 @@
 [package]
 name = "ordito"
-version = "2.0.3"
+version = "2.0.4"
 description = "Run saved shell commands from the system tray."
 authors = ["Tonmoy Deb"]
 homepage = "https://ordito.tonmoydeb.com"

@@ -6,7 +6,7 @@
 export const brand = {
   "appName": "Ordito",
   "identifier": "com.tonmoydeb.ordito",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "developer": {
     "name": "Tonmoy Deb",
     "website": "https://ordito.tonmoydeb.com"

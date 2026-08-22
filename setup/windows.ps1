@@ -9,7 +9,7 @@ $Repo = "tonmoydeb404/ordito"
 # Pinned by scripts/sync-brand.mjs on every release; avoids api.github.com
 # (rate limited to 60 requests/hour per IP, shared by every machine behind
 # the same network).
-$DefaultVersion = "v2.0.3"
+$DefaultVersion = "v2.0.4"
 $Version = if ($env:ORDITO_VERSION) { $env:ORDITO_VERSION } else { $DefaultVersion }
 $Version = $Version -replace '^v', ''
 $Tag = "v$Version"
