@@ -6,7 +6,21 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "tonmoydeb404/ordito"
-$Version = if ($env:ORDITO_VERSION) { $env:ORDITO_VERSION } else { "latest" }
+# Pinned by scripts/sync-brand.mjs on every release; avoids api.github.com
+# (rate limited to 60 requests/hour per IP, shared by every machine behind
+# the same network).
+$DefaultVersion = "v2.0.3"
+$Version = if ($env:ORDITO_VERSION) { $env:ORDITO_VERSION } else { $DefaultVersion }
+$Version = $Version -replace '^v', ''
+$Tag = "v$Version"
+
+if ($Version -eq "latest") {
+    Write-Host "This installer ships a pinned default version instead of querying"
+    Write-Host "the rate-limited GitHub API. Set ORDITO_VERSION to an explicit"
+    Write-Host "version (e.g. v2.0.3) or browse releases:"
+    Write-Host "https://github.com/$Repo/releases"
+    exit 1
+}
 
 if ($env:PROCESSOR_ARCHITECTURE -ne "AMD64") {
     Write-Host "Only x64 builds are currently published for Windows."
@@ -14,24 +28,18 @@ if ($env:PROCESSOR_ARCHITECTURE -ne "AMD64") {
     exit 1
 }
 
-Write-Host "==> Fetching release info ($Version)..."
-$releaseUrl = if ($Version -eq "latest") {
-    "https://api.github.com/repos/$Repo/releases/latest"
-} else {
-    "https://api.github.com/repos/$Repo/releases/tags/$Version"
-}
-$release = Invoke-RestMethod -Uri $releaseUrl
-$asset = $release.assets | Where-Object { $_.name -like "*_x64-setup.exe" } | Select-Object -First 1
+$assetName = "Ordito_${Version}_x64-setup.exe"
+$downloadUrl = "https://github.com/$Repo/releases/download/$Tag/$assetName"
+$installerPath = Join-Path $env:TEMP $assetName
 
-if (-not $asset) {
-    Write-Host "Could not find a Windows build for $Version."
+Write-Host "==> Downloading Ordito ($Tag)..."
+try {
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+} catch {
+    Write-Host "Download failed: $downloadUrl"
+    Write-Host "Browse available releases: https://github.com/$Repo/releases"
     exit 1
 }
-
-$installerPath = Join-Path $env:TEMP $asset.name
-
-Write-Host "==> Downloading Ordito..."
-Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installerPath
 
 Write-Host "==> Installing Ordito (silent)..."
 Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
