@@ -188,7 +188,7 @@ export function CronEditor({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="font-mono"
-            placeholder="0 0 9 * * 1-5"
+            placeholder="0 0 9 * * 2-6"
           />
         </TabsContent>
       </Tabs>

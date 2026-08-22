@@ -44,10 +44,11 @@ export const CRON_FIELD_CONFIGS: CronFieldConfig[] = [
     ],
   },
   {
+    // 1-based Quartz numbering matching the Rust `cron` crate: 1=Sun … 7=Sat
     key: "dayOfWeek",
     label: "Day of week",
-    min: 0,
-    max: 6,
+    min: 1,
+    max: 7,
     names: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
   },
 ];
@@ -105,7 +106,10 @@ export function describeCron(
   expr: string,
 ): { ok: true; text: string } | { ok: false } {
   try {
-    const text = cronstrue.toString(expr, { throwExceptionOnParseError: true });
+    const text = cronstrue.toString(expr, {
+      throwExceptionOnParseError: true,
+      dayOfWeekStartIndexZero: false,
+    });
     return { ok: true, text };
   } catch {
     return { ok: false };
