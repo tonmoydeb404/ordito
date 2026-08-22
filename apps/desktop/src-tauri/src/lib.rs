@@ -69,9 +69,19 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            None,
+            Some(vec!["--hidden"]),
         ))
         .setup(|app| {
+            // autostart launches with --hidden: stay in the tray without a
+            // window; a normal launch shows the main window immediately
+            let launch_hidden = std::env::args().any(|arg| arg == "--hidden");
+            if launch_hidden {
+                #[cfg(target_os = "macos")]
+                let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            } else {
+                show_window(app.handle());
+            }
+
             let mut app_data_dir = app
                 .path()
                 .app_data_dir()

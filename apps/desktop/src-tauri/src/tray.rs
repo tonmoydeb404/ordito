@@ -99,11 +99,7 @@ pub fn rebuild_menu(app: &AppHandle) {
 pub fn handle_menu_event(app: &AppHandle, id: &str) {
     match id {
         "open" => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            crate::show_window(app);
         }
         "quit" => {
             app.exit(0);
