@@ -1,8 +1,8 @@
 cask "ordito" do
   arch arm: "aarch64"
 
-  version "2.0.3"
-  sha256 "7cc047ef0a678bbcae7a22fec505b075e2c50182ee72461444d8b55fad9d38d2"
+  version "2.0.4"
+  sha256 "e7929d29a9ffad2fcfbffb650f69d9e45848bf0edaa46c359a6c34afc6e675f2"
 
   url "https://github.com/tonmoydeb404/ordito/releases/download/v#{version}/Ordito_#{version}_#{arch}.dmg"
   name "Ordito"
