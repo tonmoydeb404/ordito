@@ -10,16 +10,13 @@ set -e
 TAP="tonmoydeb404/ordito"
 TAP_URL="https://github.com/tonmoydeb404/ordito.git"
 REPO="tonmoydeb404/ordito"
-# Optional version tag (e.g. "v0.1.3"); defaults to the latest release.
-VERSION="${1:-latest}"
-
-release_json() {
-  if [ "$VERSION" = "latest" ]; then
-    curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest"
-  else
-    curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${VERSION}"
-  fi
-}
+# Optional version tag (e.g. "v2.0.3"); defaults to the pinned version below.
+# The default is rewritten by scripts/sync-brand.mjs on every release, so this
+# installer never calls api.github.com (rate limited to 60 requests/hour per
+# IP, shared by every machine behind the same network).
+DEFAULT_VERSION="v2.0.3"
+VERSION_ARG="${1:-}"
+TAG="v$(printf '%s' "${1:-$DEFAULT_VERSION}" | sed 's/^v//')"
 
 install_macos() {
   if [ "$(uname -m)" != "arm64" ]; then
@@ -42,7 +39,7 @@ install_macos() {
     exit 1
   fi
 
-  if [ "$VERSION" != "latest" ]; then
+  if [ -n "$VERSION_ARG" ]; then
     echo "Note: Homebrew always installs the tap's current cask version; a"
     echo "pinned version argument is only honored for Linux installs."
   fi
@@ -92,21 +89,25 @@ install_linux() {
     exit 1
   fi
 
-  echo "==> Fetching release info (${VERSION})..."
-  RELEASE_JSON=$(release_json)
-
-  DEB_URL=$(printf '%s' "$RELEASE_JSON" | grep -o '"browser_download_url": *"[^"]*_amd64\.deb"' | sed -E 's/.*"(https:[^"]+)"/\1/' | head -n1)
-
-  if [ -z "$DEB_URL" ]; then
-    echo "Could not find a Linux build for ${VERSION}."
+  if [ "$TAG" = "vlatest" ]; then
+    echo "This installer ships a pinned default version instead of querying"
+    echo "the rate-limited GitHub API. Pass an explicit version (e.g. v2.0.3)"
+    echo "or browse releases: https://github.com/${REPO}/releases"
     exit 1
   fi
+
+  echo "==> Installing Ordito ${TAG}..."
+  DEB_URL="https://github.com/${REPO}/releases/download/${TAG}/Ordito_${TAG#v}_amd64.deb"
 
   TMP_DEB=$(mktemp -t ordito.XXXXXX.deb)
   trap 'rm -f "$TMP_DEB"' EXIT
 
   echo "==> Downloading Ordito..."
-  curl -fsSL "$DEB_URL" -o "$TMP_DEB"
+  if ! curl -fsSL "$DEB_URL" -o "$TMP_DEB"; then
+    echo "Download failed: ${DEB_URL}"
+    echo "Browse available releases: https://github.com/${REPO}/releases"
+    exit 1
+  fi
 
   echo "==> Installing Ordito..."
   if [ "$(id -u)" != "0" ]; then

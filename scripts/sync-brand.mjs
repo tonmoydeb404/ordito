@@ -252,12 +252,14 @@ setupSh = applyShellBlock(setupSh, "usage", shUsageBlock);
 setupSh = setLine(setupSh, `TAP=`, `TAP="${brand.homebrewTap}"`);
 setupSh = setLine(setupSh, `TAP_URL=`, `TAP_URL="${repoGit}"`);
 setupSh = setLine(setupSh, `REPO=`, `REPO="${repoSlug}"`);
+setupSh = setLine(setupSh, `DEFAULT_VERSION=`, `DEFAULT_VERSION="v${brand.version}"`);
 
 const ps1UsageBlock = `#   irm ${brand.scripts.setupPs1} | iex
 `;
 let setupPs1 = read("setup/windows.ps1");
 setupPs1 = applyShellBlock(setupPs1, "usage", ps1UsageBlock);
 setupPs1 = setLine(setupPs1, `$Repo = `, `$Repo = "${repoSlug}"`);
+setupPs1 = setLine(setupPs1, `$DefaultVersion = `, `$DefaultVersion = "v${brand.version}"`);
 
 const uninstallShUsageBlock = `#   curl -fsSL ${brand.scripts.uninstallSh} | sh
 `;
